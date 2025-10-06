@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { AchievementBadge } from '@/components/gamification/AchievementBadge';
 import { SocialShare, useSocialShare } from '@/components/social/SocialShare';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -196,7 +197,7 @@ export default function LeaderboardPage() {
 
             <Select
               value={filters.season || ''}
-              onValueChange={(value) => setFilters({ ...filters, season: value || undefined })}
+              onValueChange={(value: string) => setFilters({ ...filters, season: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Seasons" />
@@ -211,7 +212,7 @@ export default function LeaderboardPage() {
 
             <Select
               value={filters.industry || ''}
-              onValueChange={(value) => setFilters({ ...filters, industry: value || undefined })}
+              onValueChange={(value: string) => setFilters({ ...filters, industry: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Industries" />
@@ -229,7 +230,7 @@ export default function LeaderboardPage() {
 
             <Select
               value={filters.strategy_type || ''}
-              onValueChange={(value) => setFilters({ ...filters, strategy_type: value || undefined })}
+              onValueChange={(value: string) => setFilters({ ...filters, strategy_type: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="All Strategies" />

@@ -18,7 +18,7 @@ export function SocialShare({ entry, rank, onClose }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
-  const shareText = `🎯 Just achieved a ${entry.grade} grade in CMO Simulator!\n\n📊 Final Score: ${entry.final_score.toLocaleString()}\n💰 ROI: ${entry.roi}%\n📈 Market Share: ${entry.market_share}%\n🏢 Company: ${entry.company_name}\n🎯 Strategy: ${entry.strategy_type}\n\n${rank ? `🏆 Ranked #${rank} on the leaderboard!` : '🚀 Ready to take on the competition!'}\n\n#CMOSimulator #MarketingStrategy #BusinessSimulation`;
+  const shareText = `🎯 Just achieved a ${entry.grade} grade in CMO Simulator!\n\n📊 Final Score: ${entry.final_score.toLocaleString()}\n💰 Revenue: $${entry.revenue?.toLocaleString() || 'N/A'}\n📈 Market Share: ${entry.market_share}%\n🏢 Company: ${entry.company_name}\n🎯 Strategy: ${entry.strategy_type}\n\n${rank ? `🏆 Ranked #${rank} on the leaderboard!` : '🚀 Ready to take on the competition!'}\n\n#CMOSimulator #MarketingStrategy #BusinessSimulation`;
 
   const shareUrl = typeof window !== 'undefined' ? window.location.origin + '/leaderboard' : '';
 
