@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CMO Simulator
 
-## Getting Started
+A Next.js 15 application with Supabase authentication, customizable brand themes, and marketing simulation capabilities.
 
-First, run the development server:
+## Features
+
+### Phase 1: App Foundation & Auth ✅
+- Next.js 15 with App Router
+- Supabase cookie-based authentication with SSR sessions
+- Tailwind CSS & shadcn/ui components
+- Protected routes with middleware
+- Login, signup, and dashboard pages
+
+### Phase 2: Theme Picker & Brand Styling ✅
+- Custom BrandPicker component with 5 brand themes:
+  - **Aurora Tech**: Modern tech with vibrant gradients
+  - **Heritage Serif**: Classic elegance with serif typography
+  - **Clinic Clean**: Minimal medical-inspired design
+  - **Forest Nature**: Earthy greens and natural tones
+  - **Sunset Warm**: Warm oranges and golden hues
+- CSS custom properties for dynamic theming
+- Theme persistence to Supabase user profiles
+- Real-time theme switching with data-theme attributes
+
+## Setup Instructions
+
+### 1. Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 2. Supabase Database Setup
+
+1. Create a new Supabase project
+2. Run the SQL commands from `supabase-schema.sql` in your Supabase SQL editor
+3. This will create:
+   - `profiles` table for user theme preferences
+   - Row Level Security policies
+   - Automatic profile creation trigger
+
+### 3. Install Dependencies
+
+```bash
+npm install
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── dashboard/          # Protected dashboard page
+│   ├── login/             # Authentication login page
+│   ├── signup/            # User registration page
+│   ├── globals.css        # Global styles with theme variables
+│   └── page.tsx           # Landing page
+├── components/
+│   ├── ui/                # shadcn/ui components
+│   ├── BrandPicker.tsx    # Theme selection component
+│   └── LogoutButton.tsx   # Authentication logout
+├── lib/
+│   └── supabase/          # Supabase client configurations
+│       ├── client.ts      # Browser client
+│       ├── server.ts      # Server client
+│       └── middleware.ts  # Auth middleware
+└── middleware.ts          # Next.js middleware for route protection
+```
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: Next.js 15 with App Router
+- **Authentication**: Supabase Auth with SSR
+- **Database**: Supabase PostgreSQL
+- **Styling**: Tailwind CSS with CSS custom properties
+- **UI Components**: shadcn/ui
+- **Icons**: Lucide React
+- **TypeScript**: Full type safety
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Theme System
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The application uses CSS custom properties for dynamic theming:
 
-## Deploy on Vercel
+- `--bg`: Background color
+- `--card-bg`: Card background color
+- `--text`: Text color
+- `--accent`: Accent/primary color
+- `--accent-hover`: Accent hover state
+- `--border`: Border color
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Themes are applied via `data-theme` attributes on the HTML element and persisted to the user's Supabase profile.
