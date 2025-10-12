@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,15 @@ import { TalentCandidate } from '@/lib/talentMarket';
 
 export default function Q2Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const {
+    context,
+    addTactic,
+    removeTactic,
+    triggerWildcard,
+    respondToWildcard,
+    completeQuarter,
+    hireTalent,
+  } = useSimulation();
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q2.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
@@ -42,7 +50,10 @@ export default function Q2Page() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [talentCandidates, setTalentCandidates] = useState<TalentCandidate[]>([]);
   const [showTalentMarket, setShowTalentMarket] = useState(false);
-  const [hasTriggeredTalentMarket, setHasTriggeredTalentMarket] = useState(false);
+  const [hasTriggeredTalentMarket, setHasTriggeredTalentMarket] = useState(
+    (context.quarters.Q2.talentHired?.length || 0) > 0
+  );
+  const lastTalentCountRef = useRef(context.quarters.Q2.talentHired?.length || 0);
   const [allocations, setAllocations] = useState([
     { id: 'digital', name: 'Digital Marketing', budgetAmount: 0, timeAmount: 0, color: '#3b82f6' },
     { id: 'content', name: 'Content Creation', budgetAmount: 0, timeAmount: 0, color: '#10b981' },
@@ -68,6 +79,17 @@ export default function Q2Page() {
     });
     setAllocations(newAllocations);
   }, [selectedTactics]);
+
+  useEffect(() => {
+    const currentCount = context.quarters.Q2.talentHired?.length || 0;
+
+    if (currentCount > lastTalentCountRef.current) {
+      setHasTriggeredTalentMarket(true);
+      setShowTalentMarket(false);
+    }
+
+    lastTalentCountRef.current = currentCount;
+  }, [context.quarters.Q2.talentHired]);
 
   const handleAddTactic = (tactic: Tactic) => {
     if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
@@ -102,13 +124,18 @@ export default function Q2Page() {
     const candidates = getRandomTalentPool(4);
     setTalentCandidates(candidates);
     setShowTalentMarket(true);
-    setHasTriggeredTalentMarket(true);
   };
 
   const handleHireTalent = (candidate: TalentCandidate) => {
-    // TODO: Integrate with simulation state machine
-    console.log('Hired:', candidate);
-    setShowTalentMarket(false);
+    if (context.remainingBudget < candidate.hiringCost) {
+      return;
+    }
+
+    if (context.hiredTalent.some(hired => hired.id === candidate.id)) {
+      return;
+    }
+
+    hireTalent('Q2', candidate);
   };
 
   const handleCompleteQuarter = () => {
@@ -322,7 +349,7 @@ export default function Q2Page() {
         isOpen={showTalentMarket}
         onClose={() => setShowTalentMarket(false)}
         onHire={handleHireTalent}
-        availableBudget={remainingBudget}
+        availableBudget={context.remainingBudget}
       />
     </div>
   );

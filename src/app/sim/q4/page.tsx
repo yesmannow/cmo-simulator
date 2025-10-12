@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -17,13 +17,21 @@ import { BudgetTimeAllocator } from '@/components/simulation/BudgetTimeAllocator
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { getTacticsByCategory, getRandomWildcard } from '@/lib/tactics';
 import { getRandomBigBets } from '@/lib/talentMarket';
-import { Tactic, WildcardEvent } from '@/lib/simMachine';
+import { Tactic, WildcardEvent, BigBetOutcome } from '@/lib/simMachine';
 import { BigBetOption } from '@/lib/talentMarket';
 import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles } from 'lucide-react';
 
 export default function Q4Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const {
+    context,
+    addTactic,
+    removeTactic,
+    triggerWildcard,
+    respondToWildcard,
+    completeQuarter,
+    selectBigBet,
+  } = useSimulation();
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q4.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
@@ -32,7 +40,15 @@ export default function Q4Page() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [bigBetOptions, setBigBetOptions] = useState<BigBetOption[]>([]);
   const [showBigBetModal, setShowBigBetModal] = useState(false);
-  const [hasTriggeredBigBet, setHasTriggeredBigBet] = useState(false);
+  const [hasTriggeredBigBet, setHasTriggeredBigBet] = useState(!!context.selectedBigBet);
+  const [bigBetSummary, setBigBetSummary] = useState<
+    { bet: BigBetOption; outcome: BigBetOutcome }
+  >(
+    context.selectedBigBet && context.bigBetOutcome
+      ? { bet: context.selectedBigBet, outcome: context.bigBetOutcome }
+      : null
+  );
+  const hasCommittedBigBetRef = useRef(!!context.selectedBigBet);
   const [allocations, setAllocations] = useState([
     { id: 'digital', name: 'Digital Marketing', budgetAmount: 0, timeAmount: 0, color: '#3b82f6' },
     { id: 'content', name: 'Content Creation', budgetAmount: 0, timeAmount: 0, color: '#10b981' },
@@ -63,6 +79,21 @@ export default function Q4Page() {
     });
     setAllocations(newAllocations);
   }, [selectedTactics]);
+
+  useEffect(() => {
+    if (context.selectedBigBet && context.bigBetOutcome) {
+      const hasNewCommit = !hasCommittedBigBetRef.current;
+
+      setHasTriggeredBigBet(true);
+      setBigBetSummary({ bet: context.selectedBigBet, outcome: context.bigBetOutcome });
+
+      if (hasNewCommit) {
+        setShowBigBetModal(false);
+      }
+
+      hasCommittedBigBetRef.current = true;
+    }
+  }, [context.selectedBigBet, context.bigBetOutcome]);
 
   const handleAddTactic = (tactic: Tactic) => {
     if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
@@ -97,13 +128,18 @@ export default function Q4Page() {
     const bigBets = getRandomBigBets(3);
     setBigBetOptions(bigBets);
     setShowBigBetModal(true);
-    setHasTriggeredBigBet(true);
   };
 
-  const handleSelectBigBet = (bigBet: BigBetOption) => {
-    // TODO: Integrate with simulation state machine
-    console.log('Selected Big Bet:', bigBet);
-    setShowBigBetModal(false);
+  const handleSelectBigBet = (bigBet: BigBetOption, outcome: BigBetOutcome) => {
+    if (context.remainingBudget < bigBet.cost) {
+      return;
+    }
+
+    if (context.selectedBigBet?.id === bigBet.id) {
+      return;
+    }
+
+    selectBigBet('Q4', bigBet, outcome);
   };
 
   const handleCompleteQuarter = () => {
@@ -182,7 +218,7 @@ export default function Q4Page() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Available Marketing Tactics</h3>
                 <div className="flex gap-2">
-                  <Button 
+                  <Button
                     onClick={handleOpenBigBet}
                     variant="outline"
                     className="flex items-center gap-2"
@@ -314,9 +350,58 @@ export default function Q4Page() {
                   <div className="font-medium">Events</div>
                   <div className="text-muted-foreground">
                     {context.quarters.Q4.wildcardEvents.length} triggered
+        </div>
+
+        {bigBetSummary && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-base">
+                <span>Committed Big Bet</span>
+                <Badge variant={bigBetSummary.outcome.success ? 'default' : 'destructive'}>
+                  {bigBetSummary.outcome.success ? 'Success' : 'Missed Target'}
+                </Badge>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {bigBetSummary.bet.name} • Investment ${bigBetSummary.bet.cost.toLocaleString()}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <p>{bigBetSummary.bet.description}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className={`p-3 rounded-lg border ${bigBetSummary.outcome.actualImpact.revenue >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Revenue</div>
+                  <div className="text-lg font-semibold">
+                    {bigBetSummary.outcome.actualImpact.revenue >= 0 ? '+' : '-'}$
+                    {Math.abs(bigBetSummary.outcome.actualImpact.revenue).toLocaleString()}
+                  </div>
+                </div>
+                <div className={`p-3 rounded-lg border ${bigBetSummary.outcome.actualImpact.marketShare >= 0 ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Market Share</div>
+                  <div className="text-lg font-semibold">
+                    {bigBetSummary.outcome.actualImpact.marketShare >= 0 ? '+' : '-'}
+                    {Math.abs(bigBetSummary.outcome.actualImpact.marketShare)}%
+                  </div>
+                </div>
+                <div className={`p-3 rounded-lg border ${bigBetSummary.outcome.actualImpact.brandAwareness >= 0 ? 'border-purple-200 bg-purple-50' : 'border-red-200 bg-red-50'}`}>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Brand Awareness</div>
+                  <div className="text-lg font-semibold">
+                    {bigBetSummary.outcome.actualImpact.brandAwareness >= 0 ? '+' : '-'}
+                    {Math.abs(bigBetSummary.outcome.actualImpact.brandAwareness)}%
+                  </div>
+                </div>
+                <div className={`p-3 rounded-lg border ${bigBetSummary.outcome.actualImpact.customerSatisfaction >= 0 ? 'border-amber-200 bg-amber-50' : 'border-red-200 bg-red-50'}`}>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Customer Satisfaction</div>
+                  <div className="text-lg font-semibold">
+                    {bigBetSummary.outcome.actualImpact.customerSatisfaction >= 0 ? '+' : '-'}
+                    {Math.abs(bigBetSummary.outcome.actualImpact.customerSatisfaction)}%
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
 
               <Button
                 onClick={handleCompleteQuarter}
@@ -406,13 +491,15 @@ export default function Q4Page() {
         isOpen={showBigBetModal}
         onClose={() => setShowBigBetModal(false)}
         onSelect={handleSelectBigBet}
-        availableBudget={remainingBudget}
+        availableBudget={context.remainingBudget}
         currentKPIs={{
           revenue: context.quarters.Q1.results.revenue + context.quarters.Q2.results.revenue + context.quarters.Q3.results.revenue,
           marketShare: context.quarters.Q3.results.marketShare || 15,
           customerSatisfaction: context.quarters.Q3.results.customerSatisfaction || 75,
-          brandAwareness: context.quarters.Q3.results.brandAwareness || 60
+          brandAwareness: context.quarters.Q3.results.brandAwareness || 60,
         }}
+        simulationContext={context}
+        hasStrongTeam={context.hiredTalent.length >= 2}
       />
     </div>
   );

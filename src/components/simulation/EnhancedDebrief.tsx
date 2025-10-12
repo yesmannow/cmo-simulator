@@ -268,6 +268,121 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
         </motion.div>
       </div>
 
+      <div className="grid md:grid-cols-2 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-indigo-600" />
+                <CardTitle className="text-base">Talent Investments</CardTitle>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Strategic hires that strengthened the team in Q2
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {context.hiredTalent.length > 0 ? (
+                context.hiredTalent.map((candidate) => (
+                  <div
+                    key={candidate.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{candidate.avatar}</span>
+                      <div>
+                        <div className="font-medium">{candidate.name}</div>
+                        <div className="text-xs text-muted-foreground">{candidate.role}</div>
+                      </div>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div className="font-semibold text-green-600">+${candidate.impact.revenue.toLocaleString()}</div>
+                      <div className="text-muted-foreground">Annual impact</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No talent hires were made. Consider investing in specialized roles next time.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-orange-500" />
+                <CardTitle className="text-base">Big Bet Outcome</CardTitle>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Final quarter strategic move and its impact
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {context.selectedBigBet && context.bigBetOutcome ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{context.selectedBigBet.name}</div>
+                      <div className="text-xs text-muted-foreground line-clamp-2">
+                        {context.selectedBigBet.description}
+                      </div>
+                    </div>
+                    <Badge variant={context.bigBetOutcome.success ? 'default' : 'destructive'}>
+                      {context.bigBetOutcome.success ? 'Success' : 'Missed Target'}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className={`rounded-lg border p-3 ${context.bigBetOutcome.actualImpact.revenue >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="text-xs uppercase text-muted-foreground">Revenue</div>
+                      <div className="text-lg font-semibold">
+                        {context.bigBetOutcome.actualImpact.revenue >= 0 ? '+' : '-'}$
+                        {Math.abs(context.bigBetOutcome.actualImpact.revenue).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className={`rounded-lg border p-3 ${context.bigBetOutcome.actualImpact.marketShare >= 0 ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="text-xs uppercase text-muted-foreground">Market Share</div>
+                      <div className="text-lg font-semibold">
+                        {context.bigBetOutcome.actualImpact.marketShare >= 0 ? '+' : '-'}
+                        {Math.abs(context.bigBetOutcome.actualImpact.marketShare)}%
+                      </div>
+                    </div>
+                    <div className={`rounded-lg border p-3 ${context.bigBetOutcome.actualImpact.brandAwareness >= 0 ? 'border-purple-200 bg-purple-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="text-xs uppercase text-muted-foreground">Brand Awareness</div>
+                      <div className="text-lg font-semibold">
+                        {context.bigBetOutcome.actualImpact.brandAwareness >= 0 ? '+' : '-'}
+                        {Math.abs(context.bigBetOutcome.actualImpact.brandAwareness)}%
+                      </div>
+                    </div>
+                    <div className={`rounded-lg border p-3 ${context.bigBetOutcome.actualImpact.customerSatisfaction >= 0 ? 'border-amber-200 bg-amber-50' : 'border-red-200 bg-red-50'}`}>
+                      <div className="text-xs uppercase text-muted-foreground">Customer Satisfaction</div>
+                      <div className="text-lg font-semibold">
+                        {context.bigBetOutcome.actualImpact.customerSatisfaction >= 0 ? '+' : '-'}
+                        {Math.abs(context.bigBetOutcome.actualImpact.customerSatisfaction)}%
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No big bet was committed in Q4. Revisit opportunities for bold investments next cycle.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
       {/* Detailed Analytics Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">

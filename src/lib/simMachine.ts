@@ -60,6 +60,7 @@ export interface QuarterData {
   wildcardEvents: WildcardEvent[];
   talentHired?: TalentCandidate[];
   bigBetMade?: BigBetOption;
+  bigBetOutcome?: BigBetOutcome;
   results: {
     revenue: number;
     profit: number;
@@ -156,6 +157,8 @@ export type SimulationEvent =
   | { type: 'ALLOCATE_TIME'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; hours: number }
   | { type: 'TRIGGER_WILDCARD'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; wildcard: WildcardEvent }
   | { type: 'RESPOND_TO_WILDCARD'; wildcardId: string; choiceId: string }
+  | { type: 'HIRE_TALENT'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; candidate: TalentCandidate }
+  | { type: 'SELECT_BIG_BET'; quarter: 'Q4'; bigBet: BigBetOption; outcome?: BigBetOutcome }
   | { type: 'COMPLETE_QUARTER'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' }
   | { type: 'CALCULATE_RESULTS' }
   | { type: 'COMPLETE_DEBRIEF' }
@@ -171,6 +174,7 @@ const initialContext: SimulationContext = {
       budgetSpent: 0,
       timeSpent: 0,
       wildcardEvents: [],
+      talentHired: [],
       results: {
         revenue: 0,
         profit: 0,
@@ -184,6 +188,7 @@ const initialContext: SimulationContext = {
       budgetSpent: 0,
       timeSpent: 0,
       wildcardEvents: [],
+      talentHired: [],
       results: {
         revenue: 0,
         profit: 0,
@@ -197,6 +202,7 @@ const initialContext: SimulationContext = {
       budgetSpent: 0,
       timeSpent: 0,
       wildcardEvents: [],
+      talentHired: [],
       results: {
         revenue: 0,
         profit: 0,
@@ -210,6 +216,7 @@ const initialContext: SimulationContext = {
       budgetSpent: 0,
       timeSpent: 0,
       wildcardEvents: [],
+      talentHired: [],
       results: {
         revenue: 0,
         profit: 0,
@@ -414,6 +421,34 @@ export const simulationMachine = createMachine({
               const tactic = context.quarters.Q2.tactics.find(t => t.id === event.tacticId);
               return context.remainingBudget + (tactic?.cost || 0);
             },
+          }),
+        },
+        HIRE_TALENT: {
+          guard: ({ context, event }) =>
+            event.quarter === 'Q2' && context.remainingBudget >= event.candidate.hiringCost,
+          actions: assign(({ context, event }) => {
+            const updatedTalent = [...context.hiredTalent, event.candidate];
+            const updatedRemainingBudget = context.remainingBudget - event.candidate.hiringCost;
+            const updatedMorale = Math.max(0, Math.min(100, context.morale + event.candidate.impact.morale));
+            const updatedBrandEquity = Math.max(
+              0,
+              Math.min(100, context.brandEquity + event.candidate.impact.brandEquity)
+            );
+
+            return {
+              hiredTalent: updatedTalent,
+              remainingBudget: updatedRemainingBudget,
+              morale: updatedMorale,
+              brandEquity: updatedBrandEquity,
+              quarters: {
+                ...context.quarters,
+                Q2: {
+                  ...context.quarters.Q2,
+                  talentHired: [...(context.quarters.Q2.talentHired || []), event.candidate],
+                  budgetSpent: context.quarters.Q2.budgetSpent + event.candidate.hiringCost,
+                },
+              },
+            };
           }),
         },
         TRIGGER_WILDCARD: {
@@ -624,6 +659,29 @@ export const simulationMachine = createMachine({
             },
           }),
         },
+        SELECT_BIG_BET: {
+          guard: ({ context, event }) => event.quarter === 'Q4' && context.remainingBudget >= event.bigBet.cost,
+          actions: assign(({ context, event }) => {
+            const hasStrongTeam = context.hiredTalent.length >= 2;
+            const outcome = event.outcome ?? calculateBigBetOutcome(event.bigBet, context, hasStrongTeam);
+            const updatedRemainingBudget = context.remainingBudget - event.bigBet.cost;
+
+            return {
+              remainingBudget: updatedRemainingBudget,
+              selectedBigBet: event.bigBet,
+              bigBetOutcome: outcome,
+              quarters: {
+                ...context.quarters,
+                Q4: {
+                  ...context.quarters.Q4,
+                  bigBetMade: event.bigBet,
+                  bigBetOutcome: outcome,
+                  budgetSpent: context.quarters.Q4.budgetSpent + event.bigBet.cost,
+                },
+              },
+            };
+          }),
+        },
         TRIGGER_WILDCARD: {
           guard: ({ event }) => event.quarter === 'Q4',
           actions: assign({
@@ -723,14 +781,14 @@ export const simulationMachine = createMachine({
 
 // Helper functions for calculations
 function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationContext['kpis']) {
-  let results = {
+  const results = {
     revenue: 0,
     profit: 0,
     marketShare: 0,
     customerSatisfaction: 0,
     brandAwareness: 0,
   };
-  
+
   // Calculate impact from tactics
   quarter.tactics.forEach(tactic => {
     results.revenue += tactic.expectedImpact.revenue;
@@ -739,7 +797,31 @@ function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationCo
     results.brandAwareness += tactic.expectedImpact.brandAwareness;
     results.profit += tactic.expectedImpact.revenue - tactic.cost; // Simple profit calculation
   });
-  
+
+  // Talent impact
+  const talentRevenueImpact = (quarter.talentHired || []).reduce(
+    (sum, candidate) => sum + calculateTalentImpact(candidate, currentKPIs.revenue),
+    0
+  );
+  const talentHiringCost = (quarter.talentHired || []).reduce(
+    (sum, candidate) => sum + candidate.hiringCost,
+    0
+  );
+
+  if (talentRevenueImpact) {
+    results.revenue += talentRevenueImpact;
+    results.profit += talentRevenueImpact - talentHiringCost;
+  }
+
+  // Big bet impact
+  if (quarter.bigBetMade && quarter.bigBetOutcome) {
+    results.revenue += quarter.bigBetOutcome.actualImpact.revenue;
+    results.marketShare += quarter.bigBetOutcome.actualImpact.marketShare;
+    results.customerSatisfaction += quarter.bigBetOutcome.actualImpact.customerSatisfaction;
+    results.brandAwareness += quarter.bigBetOutcome.actualImpact.brandAwareness;
+    results.profit += quarter.bigBetOutcome.actualImpact.revenue - quarter.bigBetMade.cost;
+  }
+
   // Calculate impact from wildcard responses
   quarter.wildcardEvents.forEach(wildcard => {
     if (wildcard.impact) {

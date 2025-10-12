@@ -162,7 +162,8 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                 const quarterData = context.quarters[q];
                 const isActive = quarter === q;
                 const hasResults = quarterData.results.revenue > 0;
-                
+                const talentCount = quarterData.talentHired?.length || 0;
+
                 return (
                   <div key={q} className={`p-4 rounded-lg border-2 ${
                     isActive ? 'border-primary bg-primary/5' : 'border-muted'
@@ -190,6 +191,25 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                           ${quarterData.budgetSpent.toLocaleString()}
                         </span>
                       </div>
+                      {talentCount > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span>Talent Hires:</span>
+                          <Badge variant="outline">{talentCount}</Badge>
+                        </div>
+                      )}
+                      {quarterData.bigBetMade && quarterData.bigBetOutcome && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center">
+                            <span>Big Bet:</span>
+                            <Badge variant={quarterData.bigBetOutcome.success ? 'default' : 'destructive'}>
+                              {quarterData.bigBetOutcome.success ? 'Success' : 'Missed' }
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {quarterData.bigBetMade.name}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

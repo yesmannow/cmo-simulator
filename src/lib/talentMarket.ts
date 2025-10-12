@@ -182,7 +182,7 @@ export const BIG_BETS: BigBetOption[] = [
     name: 'Super Bowl Commercial',
     description: 'Launch a high-impact Super Bowl commercial to achieve massive brand awareness and cultural relevance.',
     category: 'product_launch',
-    cost: 8000000,
+    cost: 850000,
     risk: 0.35,
     strategy: 'Mass market brand awareness through premium advertising placement',
     potentialImpact: {
@@ -197,7 +197,7 @@ export const BIG_BETS: BigBetOption[] = [
     name: 'AI-Powered Personalization Platform',
     description: 'Invest in cutting-edge AI technology to deliver hyper-personalized customer experiences.',
     category: 'technology_pivot',
-    cost: 3000000,
+    cost: 600000,
     risk: 0.25,
     strategy: 'Technology-driven customer experience enhancement and data monetization',
     potentialImpact: {
@@ -212,7 +212,7 @@ export const BIG_BETS: BigBetOption[] = [
     name: 'Global Market Expansion',
     description: 'Enter 3 new international markets with localized marketing campaigns and partnerships.',
     category: 'market_expansion',
-    cost: 5000000,
+    cost: 950000,
     risk: 0.4,
     strategy: 'Geographic diversification through strategic market entry and localization',
     potentialImpact: {
@@ -227,7 +227,7 @@ export const BIG_BETS: BigBetOption[] = [
     name: 'Strategic Acquisition',
     description: 'Acquire a complementary company to expand product portfolio and customer base.',
     category: 'acquisition',
-    cost: 12000000,
+    cost: 1500000,
     risk: 0.5,
     strategy: 'Inorganic growth through strategic acquisition and market consolidation',
     potentialImpact: {
@@ -242,7 +242,7 @@ export const BIG_BETS: BigBetOption[] = [
     name: 'Influencer Partnership Network',
     description: 'Build exclusive partnerships with top-tier influencers and content creators for authentic brand advocacy.',
     category: 'partnership',
-    cost: 2000000,
+    cost: 450000,
     risk: 0.2,
     strategy: 'Authentic brand advocacy through strategic influencer partnerships and content collaboration',
     potentialImpact: {
@@ -257,7 +257,7 @@ export const BIG_BETS: BigBetOption[] = [
     name: 'Sustainability Revolution',
     description: 'Transform the brand into a sustainability leader with eco-friendly initiatives and carbon neutrality.',
     category: 'product_launch',
-    cost: 4000000,
+    cost: 700000,
     risk: 0.15,
     strategy: 'Brand differentiation through environmental leadership and sustainable innovation',
     potentialImpact: {

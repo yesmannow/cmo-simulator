@@ -7,23 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  AlertTriangle, 
-  Target,
-  Zap,
-  Award,
-  BarChart3,
-  Sparkles
-} from 'lucide-react';
-import { BigBetOption } from '@/lib/talentMarket';
+import { TrendingUp, AlertTriangle, Target, Award, BarChart3, Sparkles } from 'lucide-react';
+import { BigBetOption, BigBetOutcome, calculateBigBetOutcome } from '@/lib/talentMarket';
+import { SimulationContext } from '@/lib/simMachine';
 
 interface BigBetModalProps {
   bigBets: BigBetOption[];
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (bigBet: BigBetOption) => void;
+  onSelect: (bigBet: BigBetOption, outcome: BigBetOutcome) => void;
   availableBudget: number;
   currentKPIs: {
     revenue: number;
@@ -31,42 +23,45 @@ interface BigBetModalProps {
     customerSatisfaction: number;
     brandAwareness: number;
   };
+  simulationContext: SimulationContext;
+  hasStrongTeam: boolean;
 }
 
-export function BigBetModal({ 
-  bigBets, 
-  isOpen, 
-  onClose, 
-  onSelect, 
+export function BigBetModal({
+  bigBets,
+  isOpen,
+  onClose,
+  onSelect,
   availableBudget,
-  currentKPIs
+  currentKPIs,
+  simulationContext,
+  hasStrongTeam,
 }: BigBetModalProps) {
   const [selectedBet, setSelectedBet] = useState<BigBetOption | null>(null);
   const [showOutcome, setShowOutcome] = useState(false);
-  const [outcome, setOutcome] = useState<'success' | 'failure' | null>(null);
+  const [outcomeState, setOutcomeState] = useState<'success' | 'failure' | null>(null);
+  const [computedOutcome, setComputedOutcome] = useState<BigBetOutcome | null>(null);
+
+  const handleClose = () => {
+    setSelectedBet(null);
+    setShowOutcome(false);
+    setOutcomeState(null);
+    setComputedOutcome(null);
+    onClose();
+  };
 
   const handleSelectBet = (bet: BigBetOption) => {
+    const outcome = calculateBigBetOutcome(bet, simulationContext, hasStrongTeam);
     setSelectedBet(bet);
-    
-    // Simulate outcome calculation
-    const successProbability = Math.max(0.2, Math.min(0.8, 
-      (currentKPIs.revenue / 1000000) * 0.1 + 
-      (currentKPIs.marketShare / 100) * 0.3 + 
-      (1 - bet.risk) * 0.4
-    ));
-    
-    const isSuccess = Math.random() < successProbability;
-    setOutcome(isSuccess ? 'success' : 'failure');
+    setComputedOutcome(outcome);
+    setOutcomeState(outcome.success ? 'success' : 'failure');
     setShowOutcome(true);
   };
 
   const handleConfirmBet = () => {
-    if (selectedBet) {
-      onSelect(selectedBet);
-      onClose();
-      setSelectedBet(null);
-      setShowOutcome(false);
-      setOutcome(null);
+    if (selectedBet && computedOutcome) {
+      onSelect(selectedBet, computedOutcome);
+      handleClose();
     }
   };
 
@@ -82,12 +77,27 @@ export function BigBetModal({
     return 'High Risk';
   };
 
-  const canAfford = (bet: BigBetOption) => {
-    return availableBudget >= bet.cost;
+  const canAfford = (bet: BigBetOption) => availableBudget >= bet.cost;
+
+  const getEstimatedSuccess = (bet: BigBetOption) => {
+    const revenueFactor = Math.min(1, Math.max(0, currentKPIs.revenue / 1000000));
+    const marketFactor = Math.min(1, Math.max(0, currentKPIs.marketShare / 30));
+    const satisfactionFactor = Math.min(1, Math.max(0, currentKPIs.customerSatisfaction / 100));
+    const baseChance = 1 - bet.risk;
+    const probability =
+      baseChance * 0.5 + marketFactor * 0.2 + revenueFactor * 0.2 + satisfactionFactor * 0.1;
+    return Math.max(0.2, Math.min(0.9, probability));
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          handleClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-3">
@@ -116,10 +126,10 @@ export function BigBetModal({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card 
+                    <Card
                       className={`cursor-pointer transition-all duration-200 ${
-                        selectedBet?.id === bet.id 
-                          ? 'ring-2 ring-purple-500 shadow-lg' 
+                        selectedBet?.id === bet.id
+                          ? 'ring-2 ring-purple-500 shadow-lg'
                           : 'hover:shadow-md'
                       } ${!canAfford(bet) ? 'opacity-60' : ''}`}
                       onClick={() => canAfford(bet) && handleSelectBet(bet)}
@@ -131,9 +141,7 @@ export function BigBetModal({
                             <p className="text-muted-foreground">{bet.description}</p>
                           </div>
                           <div className="flex flex-col items-end gap-2">
-                            <Badge className={getRiskColor(bet.risk)}>
-                              {getRiskLabel(bet.risk)}
-                            </Badge>
+                            <Badge className={getRiskColor(bet.risk)}>{getRiskLabel(bet.risk)}</Badge>
                             <div className="text-right">
                               <div className="text-lg font-bold">${bet.cost.toLocaleString()}</div>
                               <div className="text-xs text-muted-foreground">Investment</div>
@@ -177,9 +185,9 @@ export function BigBetModal({
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span>Success Probability</span>
-                            <span>{Math.round((1 - bet.risk) * 100)}%</span>
+                            <span>{Math.round(getEstimatedSuccess(bet) * 100)}%</span>
                           </div>
-                          <Progress value={(1 - bet.risk) * 100} className="h-2" />
+                          <Progress value={getEstimatedSuccess(bet) * 100} className="h-2" />
                         </div>
 
                         <div className="text-sm text-muted-foreground">
@@ -198,13 +206,13 @@ export function BigBetModal({
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" onClick={onClose}>
+                <Button variant="outline" onClick={handleClose}>
                   Skip Big Bet
                 </Button>
                 {selectedBet && (
                   <Button
                     onClick={handleConfirmBet}
-                    disabled={!canAfford(selectedBet)}
+                    disabled={!canAfford(selectedBet) || !computedOutcome}
                     className="px-6 bg-purple-600 hover:bg-purple-700"
                   >
                     Commit to {selectedBet.name} - ${selectedBet.cost.toLocaleString()}
@@ -224,43 +232,28 @@ export function BigBetModal({
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                   className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${
-                    outcome === 'success' 
-                      ? 'bg-green-100 text-green-600' 
-                      : 'bg-red-100 text-red-600'
+                    outcomeState === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
                   }`}
                 >
-                  {outcome === 'success' ? (
-                    <Award className="h-12 w-12" />
-                  ) : (
-                    <AlertTriangle className="h-12 w-12" />
-                  )}
+                  {outcomeState === 'success' ? <Award className="h-12 w-12" /> : <AlertTriangle className="h-12 w-12" />}
                 </motion.div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                   <h3 className="text-2xl font-bold">
-                    {outcome === 'success' ? 'Big Bet Pays Off!' : 'Big Bet Falls Short'}
+                    {outcomeState === 'success' ? 'Big Bet Pays Off!' : 'Big Bet Falls Short'}
                   </h3>
                   <p className="text-muted-foreground mt-2">
-                    {outcome === 'success' 
+                    {outcomeState === 'success'
                       ? `Your investment in ${selectedBet?.name} has exceeded expectations!`
-                      : `Your investment in ${selectedBet?.name} didn't deliver the expected results.`
-                    }
+                      : `Your investment in ${selectedBet?.name} didn't deliver the expected results.`}
                   </p>
                 </motion.div>
               </div>
 
-              {selectedBet && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
+              {selectedBet && computedOutcome && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">Impact Summary</CardTitle>
@@ -269,60 +262,55 @@ export function BigBetModal({
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <div className="text-sm font-medium">Revenue Impact</div>
-                          <div className={`text-lg font-bold ${
-                            outcome === 'success' ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {outcome === 'success' ? '+' : '-'}${
-                              Math.round(selectedBet.potentialImpact.revenue * 
-                                (outcome === 'success' ? 1 : 0.3)
-                              ).toLocaleString()
-                            }
+                          <div
+                            className={`text-lg font-bold ${
+                              computedOutcome.actualImpact.revenue >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                          >
+                            {computedOutcome.actualImpact.revenue >= 0 ? '+' : '-'}$
+                            {Math.abs(computedOutcome.actualImpact.revenue).toLocaleString()}
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="text-sm font-medium">Market Share</div>
-                          <div className={`text-lg font-bold ${
-                            outcome === 'success' ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {outcome === 'success' ? '+' : '-'}{
-                              Math.round(selectedBet.potentialImpact.marketShare * 
-                                (outcome === 'success' ? 1 : 0.3)
-                              )
-                            }%
+                          <div
+                            className={`text-lg font-bold ${
+                              computedOutcome.actualImpact.marketShare >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                          >
+                            {computedOutcome.actualImpact.marketShare >= 0 ? '+' : '-'}
+                            {Math.abs(computedOutcome.actualImpact.marketShare)}%
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="text-sm font-medium">Brand Awareness</div>
-                          <div className={`text-lg font-bold ${
-                            outcome === 'success' ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {outcome === 'success' ? '+' : '-'}{
-                              Math.round(selectedBet.potentialImpact.brandAwareness * 
-                                (outcome === 'success' ? 1 : 0.3)
-                              )
-                            }%
+                          <div
+                            className={`text-lg font-bold ${
+                              computedOutcome.actualImpact.brandAwareness >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                          >
+                            {computedOutcome.actualImpact.brandAwareness >= 0 ? '+' : '-'}
+                            {Math.abs(computedOutcome.actualImpact.brandAwareness)}%
                           </div>
                         </div>
                         <div className="space-y-2">
                           <div className="text-sm font-medium">Customer Satisfaction</div>
-                          <div className={`text-lg font-bold ${
-                            outcome === 'success' ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {outcome === 'success' ? '+' : '-'}{
-                              Math.round(selectedBet.potentialImpact.customerSatisfaction * 
-                                (outcome === 'success' ? 1 : 0.3)
-                              )
-                            }%
+                          <div
+                            className={`text-lg font-bold ${
+                              computedOutcome.actualImpact.customerSatisfaction >= 0 ? 'text-green-600' : 'text-red-600'
+                            }`}
+                          >
+                            {computedOutcome.actualImpact.customerSatisfaction >= 0 ? '+' : '-'}
+                            {Math.abs(computedOutcome.actualImpact.customerSatisfaction)}%
                           </div>
                         </div>
                       </div>
 
                       <div className="pt-4 border-t">
                         <div className="text-sm text-muted-foreground">
-                          {outcome === 'success' 
-                            ? "This strategic investment has positioned your company for accelerated growth and market leadership."
-                            : "While this investment didn't pay off as expected, the learnings will inform future strategic decisions."
-                          }
+                          {outcomeState === 'success'
+                            ? 'This strategic investment has positioned your company for accelerated growth and market leadership.'
+                            : 'While this investment did not pay off as expected, the learnings will inform future strategic decisions.'}
                         </div>
                       </div>
                     </CardContent>
@@ -331,11 +319,7 @@ export function BigBetModal({
               )}
 
               <div className="flex justify-center pt-6 border-t">
-                <Button
-                  onClick={handleConfirmBet}
-                  className="px-8"
-                  size="lg"
-                >
+                <Button onClick={handleConfirmBet} className="px-8" size="lg" disabled={!computedOutcome}>
                   Continue to Results
                 </Button>
               </div>

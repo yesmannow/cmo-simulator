@@ -1,6 +1,13 @@
 import { useActor } from '@xstate/react';
 import { createActor } from 'xstate';
-import { simulationMachine, type SimulationEvent, type SimulationContext } from '@/lib/simMachine';
+import {
+  simulationMachine,
+  type SimulationContext,
+  type Tactic,
+  type WildcardEvent,
+  type BigBetOutcome,
+} from '@/lib/simMachine';
+import { TalentCandidate, BigBetOption } from '@/lib/talentMarket';
 import { useMemo } from 'react';
 
 // Hook to manage simulation state
@@ -46,18 +53,24 @@ export function useSimulation() {
     completeStrategySession: () =>
       send({ type: 'COMPLETE_STRATEGY_SESSION' }),
     
-    addTactic: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', tactic: any) =>
+    addTactic: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', tactic: Tactic) =>
       send({ type: 'ADD_TACTIC', quarter, tactic }),
-    
+
     removeTactic: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', tacticId: string) =>
       send({ type: 'REMOVE_TACTIC', quarter, tacticId }),
-    
-    triggerWildcard: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', wildcard: any) =>
+
+    triggerWildcard: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', wildcard: WildcardEvent) =>
       send({ type: 'TRIGGER_WILDCARD', quarter, wildcard }),
-    
+
     respondToWildcard: (wildcardId: string, choiceId: string) =>
       send({ type: 'RESPOND_TO_WILDCARD', wildcardId, choiceId }),
-    
+
+    hireTalent: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', candidate: TalentCandidate) =>
+      send({ type: 'HIRE_TALENT', quarter, candidate }),
+
+    selectBigBet: (quarter: 'Q4', bigBet: BigBetOption, outcome?: BigBetOutcome) =>
+      send({ type: 'SELECT_BIG_BET', quarter, bigBet, outcome }),
+
     completeQuarter: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4') =>
       send({ type: 'COMPLETE_QUARTER', quarter }),
     
