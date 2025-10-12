@@ -19,6 +19,13 @@ import { getTacticsByCategory, getRandomWildcard } from '@/lib/tactics';
 import { getRandomBigBets } from '@/lib/talentMarket';
 import { Tactic, WildcardEvent } from '@/lib/simMachine';
 import { BigBetOption } from '@/lib/talentMarket';
+import {
+  BUDGET_BUCKETS,
+  DEFAULT_BUDGET_ALLOCATION,
+  getCompanySizeLabel,
+  getMarketLandscapeLabel,
+  getTimeHorizonLabel,
+} from '@/lib/strategyOptions';
 import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles } from 'lucide-react';
 
 export default function Q4Page() {
@@ -372,20 +379,60 @@ export default function Q4Page() {
             <CardHeader>
               <CardTitle className="text-base">Your Strategy</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div>
-                <span className="font-medium">Target:</span> {context.strategy.targetAudience}
+            <CardContent className="space-y-4 text-sm">
+              <div className="space-y-1">
+                <div className="uppercase text-xs text-muted-foreground tracking-wide">Company</div>
+                <div className="font-semibold">{context.strategy.companyName || 'Not specified'}</div>
+                <div className="text-muted-foreground">
+                  {context.strategy.industry || 'Industry not set'}
+                </div>
+                <div className="text-muted-foreground">
+                  {getCompanySizeLabel(context.strategy.companySize)} • {getMarketLandscapeLabel(context.strategy.marketLandscape)}
+                </div>
+                <div className="text-muted-foreground">
+                  Planning Horizon: {getTimeHorizonLabel(context.strategy.timeHorizon)}
+                </div>
               </div>
+
               <div>
-                <span className="font-medium">Position:</span> {context.strategy.brandPositioning}
+                <span className="font-medium">Target Audience:</span>
+                <div className="text-muted-foreground">
+                  {context.strategy.targetAudience || 'Not selected'}
+                </div>
               </div>
+
               <div>
-                <span className="font-medium">Channels:</span>
+                <span className="font-medium">Brand Positioning:</span>
+                <div className="text-muted-foreground">
+                  {context.strategy.brandPositioning || 'Not selected'}
+                </div>
+              </div>
+
+              <div>
+                <span className="font-medium">Primary Channels:</span>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {context.strategy.primaryChannels?.map((channel: string) => (
-                    <Badge key={channel} variant="secondary" className="text-xs">
-                      {channel}
-                    </Badge>
+                  {context.strategy.primaryChannels?.length ? (
+                    context.strategy.primaryChannels.map((channel: string) => (
+                      <Badge key={channel} variant="secondary" className="text-xs">
+                        {channel}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground">No channels selected</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <span className="font-medium">Budget Mix:</span>
+                <div className="mt-2 space-y-1">
+                  {BUDGET_BUCKETS.map(bucket => (
+                    <div key={bucket.key} className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{bucket.label}</span>
+                      <span>
+                        {context.strategy.budgetAllocation?.[bucket.key] ?? DEFAULT_BUDGET_ALLOCATION[bucket.key]}%
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>

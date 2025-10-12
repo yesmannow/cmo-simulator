@@ -5,6 +5,10 @@ export interface LeaderboardEntry {
   company_name: string;
   industry: string;
   strategy_type: string;
+  company_size?: string;
+  market_landscape?: string;
+  time_horizon?: string;
+  budget_allocation?: Record<string, number>;
   target_audience?: string;
   brand_positioning?: string;
   primary_channels?: string[];

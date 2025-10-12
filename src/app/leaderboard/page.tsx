@@ -10,10 +10,10 @@ import { SocialShare, useSocialShare } from '@/components/social/SocialShare';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Trophy, 
-  Medal, 
-  Award, 
+import {
+  Trophy,
+  Medal,
+  Award,
   TrendingUp, 
   Users, 
   Filter,
@@ -29,6 +29,12 @@ import {
 } from 'lucide-react';
 import { LeaderboardEntry, LeaderboardFilters, LeaderboardStats } from '@/lib/database/types';
 import { LeaderboardService } from '@/lib/database/leaderboard';
+import {
+  BUDGET_BUCKETS,
+  getCompanySizeLabel,
+  getMarketLandscapeLabel,
+  getTimeHorizonLabel,
+} from '@/lib/strategyOptions';
 
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -301,6 +307,10 @@ export default function LeaderboardPage() {
                             <div className="text-sm text-muted-foreground">
                               {entry.company_name} • {entry.industry}
                             </div>
+                            <div className="text-xs text-muted-foreground">
+                              {getCompanySizeLabel(entry.company_size)} • {getMarketLandscapeLabel(entry.market_landscape)} •{' '}
+                              {getTimeHorizonLabel(entry.time_horizon)}
+                            </div>
                             <div className="flex items-center gap-2 text-sm">
                               {getStrategyIcon(entry.strategy_type)}
                               <span>{entry.strategy_type} Strategy</span>
@@ -342,6 +352,20 @@ export default function LeaderboardPage() {
                           </div>
                         </div>
                       </div>
+
+                      {entry.budget_allocation && (
+                        <div className="mt-4 text-sm">
+                          <div className="font-medium">Budget Mix</div>
+                          <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-muted-foreground">
+                            {BUDGET_BUCKETS.map(bucket => (
+                              <div key={bucket.key} className="flex items-center justify-between">
+                                <span>{bucket.label}</span>
+                                <span>{entry.budget_allocation?.[bucket.key] ?? 0}%</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>

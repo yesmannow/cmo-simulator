@@ -1,5 +1,12 @@
 import { createMachine, assign } from 'xstate';
 import { TalentCandidate, BigBetOption, calculateTalentImpact, calculateBigBetOutcome } from './talentMarket';
+import {
+  DEFAULT_BUDGET_ALLOCATION,
+  type BudgetBucketKey,
+  type CompanySizeValue,
+  type MarketLandscapeValue,
+  type TimeHorizonValue,
+} from './strategyOptions';
 
 // Types for simulation context and events
 export interface SimulationContext {
@@ -10,10 +17,16 @@ export interface SimulationContext {
   
   // Strategic decisions
   strategy: {
+    companyName?: string;
+    industry?: string;
+    companySize?: CompanySizeValue;
+    marketLandscape?: MarketLandscapeValue;
+    timeHorizon?: TimeHorizonValue;
+    strategyType?: string;
     targetAudience?: string;
     brandPositioning?: string;
     primaryChannels?: string[];
-    budgetAllocation?: Record<string, number>;
+    budgetAllocation?: Record<BudgetBucketKey, number>;
   };
   
   // Quarterly data
@@ -164,7 +177,10 @@ export type SimulationEvent =
 
 // Initial context
 const initialContext: SimulationContext = {
-  strategy: {},
+  strategy: {
+    primaryChannels: [],
+    budgetAllocation: { ...DEFAULT_BUDGET_ALLOCATION },
+  },
   quarters: {
     Q1: {
       tactics: [],
@@ -267,9 +283,20 @@ export const simulationMachine = createMachine({
           guard: ({ context }) => {
             // Ensure minimum strategy requirements are met
             return !!(
+              context.strategy.companyName?.trim() &&
+              context.strategy.industry?.trim() &&
+              context.strategy.companySize &&
+              context.strategy.marketLandscape &&
+              context.strategy.timeHorizon &&
               context.strategy.targetAudience &&
               context.strategy.brandPositioning &&
-              context.strategy.primaryChannels?.length
+              context.strategy.primaryChannels?.length &&
+              context.strategy.budgetAllocation &&
+              Object.values(context.strategy.budgetAllocation).length === 4 &&
+              Math.abs(
+                Object.values(context.strategy.budgetAllocation).reduce((total, value) => total + value, 0) -
+                  100
+              ) <= 1
             );
           },
         },

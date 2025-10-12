@@ -19,6 +19,17 @@ export function testSimulationMachine() {
       targetAudience: 'Young professionals',
       brandPositioning: 'Premium quality',
       primaryChannels: ['digital', 'social'],
+      companyName: 'Test Labs',
+      industry: 'Technology',
+      companySize: 'startup',
+      marketLandscape: 'emerging',
+      timeHorizon: 'mid_term',
+      budgetAllocation: {
+        brandBuilding: 30,
+        demandGeneration: 40,
+        productInnovation: 20,
+        customerExperience: 10,
+      },
     }
   });
   console.log('Strategy set:', actor.getSnapshot().context.strategy);

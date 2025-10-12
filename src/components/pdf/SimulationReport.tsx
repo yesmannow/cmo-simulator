@@ -1,6 +1,13 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { SimulationContext } from '@/lib/simMachine';
+import {
+  BUDGET_BUCKETS,
+  DEFAULT_BUDGET_ALLOCATION,
+  getCompanySizeLabel,
+  getMarketLandscapeLabel,
+  getTimeHorizonLabel,
+} from '@/lib/strategyOptions';
 
 // Create styles for PDF
 const styles = StyleSheet.create({
@@ -163,6 +170,15 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
   const finalAwareness = context.quarters.Q4.results.brandAwareness;
 
   const overallScore = Math.round((roi * 0.4 + finalMarketShare * 2 + finalSatisfaction * 0.8 + finalAwareness * 0.6) / 4);
+
+  const normalizedBudgetAllocation = {
+    ...DEFAULT_BUDGET_ALLOCATION,
+    ...(context.strategy.budgetAllocation || {}),
+  };
+
+  const budgetMixSummary = BUDGET_BUCKETS.map(
+    bucket => `${bucket.label}: ${normalizedBudgetAllocation[bucket.key]}%`
+  ).join('  |  ');
   
   const getGrade = (score: number) => {
     if (score >= 90) return 'A+';
@@ -229,6 +245,22 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Strategic Overview</Text>
           <View style={styles.row}>
+            <Text style={styles.label}>Company:</Text>
+            <Text style={styles.value}>
+              {context.strategy.companyName || 'Not specified'} ({context.strategy.industry || 'Not specified'})
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Company Profile:</Text>
+            <Text style={styles.value}>
+              {getCompanySizeLabel(context.strategy.companySize)} • {getMarketLandscapeLabel(context.strategy.marketLandscape)}
+            </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Planning Horizon:</Text>
+            <Text style={styles.value}>{getTimeHorizonLabel(context.strategy.timeHorizon)}</Text>
+          </View>
+          <View style={styles.row}>
             <Text style={styles.label}>Target Audience:</Text>
             <Text style={styles.value}>{context.strategy.targetAudience || 'Not specified'}</Text>
           </View>
@@ -251,6 +283,10 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
             <Text style={styles.value}>
               ${totalBudgetSpent.toLocaleString()} ({((totalBudgetSpent / context.totalBudget) * 100).toFixed(1)}%)
             </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Budget Mix:</Text>
+            <Text style={styles.value}>{budgetMixSummary}</Text>
           </View>
         </View>
 

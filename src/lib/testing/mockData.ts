@@ -1,6 +1,7 @@
 import { SimulationContext } from '@/lib/simMachine';
 import { LeaderboardEntry } from '@/lib/database/types';
 import { Tactic } from '@/lib/tactics';
+import { DEFAULT_BUDGET_ALLOCATION } from '@/lib/strategyOptions';
 
 // Mock simulation contexts for testing
 export const generateMockSimulationContext = (overrides: Partial<SimulationContext> = {}): SimulationContext => {
@@ -11,6 +12,10 @@ export const generateMockSimulationContext = (overrides: Partial<SimulationConte
       primaryChannels: ['Digital Marketing', 'Social Media', 'Content Marketing'],
       companyName: 'TechCorp Solutions',
       industry: 'Technology',
+      companySize: 'scaleup',
+      marketLandscape: 'competitive',
+      timeHorizon: 'mid_term',
+      budgetAllocation: { ...DEFAULT_BUDGET_ALLOCATION },
       strategyType: 'Growth',
     },
     totalBudget: 1000000,
@@ -430,56 +435,106 @@ export const generateMockSimulationContext = (overrides: Partial<SimulationConte
 export const generateMockSimulationRuns = (count: number = 5): SimulationContext[] => {
   const variations = [
     {
-      strategy: { 
-        companyName: 'InnovateTech', 
-        industry: 'Technology', 
+      strategy: {
+        companyName: 'InnovateTech',
+        industry: 'Technology',
         strategyType: 'Innovation',
         targetAudience: 'Tech Enthusiasts',
-        brandPositioning: 'Cutting-edge Innovation'
+        brandPositioning: 'Cutting-edge Innovation',
+        primaryChannels: ['Digital Marketing', 'Content Marketing'],
+        companySize: 'scaleup',
+        marketLandscape: 'emerging',
+        timeHorizon: 'long_term',
+        budgetAllocation: {
+          brandBuilding: 35,
+          demandGeneration: 25,
+          productInnovation: 30,
+          customerExperience: 10,
+        },
       },
       finalResults: { score: 88, grade: 'A' as const },
       completionTimeMinutes: 32,
     },
     {
-      strategy: { 
-        companyName: 'HealthFirst', 
-        industry: 'Healthcare', 
+      strategy: {
+        companyName: 'HealthFirst',
+        industry: 'Healthcare',
         strategyType: 'Premium',
         targetAudience: 'Healthcare Professionals',
-        brandPositioning: 'Trusted Healthcare Partner'
+        brandPositioning: 'Trusted Healthcare Partner',
+        primaryChannels: ['Events & Experiences', 'Partnerships'],
+        companySize: 'enterprise',
+        marketLandscape: 'competitive',
+        timeHorizon: 'mid_term',
+        budgetAllocation: {
+          brandBuilding: 25,
+          demandGeneration: 20,
+          productInnovation: 15,
+          customerExperience: 40,
+        },
       },
       finalResults: { score: 76, grade: 'B' as const },
       completionTimeMinutes: 45,
     },
     {
-      strategy: { 
-        companyName: 'EcoSolutions', 
-        industry: 'Sustainability', 
+      strategy: {
+        companyName: 'EcoSolutions',
+        industry: 'Sustainability',
         strategyType: 'Value',
         targetAudience: 'Environmentally Conscious Consumers',
-        brandPositioning: 'Sustainable Future'
+        brandPositioning: 'Sustainable Future',
+        primaryChannels: ['Content Marketing', 'Social Media'],
+        companySize: 'startup',
+        marketLandscape: 'niche',
+        timeHorizon: 'long_term',
+        budgetAllocation: {
+          brandBuilding: 40,
+          demandGeneration: 20,
+          productInnovation: 20,
+          customerExperience: 20,
+        },
       },
       finalResults: { score: 94, grade: 'A+' as const },
       completionTimeMinutes: 22,
     },
     {
-      strategy: { 
-        companyName: 'FinanceFlow', 
-        industry: 'Finance', 
+      strategy: {
+        companyName: 'FinanceFlow',
+        industry: 'Finance',
         strategyType: 'Growth',
         targetAudience: 'Small Business Owners',
-        brandPositioning: 'Financial Empowerment'
+        brandPositioning: 'Financial Empowerment',
+        primaryChannels: ['Digital Marketing', 'Partnerships'],
+        companySize: 'scaleup',
+        marketLandscape: 'competitive',
+        timeHorizon: 'mid_term',
+        budgetAllocation: {
+          brandBuilding: 20,
+          demandGeneration: 45,
+          productInnovation: 20,
+          customerExperience: 15,
+        },
       },
       finalResults: { score: 82, grade: 'A' as const },
       completionTimeMinutes: 38,
     },
     {
-      strategy: { 
-        companyName: 'RetailRevolution', 
-        industry: 'Retail', 
+      strategy: {
+        companyName: 'RetailRevolution',
+        industry: 'Retail',
         strategyType: 'Value',
         targetAudience: 'Budget-Conscious Families',
-        brandPositioning: 'Affordable Quality'
+        brandPositioning: 'Affordable Quality',
+        primaryChannels: ['Traditional Media', 'Events & Experiences'],
+        companySize: 'enterprise',
+        marketLandscape: 'competitive',
+        timeHorizon: 'short_term',
+        budgetAllocation: {
+          brandBuilding: 15,
+          demandGeneration: 50,
+          productInnovation: 15,
+          customerExperience: 20,
+        },
       },
       finalResults: { score: 69, grade: 'C' as const },
       completionTimeMinutes: 52,

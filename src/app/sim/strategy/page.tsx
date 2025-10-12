@@ -1,15 +1,48 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useSimulation } from '@/hooks/useSimulation';
-import { ArrowRight, Target, Users, Megaphone, DollarSign } from 'lucide-react';
+import {
+  ArrowRight,
+  Target,
+  Users,
+  Megaphone,
+  DollarSign,
+  Building2,
+  Globe2,
+  PieChart,
+} from 'lucide-react';
+import {
+  BUDGET_BUCKETS,
+  COMPANY_SIZE_OPTIONS,
+  DEFAULT_BUDGET_ALLOCATION,
+  MARKET_LANDSCAPE_OPTIONS,
+  TIME_HORIZON_OPTIONS,
+  type BudgetBucketKey,
+  type CompanySizeValue,
+  type MarketLandscapeValue,
+  type TimeHorizonValue,
+} from '@/lib/strategyOptions';
+
+type StrategyFormState = {
+  companyName: string;
+  industry: string;
+  companySize: CompanySizeValue | '';
+  marketLandscape: MarketLandscapeValue | '';
+  timeHorizon: TimeHorizonValue | '';
+  targetAudience: string;
+  brandPositioning: string;
+  primaryChannels: string[];
+  budgetAllocation: Record<BudgetBucketKey, number>;
+  customAudience: string;
+  customPositioning: string;
+};
 
 const CHANNEL_OPTIONS = [
   { id: 'digital', name: 'Digital Marketing', icon: '💻' },
@@ -41,11 +74,22 @@ const POSITIONING_OPTIONS = [
 export default function StrategySessionPage() {
   const router = useRouter();
   const { context, setStrategy, completeStrategySession, startSimulation } = useSimulation();
-  
-  const [formData, setFormData] = useState({
+
+  const initialBudgetAllocation = useMemo(() => ({
+    ...DEFAULT_BUDGET_ALLOCATION,
+    ...(context.strategy.budgetAllocation || {}),
+  }), [context.strategy.budgetAllocation]);
+
+  const [formData, setFormData] = useState<StrategyFormState>({
+    companyName: context.strategy.companyName || '',
+    industry: context.strategy.industry || '',
+    companySize: context.strategy.companySize || '',
+    marketLandscape: context.strategy.marketLandscape || '',
+    timeHorizon: context.strategy.timeHorizon || '',
     targetAudience: context.strategy.targetAudience || '',
     brandPositioning: context.strategy.brandPositioning || '',
     primaryChannels: context.strategy.primaryChannels || [],
+    budgetAllocation: initialBudgetAllocation,
     customAudience: '',
     customPositioning: '',
   });
@@ -54,9 +98,24 @@ export default function StrategySessionPage() {
     const updatedChannels = formData.primaryChannels.includes(channelId)
       ? formData.primaryChannels.filter(id => id !== channelId)
       : [...formData.primaryChannels, channelId];
-    
+
     setFormData({ ...formData, primaryChannels: updatedChannels });
     setStrategy({ primaryChannels: updatedChannels });
+  };
+
+  const handleCompanySizeSelect = (value: CompanySizeValue) => {
+    setFormData(prev => ({ ...prev, companySize: value }));
+    setStrategy({ companySize: value });
+  };
+
+  const handleMarketLandscapeSelect = (value: MarketLandscapeValue) => {
+    setFormData(prev => ({ ...prev, marketLandscape: value }));
+    setStrategy({ marketLandscape: value });
+  };
+
+  const handleTimeHorizonSelect = (value: TimeHorizonValue) => {
+    setFormData(prev => ({ ...prev, timeHorizon: value }));
+    setStrategy({ timeHorizon: value });
   };
 
   const handleAudienceSelect = (audience: string) => {
@@ -83,6 +142,16 @@ export default function StrategySessionPage() {
     }
   };
 
+  const handleBudgetChange = (bucket: BudgetBucketKey, value: number) => {
+    const updatedAllocation = {
+      ...formData.budgetAllocation,
+      [bucket]: value,
+    };
+
+    setFormData(prev => ({ ...prev, budgetAllocation: updatedAllocation }));
+    setStrategy({ budgetAllocation: updatedAllocation });
+  };
+
   const handleComplete = () => {
     if (!context.userId) {
       startSimulation('current-user'); // In real app, get from auth
@@ -91,7 +160,19 @@ export default function StrategySessionPage() {
     router.push('/sim/q1');
   };
 
-  const canComplete = formData.targetAudience && formData.brandPositioning && formData.primaryChannels.length > 0;
+  const budgetTotal = Object.values(formData.budgetAllocation).reduce((total, value) => total + value, 0);
+  const isBudgetValid = Math.abs(budgetTotal - 100) <= 1;
+
+  const canComplete =
+    formData.companyName.trim() &&
+    formData.industry.trim() &&
+    formData.companySize &&
+    formData.marketLandscape &&
+    formData.timeHorizon &&
+    formData.targetAudience &&
+    formData.brandPositioning &&
+    formData.primaryChannels.length > 0 &&
+    isBudgetValid;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -124,7 +205,120 @@ export default function StrategySessionPage() {
       </Card>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Target Audience */}
+        {/* Company Profile */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Company Profile
+            </CardTitle>
+            <CardDescription>
+              Establish the context for your marketing plan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="company-name">Company Name</Label>
+              <Input
+                id="company-name"
+                placeholder="e.g. Aurora Labs"
+                value={formData.companyName}
+                onChange={event => {
+                  setFormData(prev => ({ ...prev, companyName: event.target.value }));
+                  setStrategy({ companyName: event.target.value });
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="industry">Industry</Label>
+              <Input
+                id="industry"
+                placeholder="e.g. Fintech, Consumer Goods"
+                value={formData.industry}
+                onChange={event => {
+                  setFormData(prev => ({ ...prev, industry: event.target.value }));
+                  setStrategy({ industry: event.target.value });
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Company Size</Label>
+              <div className="grid gap-2">
+                {COMPANY_SIZE_OPTIONS.map(option => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant={formData.companySize === option.value ? 'default' : 'outline'}
+                    className="justify-start h-auto p-3"
+                    onClick={() => handleCompanySizeSelect(option.value)}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">{option.label}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Market Landscape */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe2 className="h-5 w-5" />
+              Market Landscape
+            </CardTitle>
+            <CardDescription>
+              Understand your competitive environment and planning horizon.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Market Dynamics</Label>
+              <div className="grid gap-2">
+                {MARKET_LANDSCAPE_OPTIONS.map(option => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant={formData.marketLandscape === option.value ? 'default' : 'outline'}
+                    className="justify-start h-auto p-3"
+                    onClick={() => handleMarketLandscapeSelect(option.value)}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">{option.label}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Time Horizon</Label>
+              <div className="grid gap-2">
+                {TIME_HORIZON_OPTIONS.map(option => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant={formData.timeHorizon === option.value ? 'default' : 'outline'}
+                    className="justify-start h-auto p-3"
+                    onClick={() => handleTimeHorizonSelect(option.value)}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">{option.label}</div>
+                      <div className="text-xs text-muted-foreground">{option.description}</div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      {/* Target Audience */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -267,6 +461,59 @@ export default function StrategySessionPage() {
         </CardContent>
       </Card>
 
+      {/* Budget Allocation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PieChart className="h-5 w-5" />
+            Strategic Budget Mix
+          </CardTitle>
+          <CardDescription>
+            Allocate your annual budget across core marketing priorities (must total 100%).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid gap-4">
+            {BUDGET_BUCKETS.map(bucket => (
+              <div key={bucket.key} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{bucket.label}</div>
+                    <div className="text-xs text-muted-foreground">{bucket.description}</div>
+                  </div>
+                  <div className="text-sm font-semibold">{formData.budgetAllocation[bucket.key]}%</div>
+                </div>
+                <div className={`h-2 rounded-full bg-muted relative overflow-hidden`}>
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded-full bg-gradient-to-r ${bucket.accent}`}
+                    style={{ width: `${formData.budgetAllocation[bucket.key]}%` }}
+                  />
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={formData.budgetAllocation[bucket.key]}
+                  onChange={event => handleBudgetChange(bucket.key, Number(event.target.value))}
+                  className="w-full"
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <div className="font-medium">Total Allocation</div>
+            <div className={isBudgetValid ? 'text-green-600' : 'text-red-600'}>{budgetTotal}%</div>
+          </div>
+          {!isBudgetValid && (
+            <p className="text-sm text-red-600">
+              Adjust the sliders so your allocation adds up to 100%.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Action Button */}
       <div className="flex justify-center pt-8">
         <Button
@@ -281,9 +528,10 @@ export default function StrategySessionPage() {
       </div>
 
       {!canComplete && (
-        <p className="text-center text-sm text-muted-foreground">
-          Please complete all sections to continue
-        </p>
+        <div className="text-center text-sm text-muted-foreground space-y-1">
+          <p>Please complete all sections to continue.</p>
+          {!isBudgetValid && <p className="text-red-600">Budget allocation must equal 100%.</p>}
+        </div>
       )}
     </div>
   );

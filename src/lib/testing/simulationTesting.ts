@@ -156,6 +156,15 @@ export class SimulationPathTester {
             primaryChannels: ['Digital Marketing', 'Social Media'],
             companyName: 'Test Company',
             industry: 'Technology',
+            companySize: 'scaleup',
+            marketLandscape: 'competitive',
+            timeHorizon: 'mid_term',
+            budgetAllocation: {
+              brandBuilding: 25,
+              demandGeneration: 35,
+              productInnovation: 20,
+              customerExperience: 20,
+            },
             strategyType: 'Growth'
           },
           budget: 1000000
@@ -272,12 +281,23 @@ export class SimulationPerformanceTester {
         
         // Simulate a typical user flow
         service.send({ type: 'START_SIMULATION' });
-        service.send({ 
-          type: 'SET_STRATEGY', 
+        service.send({
+          type: 'SET_STRATEGY',
           strategy: {
             targetAudience: 'Test Audience',
             brandPositioning: 'Test Position',
-            primaryChannels: ['Digital Marketing']
+            primaryChannels: ['Digital Marketing'],
+            companyName: 'Benchmark Corp',
+            industry: 'Technology',
+            companySize: 'scaleup',
+            marketLandscape: 'competitive',
+            timeHorizon: 'mid_term',
+            budgetAllocation: {
+              brandBuilding: 25,
+              demandGeneration: 35,
+              productInnovation: 20,
+              customerExperience: 20,
+            },
           },
           budget: 1000000
         });
