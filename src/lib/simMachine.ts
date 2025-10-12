@@ -125,6 +125,8 @@ export interface WildcardChoice {
     marketShare: number;
     customerSatisfaction: number;
     brandAwareness: number;
+    morale?: number;
+    brandEquity?: number;
   };
 }
 
@@ -142,6 +144,10 @@ export interface SimulationResults {
   recommendations: string[];
   score: number;
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  totalBudgetSpent: number;
+  totalTimeSpent: number;
+  quarterlySpend: Record<string, number>;
+  quarterlyTimeSpent: Record<string, number>;
 }
 
 // Event types
@@ -235,6 +241,17 @@ const initialContext: SimulationContext = {
 };
 
 // Simulation state machine
+type QuarterKey = keyof SimulationContext['quarters'];
+
+interface WildcardResponseResult {
+  updatedQuarter: QuarterData;
+  updatedWildcards: WildcardEvent[];
+  budgetDelta: number;
+  timeDelta: number;
+  moraleDelta: number;
+  brandEquityDelta: number;
+}
+
 export const simulationMachine = createMachine({
   id: 'cmoSimulation',
   initial: 'idle',
@@ -281,32 +298,43 @@ export const simulationMachine = createMachine({
         ADD_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q1',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q1: {
-                ...context.quarters.Q1,
-                tactics: [...context.quarters.Q1.tactics, event.tactic],
-              },
-            }),
-            remainingBudget: ({ context, event }) => 
-              context.remainingBudget - event.tactic.cost,
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q1;
+              return {
+                ...context.quarters,
+                Q1: {
+                  ...currentQuarter,
+                  tactics: [...currentQuarter.tactics, event.tactic],
+                  budgetSpent: currentQuarter.budgetSpent + event.tactic.cost,
+                  timeSpent: currentQuarter.timeSpent + event.tactic.timeRequired,
+                },
+              };
+            },
+            remainingBudget: ({ context, event }) =>
+              Math.max(0, context.remainingBudget - event.tactic.cost),
           }),
         },
         REMOVE_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q1',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q1.tactics.find(t => t.id === event.tacticId);
+              const currentQuarter = context.quarters.Q1;
+              const tactic = currentQuarter.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.quarters;
+
               return {
                 ...context.quarters,
                 Q1: {
-                  ...context.quarters.Q1,
-                  tactics: context.quarters.Q1.tactics.filter(t => t.id !== event.tacticId),
+                  ...currentQuarter,
+                  tactics: currentQuarter.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, currentQuarter.budgetSpent - tactic.cost),
+                  timeSpent: Math.max(0, currentQuarter.timeSpent - tactic.timeRequired),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q1.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.remainingBudget;
               return context.remainingBudget + (tactic?.cost || 0);
             },
           }),
@@ -314,40 +342,64 @@ export const simulationMachine = createMachine({
         TRIGGER_WILDCARD: {
           guard: ({ event }) => event.quarter === 'Q1',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q1: {
-                ...context.quarters.Q1,
-                wildcardEvents: [...context.quarters.Q1.wildcardEvents, event.wildcard],
-              },
-            }),
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q1;
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              return {
+                ...context.quarters,
+                Q1: {
+                  ...currentQuarter,
+                  wildcardEvents: [...currentQuarter.wildcardEvents, wildcardWithQuarter],
+                },
+              };
+            },
+            wildcards: ({ context, event }) => {
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              const existing = context.wildcards.find(w => w.id === event.wildcard.id);
+              if (existing) {
+                return context.wildcards.map(w =>
+                  w.id === event.wildcard.id ? { ...existing, ...wildcardWithQuarter } : w
+                );
+              }
+
+              return [...context.wildcards, wildcardWithQuarter];
+            },
           }),
         },
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q1.wildcardEvents.find(w => w.id === event.wildcardId);
-              if (!wildcard) return context.quarters;
-              
-              const choice = wildcard.choices.find(c => c.id === event.choiceId);
-              if (!choice) return context.quarters;
-              
+              const result = processWildcardResponse(context, 'Q1', event.wildcardId, event.choiceId);
+              if (!result) return context.quarters;
+
               return {
                 ...context.quarters,
-                Q1: {
-                  ...context.quarters.Q1,
-                  wildcardEvents: context.quarters.Q1.wildcardEvents.map(w =>
-                    w.id === event.wildcardId
-                      ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
-                      : w
-                  ),
-                },
+                Q1: result.updatedQuarter,
               };
             },
+            wildcards: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q1', event.wildcardId, event.choiceId);
+              return result ? result.updatedWildcards : context.wildcards;
+            },
             remainingBudget: ({ context, event }) => {
-              const wildcard = context.quarters.Q1.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              const result = processWildcardResponse(context, 'Q1', event.wildcardId, event.choiceId);
+              return result ? context.remainingBudget - result.budgetDelta : context.remainingBudget;
+            },
+            morale: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q1', event.wildcardId, event.choiceId);
+              return result ? context.morale + result.moraleDelta : context.morale;
+            },
+            brandEquity: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q1', event.wildcardId, event.choiceId);
+              return result ? context.brandEquity + result.brandEquityDelta : context.brandEquity;
             },
           }),
         },
@@ -386,32 +438,43 @@ export const simulationMachine = createMachine({
         ADD_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q2',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q2: {
-                ...context.quarters.Q2,
-                tactics: [...context.quarters.Q2.tactics, event.tactic],
-              },
-            }),
-            remainingBudget: ({ context, event }) => 
-              context.remainingBudget - event.tactic.cost,
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q2;
+              return {
+                ...context.quarters,
+                Q2: {
+                  ...currentQuarter,
+                  tactics: [...currentQuarter.tactics, event.tactic],
+                  budgetSpent: currentQuarter.budgetSpent + event.tactic.cost,
+                  timeSpent: currentQuarter.timeSpent + event.tactic.timeRequired,
+                },
+              };
+            },
+            remainingBudget: ({ context, event }) =>
+              Math.max(0, context.remainingBudget - event.tactic.cost),
           }),
         },
         REMOVE_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q2',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q2.tactics.find(t => t.id === event.tacticId);
+              const currentQuarter = context.quarters.Q2;
+              const tactic = currentQuarter.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.quarters;
+
               return {
                 ...context.quarters,
                 Q2: {
-                  ...context.quarters.Q2,
-                  tactics: context.quarters.Q2.tactics.filter(t => t.id !== event.tacticId),
+                  ...currentQuarter,
+                  tactics: currentQuarter.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, currentQuarter.budgetSpent - tactic.cost),
+                  timeSpent: Math.max(0, currentQuarter.timeSpent - tactic.timeRequired),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q2.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.remainingBudget;
               return context.remainingBudget + (tactic?.cost || 0);
             },
           }),
@@ -419,40 +482,64 @@ export const simulationMachine = createMachine({
         TRIGGER_WILDCARD: {
           guard: ({ event }) => event.quarter === 'Q2',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q2: {
-                ...context.quarters.Q2,
-                wildcardEvents: [...context.quarters.Q2.wildcardEvents, event.wildcard],
-              },
-            }),
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q2;
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              return {
+                ...context.quarters,
+                Q2: {
+                  ...currentQuarter,
+                  wildcardEvents: [...currentQuarter.wildcardEvents, wildcardWithQuarter],
+                },
+              };
+            },
+            wildcards: ({ context, event }) => {
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              const existing = context.wildcards.find(w => w.id === event.wildcard.id);
+              if (existing) {
+                return context.wildcards.map(w =>
+                  w.id === event.wildcard.id ? { ...existing, ...wildcardWithQuarter } : w
+                );
+              }
+
+              return [...context.wildcards, wildcardWithQuarter];
+            },
           }),
         },
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q2.wildcardEvents.find(w => w.id === event.wildcardId);
-              if (!wildcard) return context.quarters;
-              
-              const choice = wildcard.choices.find(c => c.id === event.choiceId);
-              if (!choice) return context.quarters;
-              
+              const result = processWildcardResponse(context, 'Q2', event.wildcardId, event.choiceId);
+              if (!result) return context.quarters;
+
               return {
                 ...context.quarters,
-                Q2: {
-                  ...context.quarters.Q2,
-                  wildcardEvents: context.quarters.Q2.wildcardEvents.map(w =>
-                    w.id === event.wildcardId
-                      ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
-                      : w
-                  ),
-                },
+                Q2: result.updatedQuarter,
               };
             },
+            wildcards: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q2', event.wildcardId, event.choiceId);
+              return result ? result.updatedWildcards : context.wildcards;
+            },
             remainingBudget: ({ context, event }) => {
-              const wildcard = context.quarters.Q2.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              const result = processWildcardResponse(context, 'Q2', event.wildcardId, event.choiceId);
+              return result ? context.remainingBudget - result.budgetDelta : context.remainingBudget;
+            },
+            morale: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q2', event.wildcardId, event.choiceId);
+              return result ? context.morale + result.moraleDelta : context.morale;
+            },
+            brandEquity: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q2', event.wildcardId, event.choiceId);
+              return result ? context.brandEquity + result.brandEquityDelta : context.brandEquity;
             },
           }),
         },
@@ -490,32 +577,43 @@ export const simulationMachine = createMachine({
         ADD_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q3',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q3: {
-                ...context.quarters.Q3,
-                tactics: [...context.quarters.Q3.tactics, event.tactic],
-              },
-            }),
-            remainingBudget: ({ context, event }) => 
-              context.remainingBudget - event.tactic.cost,
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q3;
+              return {
+                ...context.quarters,
+                Q3: {
+                  ...currentQuarter,
+                  tactics: [...currentQuarter.tactics, event.tactic],
+                  budgetSpent: currentQuarter.budgetSpent + event.tactic.cost,
+                  timeSpent: currentQuarter.timeSpent + event.tactic.timeRequired,
+                },
+              };
+            },
+            remainingBudget: ({ context, event }) =>
+              Math.max(0, context.remainingBudget - event.tactic.cost),
           }),
         },
         REMOVE_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q3',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q3.tactics.find(t => t.id === event.tacticId);
+              const currentQuarter = context.quarters.Q3;
+              const tactic = currentQuarter.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.quarters;
+
               return {
                 ...context.quarters,
                 Q3: {
-                  ...context.quarters.Q3,
-                  tactics: context.quarters.Q3.tactics.filter(t => t.id !== event.tacticId),
+                  ...currentQuarter,
+                  tactics: currentQuarter.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, currentQuarter.budgetSpent - tactic.cost),
+                  timeSpent: Math.max(0, currentQuarter.timeSpent - tactic.timeRequired),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q3.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.remainingBudget;
               return context.remainingBudget + (tactic?.cost || 0);
             },
           }),
@@ -523,40 +621,64 @@ export const simulationMachine = createMachine({
         TRIGGER_WILDCARD: {
           guard: ({ event }) => event.quarter === 'Q3',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q3: {
-                ...context.quarters.Q3,
-                wildcardEvents: [...context.quarters.Q3.wildcardEvents, event.wildcard],
-              },
-            }),
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q3;
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              return {
+                ...context.quarters,
+                Q3: {
+                  ...currentQuarter,
+                  wildcardEvents: [...currentQuarter.wildcardEvents, wildcardWithQuarter],
+                },
+              };
+            },
+            wildcards: ({ context, event }) => {
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              const existing = context.wildcards.find(w => w.id === event.wildcard.id);
+              if (existing) {
+                return context.wildcards.map(w =>
+                  w.id === event.wildcard.id ? { ...existing, ...wildcardWithQuarter } : w
+                );
+              }
+
+              return [...context.wildcards, wildcardWithQuarter];
+            },
           }),
         },
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q3.wildcardEvents.find(w => w.id === event.wildcardId);
-              if (!wildcard) return context.quarters;
-              
-              const choice = wildcard.choices.find(c => c.id === event.choiceId);
-              if (!choice) return context.quarters;
-              
+              const result = processWildcardResponse(context, 'Q3', event.wildcardId, event.choiceId);
+              if (!result) return context.quarters;
+
               return {
                 ...context.quarters,
-                Q3: {
-                  ...context.quarters.Q3,
-                  wildcardEvents: context.quarters.Q3.wildcardEvents.map(w =>
-                    w.id === event.wildcardId
-                      ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
-                      : w
-                  ),
-                },
+                Q3: result.updatedQuarter,
               };
             },
+            wildcards: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q3', event.wildcardId, event.choiceId);
+              return result ? result.updatedWildcards : context.wildcards;
+            },
             remainingBudget: ({ context, event }) => {
-              const wildcard = context.quarters.Q3.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              const result = processWildcardResponse(context, 'Q3', event.wildcardId, event.choiceId);
+              return result ? context.remainingBudget - result.budgetDelta : context.remainingBudget;
+            },
+            morale: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q3', event.wildcardId, event.choiceId);
+              return result ? context.morale + result.moraleDelta : context.morale;
+            },
+            brandEquity: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q3', event.wildcardId, event.choiceId);
+              return result ? context.brandEquity + result.brandEquityDelta : context.brandEquity;
             },
           }),
         },
@@ -594,32 +716,43 @@ export const simulationMachine = createMachine({
         ADD_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q4',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q4: {
-                ...context.quarters.Q4,
-                tactics: [...context.quarters.Q4.tactics, event.tactic],
-              },
-            }),
-            remainingBudget: ({ context, event }) => 
-              context.remainingBudget - event.tactic.cost,
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q4;
+              return {
+                ...context.quarters,
+                Q4: {
+                  ...currentQuarter,
+                  tactics: [...currentQuarter.tactics, event.tactic],
+                  budgetSpent: currentQuarter.budgetSpent + event.tactic.cost,
+                  timeSpent: currentQuarter.timeSpent + event.tactic.timeRequired,
+                },
+              };
+            },
+            remainingBudget: ({ context, event }) =>
+              Math.max(0, context.remainingBudget - event.tactic.cost),
           }),
         },
         REMOVE_TACTIC: {
           guard: ({ event }) => event.quarter === 'Q4',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q4.tactics.find(t => t.id === event.tacticId);
+              const currentQuarter = context.quarters.Q4;
+              const tactic = currentQuarter.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.quarters;
+
               return {
                 ...context.quarters,
                 Q4: {
-                  ...context.quarters.Q4,
-                  tactics: context.quarters.Q4.tactics.filter(t => t.id !== event.tacticId),
+                  ...currentQuarter,
+                  tactics: currentQuarter.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, currentQuarter.budgetSpent - tactic.cost),
+                  timeSpent: Math.max(0, currentQuarter.timeSpent - tactic.timeRequired),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q4.tactics.find(t => t.id === event.tacticId);
+              if (!tactic) return context.remainingBudget;
               return context.remainingBudget + (tactic?.cost || 0);
             },
           }),
@@ -627,40 +760,64 @@ export const simulationMachine = createMachine({
         TRIGGER_WILDCARD: {
           guard: ({ event }) => event.quarter === 'Q4',
           actions: assign({
-            quarters: ({ context, event }) => ({
-              ...context.quarters,
-              Q4: {
-                ...context.quarters.Q4,
-                wildcardEvents: [...context.quarters.Q4.wildcardEvents, event.wildcard],
-              },
-            }),
+            quarters: ({ context, event }) => {
+              const currentQuarter = context.quarters.Q4;
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              return {
+                ...context.quarters,
+                Q4: {
+                  ...currentQuarter,
+                  wildcardEvents: [...currentQuarter.wildcardEvents, wildcardWithQuarter],
+                },
+              };
+            },
+            wildcards: ({ context, event }) => {
+              const wildcardWithQuarter = {
+                ...event.wildcard,
+                triggeredInQuarter: event.wildcard.triggeredInQuarter ?? event.quarter,
+              };
+
+              const existing = context.wildcards.find(w => w.id === event.wildcard.id);
+              if (existing) {
+                return context.wildcards.map(w =>
+                  w.id === event.wildcard.id ? { ...existing, ...wildcardWithQuarter } : w
+                );
+              }
+
+              return [...context.wildcards, wildcardWithQuarter];
+            },
           }),
         },
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q4.wildcardEvents.find(w => w.id === event.wildcardId);
-              if (!wildcard) return context.quarters;
-              
-              const choice = wildcard.choices.find(c => c.id === event.choiceId);
-              if (!choice) return context.quarters;
-              
+              const result = processWildcardResponse(context, 'Q4', event.wildcardId, event.choiceId);
+              if (!result) return context.quarters;
+
               return {
                 ...context.quarters,
-                Q4: {
-                  ...context.quarters.Q4,
-                  wildcardEvents: context.quarters.Q4.wildcardEvents.map(w =>
-                    w.id === event.wildcardId
-                      ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
-                      : w
-                  ),
-                },
+                Q4: result.updatedQuarter,
               };
             },
+            wildcards: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q4', event.wildcardId, event.choiceId);
+              return result ? result.updatedWildcards : context.wildcards;
+            },
             remainingBudget: ({ context, event }) => {
-              const wildcard = context.quarters.Q4.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              const result = processWildcardResponse(context, 'Q4', event.wildcardId, event.choiceId);
+              return result ? context.remainingBudget - result.budgetDelta : context.remainingBudget;
+            },
+            morale: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q4', event.wildcardId, event.choiceId);
+              return result ? context.morale + result.moraleDelta : context.morale;
+            },
+            brandEquity: ({ context, event }) => {
+              const result = processWildcardResponse(context, 'Q4', event.wildcardId, event.choiceId);
+              return result ? context.brandEquity + result.brandEquityDelta : context.brandEquity;
             },
           }),
         },
@@ -722,6 +879,76 @@ export const simulationMachine = createMachine({
 });
 
 // Helper functions for calculations
+function processWildcardResponse(
+  context: SimulationContext,
+  quarterKey: QuarterKey,
+  wildcardId: string,
+  choiceId: string
+): WildcardResponseResult | null {
+  const quarterData = context.quarters[quarterKey];
+  const wildcard = quarterData.wildcardEvents.find(w => w.id === wildcardId);
+  if (!wildcard) return null;
+
+  const choice = wildcard.choices.find(c => c.id === choiceId);
+  if (!choice) return null;
+
+  const previousChoice = wildcard.selectedChoice
+    ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+    : undefined;
+
+  const previousImpact = wildcard.impact || {};
+  const resolvedImpact = {
+    ...choice.impact,
+    morale: choice.impact.morale ?? previousImpact.morale ?? 0,
+    brandEquity: choice.impact.brandEquity ?? previousImpact.brandEquity ?? 0,
+  };
+
+  const budgetDelta = (choice.cost || 0) - (previousChoice?.cost || 0);
+  const timeDelta = (choice.timeRequired || 0) - (previousChoice?.timeRequired || 0);
+  const moraleDelta = (resolvedImpact.morale ?? 0) - (previousImpact.morale ?? 0);
+  const brandEquityDelta = (resolvedImpact.brandEquity ?? 0) - (previousImpact.brandEquity ?? 0);
+
+  const updatedQuarter: QuarterData = {
+    ...quarterData,
+    budgetSpent: Math.max(0, quarterData.budgetSpent + budgetDelta),
+    timeSpent: Math.max(0, quarterData.timeSpent + timeDelta),
+    wildcardEvents: quarterData.wildcardEvents.map(w =>
+      w.id === wildcardId
+        ? {
+            ...w,
+            selectedChoice: choiceId,
+            chosenResponse: choice.title,
+            impact: resolvedImpact,
+            triggeredInQuarter: w.triggeredInQuarter ?? quarterKey,
+          }
+        : w
+    ),
+  };
+
+  const existingGlobal = context.wildcards.find(w => w.id === wildcardId);
+  const baseGlobal = existingGlobal ?? wildcard;
+  const updatedGlobal: WildcardEvent = {
+    ...baseGlobal,
+    selectedChoice: choiceId,
+    chosenResponse: choice.title,
+    impact: resolvedImpact,
+    triggeredInQuarter: baseGlobal.triggeredInQuarter ?? quarterKey,
+  };
+
+  const updatedWildcards = existingGlobal
+    ? context.wildcards.map(w => (w.id === wildcardId ? updatedGlobal : w))
+    : [...context.wildcards, updatedGlobal];
+
+  return {
+    updatedQuarter,
+    updatedWildcards,
+    budgetDelta,
+    timeDelta,
+    moraleDelta,
+    brandEquityDelta,
+  };
+}
+
 function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationContext['kpis']) {
   let results = {
     revenue: 0,
@@ -762,7 +989,26 @@ function calculateFinalResults(context: SimulationContext): SimulationResults {
     ...context.quarters.Q3.wildcardEvents,
     ...context.quarters.Q4.wildcardEvents,
   ];
-  
+
+  const quarterlySpend = Object.entries(context.quarters).reduce(
+    (acc, [quarterKey, data]) => {
+      acc[quarterKey] = data.budgetSpent;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  const quarterlyTimeSpent = Object.entries(context.quarters).reduce(
+    (acc, [quarterKey, data]) => {
+      acc[quarterKey] = data.timeSpent;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  const totalBudgetSpent = Object.values(quarterlySpend).reduce((sum, value) => sum + value, 0);
+  const totalTimeSpent = Object.values(quarterlyTimeSpent).reduce((sum, value) => sum + value, 0);
+
   // Calculate overall score based on KPIs
   const score = Math.round(
     (context.kpis.revenue / 1000000) * 25 + // Revenue weight: 25%
@@ -790,6 +1036,10 @@ function calculateFinalResults(context: SimulationContext): SimulationResults {
     recommendations,
     score,
     grade,
+    totalBudgetSpent,
+    totalTimeSpent,
+    quarterlySpend,
+    quarterlyTimeSpent,
   };
 }
 

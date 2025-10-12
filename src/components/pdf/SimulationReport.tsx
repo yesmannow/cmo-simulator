@@ -149,14 +149,35 @@ interface SimulationReportProps {
 export const SimulationReport: React.FC<SimulationReportProps> = ({ context, generatedAt }) => {
   // Calculate metrics
   const quarterlyData = [
-    { quarter: 'Q1', ...context.quarters.Q1.results, budget: context.quarters.Q1.budgetSpent },
-    { quarter: 'Q2', ...context.quarters.Q2.results, budget: context.quarters.Q2.budgetSpent },
-    { quarter: 'Q3', ...context.quarters.Q3.results, budget: context.quarters.Q3.budgetSpent },
-    { quarter: 'Q4', ...context.quarters.Q4.results, budget: context.quarters.Q4.budgetSpent },
+    {
+      quarter: 'Q1',
+      ...context.quarters.Q1.results,
+      budget: context.quarters.Q1.budgetSpent,
+      time: context.quarters.Q1.timeSpent,
+    },
+    {
+      quarter: 'Q2',
+      ...context.quarters.Q2.results,
+      budget: context.quarters.Q2.budgetSpent,
+      time: context.quarters.Q2.timeSpent,
+    },
+    {
+      quarter: 'Q3',
+      ...context.quarters.Q3.results,
+      budget: context.quarters.Q3.budgetSpent,
+      time: context.quarters.Q3.timeSpent,
+    },
+    {
+      quarter: 'Q4',
+      ...context.quarters.Q4.results,
+      budget: context.quarters.Q4.budgetSpent,
+      time: context.quarters.Q4.timeSpent,
+    },
   ];
 
   const totalRevenue = quarterlyData.reduce((sum, q) => sum + q.revenue, 0);
   const totalBudgetSpent = quarterlyData.reduce((sum, q) => sum + q.budget, 0);
+  const totalTimeInvested = quarterlyData.reduce((sum, q) => sum + q.time, 0);
   const roi = totalBudgetSpent > 0 ? ((totalRevenue - totalBudgetSpent) / totalBudgetSpent) * 100 : 0;
   const finalMarketShare = context.quarters.Q4.results.marketShare;
   const finalSatisfaction = context.quarters.Q4.results.customerSatisfaction;
@@ -223,6 +244,16 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
               <Text style={styles.metricValue}>{finalSatisfaction.toFixed(1)}%</Text>
               <Text style={styles.metricLabel}>Customer Satisfaction</Text>
             </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricValue}>${totalBudgetSpent.toLocaleString()}</Text>
+              <Text style={styles.metricLabel}>
+                Budget Utilized {context.totalBudget > 0 ? `(${((totalBudgetSpent / context.totalBudget) * 100).toFixed(1)}%)` : ''}
+              </Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricValue}>{totalTimeInvested.toLocaleString()} hrs</Text>
+              <Text style={styles.metricLabel}>Total Time Invested</Text>
+            </View>
           </View>
         </View>
 
@@ -251,6 +282,10 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
             <Text style={styles.value}>
               ${totalBudgetSpent.toLocaleString()} ({((totalBudgetSpent / context.totalBudget) * 100).toFixed(1)}%)
             </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Total Time Invested:</Text>
+            <Text style={styles.value}>{totalTimeInvested.toLocaleString()} hours</Text>
           </View>
         </View>
 
@@ -303,6 +338,7 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
               <Text style={styles.tableCellHeader}>Market Share</Text>
               <Text style={styles.tableCellHeader}>Satisfaction</Text>
               <Text style={styles.tableCellHeader}>Awareness</Text>
+              <Text style={styles.tableCellHeader}>Time (hrs)</Text>
             </View>
             {quarterlyData.map((quarter) => (
               <View key={quarter.quarter} style={styles.tableRow}>
@@ -312,6 +348,7 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
                 <Text style={styles.tableCell}>{quarter.marketShare.toFixed(1)}%</Text>
                 <Text style={styles.tableCell}>{quarter.customerSatisfaction.toFixed(1)}%</Text>
                 <Text style={styles.tableCell}>{quarter.brandAwareness.toFixed(1)}%</Text>
+                <Text style={styles.tableCell}>{quarter.time.toLocaleString()}</Text>
               </View>
             ))}
           </View>
@@ -328,6 +365,10 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
             <Text style={styles.value}>
               ${allTactics.length > 0 ? (totalBudgetSpent / allTactics.length).toLocaleString() : '0'}
             </Text>
+          </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>Total Time Invested:</Text>
+            <Text style={styles.value}>{totalTimeInvested.toLocaleString()} hours</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Wildcard Events Handled:</Text>

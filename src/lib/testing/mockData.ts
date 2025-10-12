@@ -420,10 +420,53 @@ export const generateMockSimulationContext = (overrides: Partial<SimulationConte
       ],
       wildcardEvents: [],
     },
-    ...overrides,
+  };
+  const { finalResults: finalResultsOverride, ...restOverrides } = overrides;
+
+  const mergedFinalResults = baseContext.finalResults
+    ? { ...baseContext.finalResults, ...(finalResultsOverride || {}) }
+    : finalResultsOverride;
+
+  let context: SimulationContext = {
+    ...baseContext,
+    ...restOverrides,
+    finalResults: mergedFinalResults,
   };
 
-  return baseContext;
+  const quarterlySpend = Object.entries(context.quarters).reduce(
+    (acc, [quarterKey, data]) => {
+      acc[quarterKey] = data.budgetSpent;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  const quarterlyTimeSpent = Object.entries(context.quarters).reduce(
+    (acc, [quarterKey, data]) => {
+      acc[quarterKey] = data.timeSpent;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  const totalBudgetSpent = Object.values(quarterlySpend).reduce((sum, value) => sum + value, 0);
+  const totalTimeSpent = Object.values(quarterlyTimeSpent).reduce((sum, value) => sum + value, 0);
+
+  if (context.finalResults) {
+    context = {
+      ...context,
+      finalResults: {
+        ...context.finalResults,
+        quarterlyBreakdown: context.finalResults.quarterlyBreakdown || context.quarters,
+        totalBudgetSpent,
+        totalTimeSpent,
+        quarterlySpend,
+        quarterlyTimeSpent,
+      },
+    };
+  }
+
+  return context;
 };
 
 // Generate multiple mock simulation runs

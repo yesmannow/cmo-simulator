@@ -60,6 +60,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
       satisfaction: context.quarters.Q1.results.customerSatisfaction,
       awareness: context.quarters.Q1.results.brandAwareness,
       budget: context.quarters.Q1.budgetSpent,
+      time: context.quarters.Q1.timeSpent,
     },
     {
       quarter: 'Q2',
@@ -68,6 +69,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
       satisfaction: context.quarters.Q2.results.customerSatisfaction,
       awareness: context.quarters.Q2.results.brandAwareness,
       budget: context.quarters.Q2.budgetSpent,
+      time: context.quarters.Q2.timeSpent,
     },
     {
       quarter: 'Q3',
@@ -76,6 +78,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
       satisfaction: context.quarters.Q3.results.customerSatisfaction,
       awareness: context.quarters.Q3.results.brandAwareness,
       budget: context.quarters.Q3.budgetSpent,
+      time: context.quarters.Q3.timeSpent,
     },
     {
       quarter: 'Q4',
@@ -84,11 +87,13 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
       satisfaction: context.quarters.Q4.results.customerSatisfaction,
       awareness: context.quarters.Q4.results.brandAwareness,
       budget: context.quarters.Q4.budgetSpent,
+      time: context.quarters.Q4.timeSpent,
     },
   ];
 
   const totalRevenue = quarterlyData.reduce((sum, q) => sum + q.revenue, 0);
   const totalBudgetSpent = quarterlyData.reduce((sum, q) => sum + q.budget, 0);
+  const totalTimeSpent = quarterlyData.reduce((sum, q) => sum + q.time, 0);
   const roi = totalBudgetSpent > 0 ? ((totalRevenue - totalBudgetSpent) / totalBudgetSpent) * 100 : 0;
   const finalMarketShare = context.quarters.Q4.results.marketShare;
   const finalSatisfaction = context.quarters.Q4.results.customerSatisfaction;
@@ -174,7 +179,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
       </motion.div>
 
       {/* Key Metrics Cards */}
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid md:grid-cols-5 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -266,6 +271,54 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
             </CardContent>
           </Card>
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <PieChartIcon className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-base">Budget Utilized</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                ${totalBudgetSpent.toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {context.totalBudget > 0
+                  ? `${((totalBudgetSpent / context.totalBudget) * 100).toFixed(1)}% of total`
+                  : 'No budget allocated'}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-amber-600" />
+                <CardTitle className="text-base">Time Invested</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-600">
+                {totalTimeSpent.toLocaleString()} hrs
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Across all executed tactics & responses
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Detailed Analytics Tabs */}
@@ -327,10 +380,25 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
                 <BarChart data={quarterlyData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="quarter" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="budget" fill="#ef4444" name="Investment" />
-                  <Bar dataKey="revenue" fill="#10b981" name="Revenue" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip
+                    formatter={(value, name) =>
+                      name === 'Time (hrs)'
+                        ? [`${Number(value).toLocaleString()} hrs`, name]
+                        : [`$${Number(value).toLocaleString()}`, name]
+                    }
+                  />
+                  <Bar yAxisId="left" dataKey="budget" fill="#ef4444" name="Investment" />
+                  <Bar yAxisId="left" dataKey="revenue" fill="#10b981" name="Revenue" />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="time"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    name="Time (hrs)"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

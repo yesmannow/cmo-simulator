@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Users, Target, Heart } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Users, Target, Heart, Clock } from 'lucide-react';
 import { SimulationContext } from '@/lib/simMachine';
 
 interface KPIDashboardProps {
@@ -13,6 +13,9 @@ interface KPIDashboardProps {
 }
 
 export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false }: KPIDashboardProps) {
+  const totalBudgetSpent = Object.values(context.quarters).reduce((sum, q) => sum + q.budgetSpent, 0);
+  const totalTimeSpent = Object.values(context.quarters).reduce((sum, q) => sum + q.timeSpent, 0);
+  const budgetUtilization = context.totalBudget > 0 ? (totalBudgetSpent / context.totalBudget) * 100 : 0;
   const kpis = [
     {
       title: 'Revenue',
@@ -119,7 +122,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                ${(context.totalBudget - context.remainingBudget).toLocaleString()}
+                ${totalBudgetSpent.toLocaleString()}
               </div>
               <div className="text-sm text-muted-foreground">Spent</div>
             </div>
@@ -135,15 +138,24 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
               </div>
               <div className="text-sm text-muted-foreground">Profit</div>
             </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-amber-600">
+                {totalTimeSpent.toLocaleString()} hrs
+              </div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                <Clock className="h-3 w-3" />
+                Time Invested
+              </div>
+            </div>
           </div>
           <div className="mt-4">
-            <Progress 
-              value={((context.totalBudget - context.remainingBudget) / context.totalBudget) * 100} 
+            <Progress
+              value={budgetUtilization}
               className="h-3"
             />
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
               <span>Budget Utilization</span>
-              <span>{(((context.totalBudget - context.remainingBudget) / context.totalBudget) * 100).toFixed(1)}%</span>
+              <span>{budgetUtilization.toFixed(1)}%</span>
             </div>
           </div>
         </CardContent>
@@ -189,6 +201,10 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                         <span className="font-medium">
                           ${quarterData.budgetSpent.toLocaleString()}
                         </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Time:</span>
+                        <span className="font-medium">{quarterData.timeSpent.toLocaleString()} hrs</span>
                       </div>
                     </div>
                   </div>
