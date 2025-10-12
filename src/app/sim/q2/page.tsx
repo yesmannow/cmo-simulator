@@ -26,10 +26,12 @@ import { BudgetTimeAllocator } from '@/components/simulation/BudgetTimeAllocator
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { TalentMarketModal } from '@/components/simulation/TalentMarketModal';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
-import { getTacticsByCategory, getRandomWildcard } from '@/lib/tactics';
+import { getTacticsByCategory } from '@/lib/tactics';
 import { getRandomTalentPool } from '@/lib/talentMarket';
-import { Tactic, WildcardEvent } from '@/lib/simMachine';
+import { Tactic } from '@/lib/simMachine';
 import { TalentCandidate } from '@/lib/talentMarket';
+import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
+import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 
 export default function Q2Page() {
   const router = useRouter();
@@ -37,7 +39,7 @@ export default function Q2Page() {
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q2.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
-  const [currentWildcard, setCurrentWildcard] = useState<WildcardEvent | null>(null);
+  const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [talentCandidates, setTalentCandidates] = useState<TalentCandidate[]>([]);
@@ -84,7 +86,8 @@ export default function Q2Page() {
   };
 
   const handleTriggerWildcard = () => {
-    const wildcard = getRandomWildcard();
+    const wildcard = getEnhancedWildcardForQuarter(context, 'Q2');
+    if (!wildcard) return;
     setCurrentWildcard(wildcard);
     setShowWildcardModal(true);
     triggerWildcard('Q2', wildcard);
@@ -92,7 +95,8 @@ export default function Q2Page() {
 
   const handleWildcardResponse = (choiceId: string) => {
     if (currentWildcard) {
-      respondToWildcard(currentWildcard.id, choiceId);
+      const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
+      respondToWildcard('Q2', currentWildcard, choiceId, impact);
       setShowWildcardModal(false);
       setCurrentWildcard(null);
     }

@@ -14,7 +14,9 @@ import { TacticCard, DraggableTacticCard } from '@/components/simulation/TacticC
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { BudgetTimeAllocator } from '@/components/simulation/BudgetTimeAllocator';
 import { MilestoneConfetti } from '@/components/simulation/ConfettiEffect';
-import { SAMPLE_TACTICS, SAMPLE_WILDCARDS, getTacticsByCategory, getRandomWildcard } from '@/lib/tactics';
+import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
+import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 import { ArrowRight, Zap, Target, Calendar } from 'lucide-react';
 
 export default function Q1Page() {
@@ -23,7 +25,7 @@ export default function Q1Page() {
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q1.tactics);
   const [availableTactics] = useState(SAMPLE_TACTICS);
-  const [currentWildcard, setCurrentWildcard] = useState(null);
+  const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [allocations, setAllocations] = useState([
@@ -68,7 +70,8 @@ export default function Q1Page() {
   };
 
   const handleTriggerWildcard = () => {
-    const wildcard = getRandomWildcard();
+    const wildcard = getEnhancedWildcardForQuarter(context, 'Q1');
+    if (!wildcard) return;
     setCurrentWildcard(wildcard);
     setShowWildcardModal(true);
     triggerWildcard('Q1', wildcard);
@@ -76,7 +79,8 @@ export default function Q1Page() {
 
   const handleWildcardResponse = (choiceId) => {
     if (currentWildcard) {
-      respondToWildcard(currentWildcard.id, choiceId);
+      const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
+      respondToWildcard('Q1', currentWildcard, choiceId, impact);
       setShowWildcardModal(false);
       setCurrentWildcard(null);
     }
