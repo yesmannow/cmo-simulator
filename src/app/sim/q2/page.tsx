@@ -33,7 +33,16 @@ import { TalentCandidate } from '@/lib/talentMarket';
 
 export default function Q2Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const {
+    context,
+    addTactic,
+    removeTactic,
+    triggerWildcard,
+    respondToWildcard,
+    completeQuarter,
+    hireTalent,
+    applyTalentImpact,
+  } = useSimulation();
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q2.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
@@ -106,8 +115,8 @@ export default function Q2Page() {
   };
 
   const handleHireTalent = (candidate: TalentCandidate) => {
-    // TODO: Integrate with simulation state machine
-    console.log('Hired:', candidate);
+    hireTalent('Q2', candidate);
+    applyTalentImpact('Q2', candidate.id);
     setShowTalentMarket(false);
   };
 

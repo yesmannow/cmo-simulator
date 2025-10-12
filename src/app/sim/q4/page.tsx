@@ -23,7 +23,16 @@ import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles } from 'lucid
 
 export default function Q4Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const {
+    context,
+    addTactic,
+    removeTactic,
+    triggerWildcard,
+    respondToWildcard,
+    completeQuarter,
+    selectBigBet,
+    resolveBigBet,
+  } = useSimulation();
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q4.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
@@ -101,8 +110,8 @@ export default function Q4Page() {
   };
 
   const handleSelectBigBet = (bigBet: BigBetOption) => {
-    // TODO: Integrate with simulation state machine
-    console.log('Selected Big Bet:', bigBet);
+    selectBigBet('Q4', bigBet);
+    resolveBigBet('Q4');
     setShowBigBetModal(false);
   };
 

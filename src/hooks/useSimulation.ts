@@ -1,6 +1,7 @@
 import { useActor } from '@xstate/react';
 import { createActor } from 'xstate';
-import { simulationMachine, type SimulationEvent, type SimulationContext } from '@/lib/simMachine';
+import { simulationMachine, type SimulationContext } from '@/lib/simMachine';
+import type { TalentCandidate, BigBetOption } from '@/lib/talentMarket';
 import { useMemo } from 'react';
 
 // Hook to manage simulation state
@@ -57,7 +58,19 @@ export function useSimulation() {
     
     respondToWildcard: (wildcardId: string, choiceId: string) =>
       send({ type: 'RESPOND_TO_WILDCARD', wildcardId, choiceId }),
-    
+
+    hireTalent: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', talent: TalentCandidate) =>
+      send({ type: 'HIRE_TALENT', quarter, talent }),
+
+    applyTalentImpact: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', talentId: string) =>
+      send({ type: 'APPLY_TALENT_IMPACT', quarter, talentId }),
+
+    selectBigBet: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', bigBet: BigBetOption) =>
+      send({ type: 'SELECT_BIG_BET', quarter, bigBet }),
+
+    resolveBigBet: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4') =>
+      send({ type: 'RESOLVE_BIG_BET', quarter }),
+
     completeQuarter: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4') =>
       send({ type: 'COMPLETE_QUARTER', quarter }),
     

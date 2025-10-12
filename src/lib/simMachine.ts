@@ -60,6 +60,7 @@ export interface QuarterData {
   wildcardEvents: WildcardEvent[];
   talentHired?: TalentCandidate[];
   bigBetMade?: BigBetOption;
+  bigBetOutcome?: BigBetOutcome;
   results: {
     revenue: number;
     profit: number;
@@ -156,6 +157,10 @@ export type SimulationEvent =
   | { type: 'ALLOCATE_TIME'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; hours: number }
   | { type: 'TRIGGER_WILDCARD'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; wildcard: WildcardEvent }
   | { type: 'RESPOND_TO_WILDCARD'; wildcardId: string; choiceId: string }
+  | { type: 'HIRE_TALENT'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; talent: TalentCandidate }
+  | { type: 'APPLY_TALENT_IMPACT'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; talentId: string }
+  | { type: 'SELECT_BIG_BET'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; bigBet: BigBetOption }
+  | { type: 'RESOLVE_BIG_BET'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' }
   | { type: 'COMPLETE_QUARTER'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' }
   | { type: 'CALCULATE_RESULTS' }
   | { type: 'COMPLETE_DEBRIEF' }
@@ -433,10 +438,10 @@ export const simulationMachine = createMachine({
             quarters: ({ context, event }) => {
               const wildcard = context.quarters.Q2.wildcardEvents.find(w => w.id === event.wildcardId);
               if (!wildcard) return context.quarters;
-              
+
               const choice = wildcard.choices.find(c => c.id === event.choiceId);
               if (!choice) return context.quarters;
-              
+
               return {
                 ...context.quarters,
                 Q2: {
@@ -453,6 +458,87 @@ export const simulationMachine = createMachine({
               const wildcard = context.quarters.Q2.wildcardEvents.find(w => w.id === event.wildcardId);
               const choice = wildcard?.choices.find(c => c.id === event.choiceId);
               return context.remainingBudget - (choice?.cost || 0);
+            },
+          }),
+        },
+        HIRE_TALENT: {
+          guard: ({ event }) => event.quarter === 'Q2',
+          actions: assign({
+            quarters: ({ context, event }) => {
+              const quarterKey = event.quarter;
+              const currentQuarter = context.quarters[quarterKey];
+              const existingTalent = currentQuarter.talentHired ?? [];
+              if (existingTalent.some(talent => talent.id === event.talent.id)) {
+                return context.quarters;
+              }
+              return {
+                ...context.quarters,
+                [quarterKey]: {
+                  ...currentQuarter,
+                  talentHired: [...existingTalent, event.talent],
+                },
+              };
+            },
+            hiredTalent: ({ context, event }) => {
+              if (context.hiredTalent.some(talent => talent.id === event.talent.id)) {
+                return context.hiredTalent;
+              }
+              return [...context.hiredTalent, event.talent];
+            },
+            remainingBudget: ({ context, event }) => {
+              const totalCost = event.talent.hiringCost + Math.round(event.talent.cost / 4);
+              return Math.max(0, context.remainingBudget - totalCost);
+            },
+          }),
+        },
+        APPLY_TALENT_IMPACT: {
+          guard: ({ event }) => event.quarter === 'Q2',
+          actions: assign({
+            quarters: ({ context, event }) => {
+              const quarterKey = event.quarter;
+              const currentQuarter = context.quarters[quarterKey];
+              const talentList = currentQuarter.talentHired ?? [];
+              const targetTalent = talentList.find(talent => talent.id === event.talentId);
+              if (!targetTalent) return context.quarters;
+
+              const calculatedImpact = calculateTalentImpact(targetTalent, context.kpis.revenue);
+              const updatedTalent = talentList.map(talent =>
+                talent.id === targetTalent.id ? { ...talent, calculatedImpact } : talent
+              );
+
+              const totalEfficiency = updatedTalent.reduce(
+                (sum, talent) => sum + (talent.impact?.efficiency || 0),
+                0
+              );
+              const baseCost = currentQuarter.tactics.reduce((sum, tactic) => sum + tactic.cost, 0);
+              const baseTime = currentQuarter.tactics.reduce((sum, tactic) => sum + tactic.timeRequired, 0);
+              const efficiencyMultiplier = Math.max(0.5, 1 - totalEfficiency / 100);
+              const adjustedCost = Math.round(baseCost * efficiencyMultiplier);
+              const adjustedTime = Math.round(baseTime * efficiencyMultiplier);
+
+              return {
+                ...context.quarters,
+                [quarterKey]: {
+                  ...currentQuarter,
+                  talentHired: updatedTalent,
+                  budgetSpent: adjustedCost,
+                  timeSpent: adjustedTime,
+                },
+              };
+            },
+            morale: ({ context, event }) => {
+              const talent =
+                context.hiredTalent.find(t => t.id === event.talentId) ||
+                context.quarters[event.quarter].talentHired?.find(t => t.id === event.talentId);
+              const moraleBoost = talent?.impact.morale ?? 0;
+              return Math.max(0, Math.min(100, context.morale + moraleBoost));
+            },
+            brandEquity: ({ context, event }) => {
+              const talent =
+                context.hiredTalent.find(t => t.id === event.talentId) ||
+                context.quarters[event.quarter].talentHired?.find(t => t.id === event.talentId);
+              const brandBoost = talent?.impact.brandEquity ?? 0;
+              return Math.max(0, Math.min(100, context.brandEquity + brandBoost));
             },
           }),
         },
@@ -641,10 +727,10 @@ export const simulationMachine = createMachine({
             quarters: ({ context, event }) => {
               const wildcard = context.quarters.Q4.wildcardEvents.find(w => w.id === event.wildcardId);
               if (!wildcard) return context.quarters;
-              
+
               const choice = wildcard.choices.find(c => c.id === event.choiceId);
               if (!choice) return context.quarters;
-              
+
               return {
                 ...context.quarters,
                 Q4: {
@@ -662,6 +748,48 @@ export const simulationMachine = createMachine({
               const choice = wildcard?.choices.find(c => c.id === event.choiceId);
               return context.remainingBudget - (choice?.cost || 0);
             },
+          }),
+        },
+        SELECT_BIG_BET: {
+          guard: ({ event }) => event.quarter === 'Q4',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q4: {
+                ...context.quarters.Q4,
+                bigBetMade: event.bigBet,
+                bigBetOutcome: undefined,
+              },
+            }),
+            selectedBigBet: ({ event }) => event.bigBet,
+            bigBetOutcome: () => undefined,
+            remainingBudget: ({ context, event }) =>
+              Math.max(0, context.remainingBudget - event.bigBet.cost),
+          }),
+        },
+        RESOLVE_BIG_BET: {
+          guard: ({ event }) => event.quarter === 'Q4',
+          actions: assign(({ context }) => {
+            if (!context.selectedBigBet) {
+              return {};
+            }
+
+            const outcome = calculateBigBetOutcome(
+              context.selectedBigBet,
+              context,
+              context.hiredTalent.length > 0
+            );
+
+            return {
+              quarters: {
+                ...context.quarters,
+                Q4: {
+                  ...context.quarters.Q4,
+                  bigBetOutcome: outcome,
+                },
+              },
+              bigBetOutcome: outcome,
+            };
           }),
         },
         COMPLETE_QUARTER: {
@@ -723,14 +851,16 @@ export const simulationMachine = createMachine({
 
 // Helper functions for calculations
 function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationContext['kpis']) {
-  let results = {
+  const results = {
     revenue: 0,
     profit: 0,
     marketShare: 0,
     customerSatisfaction: 0,
     brandAwareness: 0,
   };
-  
+
+  let totalCost = 0;
+
   // Calculate impact from tactics
   quarter.tactics.forEach(tactic => {
     results.revenue += tactic.expectedImpact.revenue;
@@ -738,20 +868,57 @@ function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationCo
     results.customerSatisfaction += tactic.expectedImpact.customerSatisfaction;
     results.brandAwareness += tactic.expectedImpact.brandAwareness;
     results.profit += tactic.expectedImpact.revenue - tactic.cost; // Simple profit calculation
+    totalCost += tactic.cost;
   });
-  
+
+  // Apply talent impact including efficiency gains
+  if (quarter.talentHired?.length) {
+    const totalEfficiency = quarter.talentHired.reduce(
+      (sum, talent) => sum + (talent.impact?.efficiency || 0),
+      0
+    );
+    const efficiencyMultiplier = Math.max(0.5, 1 - totalEfficiency / 100);
+    const adjustedCost = Math.round(totalCost * efficiencyMultiplier);
+    const costSavings = totalCost - adjustedCost;
+    if (costSavings > 0) {
+      results.profit += costSavings;
+    }
+
+    quarter.talentHired.forEach(talent => {
+      const revenueImpact =
+        typeof talent.calculatedImpact === 'number'
+          ? talent.calculatedImpact
+          : calculateTalentImpact(talent, currentKPIs.revenue);
+
+      if (revenueImpact) {
+        results.revenue += revenueImpact;
+        results.profit += Math.round(revenueImpact * 0.25);
+      }
+
+      results.customerSatisfaction += Math.round((talent.impact?.morale || 0) / 2);
+      results.brandAwareness += Math.round((talent.impact?.brandEquity || 0) / 2);
+    });
+  }
+
   // Calculate impact from wildcard responses
   quarter.wildcardEvents.forEach(wildcard => {
     if (wildcard.impact) {
       results.revenue += wildcard.impact.revenue;
       results.profit += wildcard.impact.profit;
-      currentKPIs.marketShare += wildcard.impact?.marketShare || 0;
-      currentKPIs.customerSatisfaction += wildcard.impact?.customerSatisfaction || 0;
-      currentKPIs.brandAwareness += wildcard.impact?.brandAwareness || 0;
-      // Note: morale and brandEquity are tracked at context level, not in currentKPIs
+      results.marketShare += wildcard.impact?.marketShare || 0;
+      results.customerSatisfaction += wildcard.impact?.customerSatisfaction || 0;
+      results.brandAwareness += wildcard.impact?.brandAwareness || 0;
     }
   });
-  
+
+  if (quarter.bigBetOutcome) {
+    results.revenue += quarter.bigBetOutcome.actualImpact.revenue;
+    results.marketShare += quarter.bigBetOutcome.actualImpact.marketShare;
+    results.brandAwareness += quarter.bigBetOutcome.actualImpact.brandAwareness;
+    results.customerSatisfaction += quarter.bigBetOutcome.actualImpact.customerSatisfaction;
+    results.profit += Math.round(quarter.bigBetOutcome.actualImpact.revenue * 0.2);
+  }
+
   return results;
 }
 

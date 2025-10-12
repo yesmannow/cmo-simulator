@@ -11,6 +11,7 @@ export interface TalentCandidate {
   specialties: string[];
   personality: string;
   avatar: string;
+  calculatedImpact?: number;
   impact: {
     revenue: number;
     efficiency: number; // Reduces time requirements
