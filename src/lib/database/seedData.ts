@@ -1,6 +1,12 @@
 import { supabase } from '@/lib/supabase/client';
 import { ACHIEVEMENT_DEFINITIONS } from '@/lib/achievements/achievements';
 import { generateMockLeaderboardEntries } from '@/lib/testing/mockData';
+import type { UserAchievement } from './types';
+
+type UserAchievementInsert = Pick<
+  UserAchievement,
+  'user_id' | 'achievement_id' | 'leaderboard_entry_id' | 'earned_at'
+>;
 
 export class DatabaseSeeder {
   // Seed achievements table
@@ -166,7 +172,7 @@ export class DatabaseSeeder {
       const achievements = achievementsResult.data || [];
       const leaderboardEntries = leaderboardResult.data || [];
 
-      const userAchievements: any[] = [];
+      const userAchievements: UserAchievementInsert[] = [];
 
       // Randomly assign achievements to users
       users.forEach(user => {

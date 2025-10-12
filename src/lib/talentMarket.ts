@@ -1,5 +1,7 @@
 // Talent Market System for Q2 Hiring
 
+import type { SimulationContext } from './simMachine';
+
 export interface TalentCandidate {
   id: string;
   name: string;
@@ -287,7 +289,11 @@ export function calculateTalentImpact(candidate: TalentCandidate, quarterlyReven
   return Math.round(baseImpact * performanceMultiplier);
 }
 
-export function calculateBigBetOutcome(bigBet: BigBetOption, context: any, hasStrongTeam: boolean = false): {
+export function calculateBigBetOutcome(
+  bigBet: BigBetOption,
+  context: SimulationContext,
+  hasStrongTeam: boolean = false
+): {
   success: boolean;
   actualImpact: {
     revenue: number;

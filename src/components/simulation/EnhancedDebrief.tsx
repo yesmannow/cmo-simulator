@@ -289,7 +289,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="quarter" />
                     <YAxis />
-                    <Tooltip formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']} />
+                    <Tooltip formatter={(value: number | string) => [`$${Number(value).toLocaleString()}`, 'Revenue']} />
                     <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -422,7 +422,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
                       <div>
                         <div className="font-medium text-purple-800">Strategic Talent Investment</div>
                         <div className="text-sm text-purple-700">
-                          Hiring {context.hiredTalent.length} key talent member(s) enhanced your team's capabilities and performance.
+                          Hiring {context.hiredTalent.length} key talent member(s) enhanced your team&apos;s capabilities and performance.
                         </div>
                       </div>
                     </div>
@@ -434,7 +434,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
                       <div>
                         <div className="font-medium text-orange-800">Bold Strategic Move</div>
                         <div className="text-sm text-orange-700">
-                          Your big bet on "{context.selectedBigBet.name}" shows strategic courage and long-term thinking.
+                          Your big bet on &quot;{context.selectedBigBet.name}&quot; shows strategic courage and long-term thinking.
                         </div>
                       </div>
                     </div>

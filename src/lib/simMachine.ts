@@ -1,5 +1,5 @@
 import { createMachine, assign } from 'xstate';
-import { TalentCandidate, BigBetOption, calculateTalentImpact, calculateBigBetOutcome } from './talentMarket';
+import { TalentCandidate, BigBetOption } from './talentMarket';
 
 // Types for simulation context and events
 export interface SimulationContext {
@@ -137,7 +137,7 @@ export interface SimulationResults {
     brandAwareness: number;
   };
   quarterlyBreakdown: Record<string, QuarterData>;
-  strategicDecisions: any[];
+  strategicDecisions: SimulationContext['strategy'][];
   wildcardEvents: WildcardEvent[];
   recommendations: string[];
   score: number;
@@ -722,8 +722,11 @@ export const simulationMachine = createMachine({
 });
 
 // Helper functions for calculations
-function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationContext['kpis']) {
-  let results = {
+function calculateQuarterResults(
+  quarter: QuarterData,
+  currentKPIs: SimulationContext['kpis']
+): QuarterData['results'] {
+  const results: QuarterData['results'] = {
     revenue: 0,
     profit: 0,
     marketShare: 0,

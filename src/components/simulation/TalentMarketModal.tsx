@@ -70,7 +70,7 @@ export function TalentMarketModal({
             Talent Market - Q2 Hiring Opportunity
           </DialogTitle>
           <p className="text-muted-foreground">
-            Hire exceptional talent to boost your team's capabilities and performance.
+            Hire exceptional talent to boost your team&apos;s capabilities and performance.
           </p>
         </DialogHeader>
 

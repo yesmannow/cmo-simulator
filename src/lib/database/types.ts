@@ -45,8 +45,19 @@ export interface Achievement {
   category: string;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
   points: number;
-  criteria: Record<string, any>;
+  criteria: AchievementCriteria;
   created_at: string;
+}
+
+export interface AchievementCriteria {
+  min_score?: number;
+  required_grade?: LeaderboardEntry['grade'];
+  min_roi?: number;
+  min_market_share?: number;
+  requires_big_bet?: boolean;
+  requires_big_bet_success?: boolean;
+  min_talent_hired?: number;
+  max_completion_time?: number;
 }
 
 export interface UserAchievement {

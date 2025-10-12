@@ -201,7 +201,7 @@ export default function Q2Page() {
                   <div className="text-muted-foreground">
                     <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <h4 className="text-lg font-medium mb-2">No tactics selected</h4>
-                    <p>Switch to the "Select Tactics" tab to build your marketing plan.</p>
+                    <p>Switch to the &quot;Select Tactics&quot; tab to build your marketing plan.</p>
                   </div>
                 </Card>
               ) : (

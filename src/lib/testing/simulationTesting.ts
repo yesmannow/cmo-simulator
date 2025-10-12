@@ -1,5 +1,5 @@
-import { createMachine, interpret } from 'xstate';
-import { simulationMachine } from '@/lib/simMachine';
+import { interpret } from 'xstate';
+import { simulationMachine, type SimulationContext } from '@/lib/simMachine';
 import { generateMockSimulationContext } from './mockData';
 
 interface TestResult {
@@ -7,8 +7,28 @@ interface TestResult {
   success: boolean;
   error?: string;
   finalState: string;
-  context?: any;
+  context?: SimulationContext;
   duration: number;
+}
+
+interface PerformanceResult {
+  iterations: number;
+  successful: number;
+  failed: number;
+  averageTime: number;
+  minTime: number;
+  maxTime: number;
+  errors: string[];
+}
+
+interface MemoryTestResult {
+  initialMemory: number;
+  finalMemory: number;
+  memoryGrowth: number;
+  averageGrowthPerIteration: number;
+  iterations: number;
+  snapshots: number[];
+  hasLeak: boolean;
 }
 
 // Test all possible simulation paths
@@ -104,7 +124,7 @@ export class SimulationPathTester {
     let success = false;
     let error: string | undefined;
     let finalState = '';
-    let context: any;
+    let context: SimulationContext | undefined;
 
     try {
       const service = interpret(this.machine.withContext(generateMockSimulationContext()));
@@ -114,7 +134,7 @@ export class SimulationPathTester {
         const currentState = service.getSnapshot();
         
         // Generate appropriate event data based on event type
-        const eventData = this.generateEventData(eventType, currentState.context);
+        const eventData = this.generateEventData(eventType);
         
         if (currentState.can({ type: eventType, ...eventData })) {
           service.send({ type: eventType, ...eventData });
@@ -146,7 +166,7 @@ export class SimulationPathTester {
     });
   }
 
-  private generateEventData(eventType: string, context: any): any {
+  private generateEventData(eventType: string): Record<string, unknown> {
     switch (eventType) {
       case 'SET_STRATEGY':
         return {
@@ -309,15 +329,6 @@ export class SimulationPerformanceTester {
     };
   }
 
-  interface PerformanceResult {
-    iterations: number;
-    successful: number;
-    failed: number;
-    averageTime: number;
-    minTime: number;
-    maxTime: number;
-    errors: string[];
-  }
 }
 
 // Memory leak detection
@@ -364,16 +375,9 @@ export class SimulationMemoryTester {
       return process.memoryUsage().heapUsed;
     }
     // Browser fallback
-    return (performance as any).memory?.usedJSHeapSize || 0;
-  }
-
-  interface MemoryTestResult {
-    initialMemory: number;
-    finalMemory: number;
-    memoryGrowth: number;
-    averageGrowthPerIteration: number;
-    iterations: number;
-    snapshots: number[];
-    hasLeak: boolean;
+    const memoryInfo = (performance as Performance & {
+      memory?: { usedJSHeapSize: number };
+    }).memory;
+    return memoryInfo?.usedJSHeapSize ?? 0;
   }
 }

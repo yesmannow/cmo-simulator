@@ -1,6 +1,6 @@
 // Enhanced Wildcard System with Dynamic Events and Morale/Brand Equity Impact
 
-import { WildcardEvent, WildcardChoice } from './simMachine';
+import { WildcardEvent, WildcardChoice, type SimulationContext } from './simMachine';
 
 export interface EnhancedWildcardEvent extends WildcardEvent {
   triggerConditions?: {
@@ -454,7 +454,7 @@ export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
 // Wildcard selection logic
 export function selectRandomWildcard(
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4',
-  currentKPIs: any,
+  currentKPIs: SimulationContext['kpis'],
   hasHiredTalent: boolean = false
 ): EnhancedWildcardEvent | null {
   // Filter wildcards based on trigger conditions
@@ -520,14 +520,21 @@ export function calculateEnhancedWildcardImpact(
   wildcard: EnhancedWildcardEvent,
   choiceId: string
 ): {
-  kpiImpact: any;
+  kpiImpact: WildcardChoice['impact'];
   moraleImpact: number;
   brandEquityImpact: number;
 } {
   const choice = wildcard.choices.find(c => c.id === choiceId);
+  const defaultImpact: WildcardChoice['impact'] = {
+    revenue: 0,
+    profit: 0,
+    marketShare: 0,
+    customerSatisfaction: 0,
+    brandAwareness: 0,
+  };
   if (!choice) {
     return {
-      kpiImpact: {},
+      kpiImpact: defaultImpact,
       moraleImpact: wildcard.moraleImpact.base,
       brandEquityImpact: wildcard.brandEquityImpact.base,
     };
@@ -536,7 +543,7 @@ export function calculateEnhancedWildcardImpact(
   const moraleImpact = wildcard.moraleImpact.base + 
     (wildcard.moraleImpact.choiceModifiers[choiceId] || 0);
   
-  const brandEquityImpact = wildcard.brandEquityImpact.base + 
+  const brandEquityImpact = wildcard.brandEquityImpact.base +
     (wildcard.brandEquityImpact.choiceModifiers[choiceId] || 0);
 
   return {

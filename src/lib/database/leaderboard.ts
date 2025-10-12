@@ -304,7 +304,7 @@ export class LeaderboardService {
     return true;
   }
 
-  private static async generateSimulationHash(data: any): Promise<string> {
+  private static async generateSimulationHash(data: Record<string, unknown>): Promise<string> {
     const jsonString = JSON.stringify(data, Object.keys(data).sort());
     const encoder = new TextEncoder();
     const dataBuffer = encoder.encode(jsonString);

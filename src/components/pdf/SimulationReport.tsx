@@ -280,7 +280,7 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
           {context.selectedBigBet && (
             <View style={styles.insightBox}>
               <Text style={styles.insightText}>
-                ⚡ Bold Strategic Move: Executed big bet on "{context.selectedBigBet.name}" showing strategic courage.
+                ⚡ Bold Strategic Move: Executed big bet on &quot;{context.selectedBigBet.name}&quot; showing strategic courage.
               </Text>
             </View>
           )}
