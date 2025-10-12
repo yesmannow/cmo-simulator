@@ -1,6 +1,6 @@
 // Enhanced Wildcard System with Dynamic Events and Morale/Brand Equity Impact
 
-import { WildcardEvent, WildcardChoice } from './simMachine';
+import { WildcardEvent, WildcardChoice, type SimulationContext, type MarketLandscape, type TimeHorizon } from './simMachine';
 
 export interface EnhancedWildcardEvent extends WildcardEvent {
   triggerConditions?: {
@@ -21,6 +21,12 @@ export interface EnhancedWildcardEvent extends WildcardEvent {
     choiceModifiers: Record<string, number>;
   };
   teamMoraleDescription: string;
+}
+
+export interface EnhancedWildcardImpactResult {
+  kpiImpact: any;
+  moraleImpact: number;
+  brandEquityImpact: number;
 }
 
 export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
@@ -452,10 +458,43 @@ export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
 ];
 
 // Wildcard selection logic
+const RARITY_WEIGHTS: Record<EnhancedWildcardEvent['rarity'], number> = {
+  common: 10,
+  uncommon: 5,
+  rare: 2,
+  legendary: 1,
+};
+
+const LANDSCAPE_MODIFIERS: Record<MarketLandscape | 'balanced', Partial<Record<EnhancedWildcardEvent['type'], number>>> = {
+  balanced: { crisis: 1, opportunity: 1, market_shift: 1, competitor_action: 1 },
+  stable: { crisis: 0.75, opportunity: 1.2, market_shift: 0.85, competitor_action: 1 },
+  emerging: { crisis: 1, opportunity: 1.35, market_shift: 1.15, competitor_action: 0.9 },
+  disrupted: { crisis: 1.4, opportunity: 0.95, market_shift: 1.3, competitor_action: 1.1 },
+  'hyper-competitive': { crisis: 0.9, opportunity: 1.05, market_shift: 1.1, competitor_action: 1.45 },
+};
+
+const HORIZON_MODIFIERS: Record<TimeHorizon | 'balanced', Partial<Record<EnhancedWildcardEvent['type'], number>>> = {
+  'short-term': { crisis: 1.05, opportunity: 1.25, market_shift: 0.9, competitor_action: 1.2 },
+  'mid-term': { crisis: 1, opportunity: 1, market_shift: 1, competitor_action: 1 },
+  'long-term': { crisis: 1.2, opportunity: 0.95, market_shift: 1.4, competitor_action: 0.95 },
+  balanced: { crisis: 1, opportunity: 1, market_shift: 1, competitor_action: 1 },
+};
+
+function resolveModifier(
+  map: Record<string, Partial<Record<EnhancedWildcardEvent['type'], number>>>,
+  key: string | undefined,
+  type: EnhancedWildcardEvent['type'],
+): number {
+  const normalized = key?.toLowerCase();
+  const modifierSet = (normalized && map[normalized]) || map.balanced;
+  return modifierSet?.[type] ?? 1;
+}
+
 export function selectRandomWildcard(
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4',
   currentKPIs: any,
-  hasHiredTalent: boolean = false
+  hasHiredTalent: boolean = false,
+  strategy?: Partial<Pick<SimulationContext['strategy'], 'marketLandscape' | 'timeHorizon'>>,
 ): EnhancedWildcardEvent | null {
   // Filter wildcards based on trigger conditions
   const eligibleWildcards = ENHANCED_WILDCARDS.filter(wildcard => {
@@ -493,37 +532,36 @@ export function selectRandomWildcard(
 
   if (eligibleWildcards.length === 0) return null;
 
-  // Weight selection by rarity (common events more likely)
-  const weightedWildcards: EnhancedWildcardEvent[] = [];
-  
-  eligibleWildcards.forEach(wildcard => {
-    let weight = 1;
-    switch (wildcard.rarity) {
-      case 'common': weight = 10; break;
-      case 'uncommon': weight = 5; break;
-      case 'rare': weight = 2; break;
-      case 'legendary': weight = 1; break;
-    }
-    
-    for (let i = 0; i < weight; i++) {
-      weightedWildcards.push(wildcard);
-    }
+  const landscapeKey = strategy?.marketLandscape ?? 'balanced';
+  const horizonKey = strategy?.timeHorizon ?? 'balanced';
+
+  const weightedWildcards = eligibleWildcards.map((wildcard) => {
+    const rarityWeight = RARITY_WEIGHTS[wildcard.rarity];
+    const landscapeModifier = resolveModifier(LANDSCAPE_MODIFIERS, landscapeKey, wildcard.type);
+    const horizonModifier = resolveModifier(HORIZON_MODIFIERS, horizonKey, wildcard.type);
+    const weight = Math.max(rarityWeight * landscapeModifier * horizonModifier, 0.1);
+    return { wildcard, weight };
   });
 
-  // Select random wildcard from weighted pool
-  const randomIndex = Math.floor(Math.random() * weightedWildcards.length);
-  return weightedWildcards[randomIndex];
+  const totalWeight = weightedWildcards.reduce((sum, entry) => sum + entry.weight, 0);
+  if (totalWeight <= 0) return null;
+
+  let threshold = Math.random() * totalWeight;
+  for (const entry of weightedWildcards) {
+    threshold -= entry.weight;
+    if (threshold <= 0) {
+      return entry.wildcard;
+    }
+  }
+
+  return weightedWildcards[weightedWildcards.length - 1]?.wildcard ?? null;
 }
 
 // Calculate enhanced wildcard impact including morale and brand equity
 export function calculateEnhancedWildcardImpact(
   wildcard: EnhancedWildcardEvent,
   choiceId: string
-): {
-  kpiImpact: any;
-  moraleImpact: number;
-  brandEquityImpact: number;
-} {
+): EnhancedWildcardImpactResult {
   const choice = wildcard.choices.find(c => c.id === choiceId);
   if (!choice) {
     return {

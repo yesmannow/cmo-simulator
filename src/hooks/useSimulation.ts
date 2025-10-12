@@ -1,6 +1,7 @@
 import { useActor } from '@xstate/react';
 import { createActor } from 'xstate';
-import { simulationMachine, type SimulationEvent, type SimulationContext } from '@/lib/simMachine';
+import { simulationMachine, type SimulationContext } from '@/lib/simMachine';
+import type { EnhancedWildcardEvent, EnhancedWildcardImpactResult } from '@/lib/enhancedWildcards';
 import { useMemo } from 'react';
 
 // Hook to manage simulation state
@@ -52,11 +53,28 @@ export function useSimulation() {
     removeTactic: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', tacticId: string) =>
       send({ type: 'REMOVE_TACTIC', quarter, tacticId }),
     
-    triggerWildcard: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', wildcard: any) =>
+    triggerWildcard: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', wildcard: EnhancedWildcardEvent) =>
       send({ type: 'TRIGGER_WILDCARD', quarter, wildcard }),
-    
-    respondToWildcard: (wildcardId: string, choiceId: string) =>
-      send({ type: 'RESPOND_TO_WILDCARD', wildcardId, choiceId }),
+
+    respondToWildcard: (
+      quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4',
+      wildcard: EnhancedWildcardEvent,
+      choiceId: string,
+      impact: EnhancedWildcardImpactResult,
+    ) => {
+      send({ type: 'RESPOND_TO_WILDCARD', quarter, wildcardId: wildcard.id, choiceId });
+      send({
+        type: 'APPLY_WILDCARD_IMPACT',
+        quarter,
+        wildcardId: wildcard.id,
+        choiceId,
+        impact: {
+          ...impact.kpiImpact,
+          morale: impact.moraleImpact,
+          brandEquity: impact.brandEquityImpact,
+        },
+      });
+    },
     
     completeQuarter: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4') =>
       send({ type: 'COMPLETE_QUARTER', quarter }),

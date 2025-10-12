@@ -15,10 +15,12 @@ import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { BigBetModal } from '@/components/simulation/BigBetModal';
 import { BudgetTimeAllocator } from '@/components/simulation/BudgetTimeAllocator';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
-import { getTacticsByCategory, getRandomWildcard } from '@/lib/tactics';
+import { getTacticsByCategory } from '@/lib/tactics';
 import { getRandomBigBets } from '@/lib/talentMarket';
-import { Tactic, WildcardEvent } from '@/lib/simMachine';
+import { Tactic } from '@/lib/simMachine';
 import { BigBetOption } from '@/lib/talentMarket';
+import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
+import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles } from 'lucide-react';
 
 export default function Q4Page() {
@@ -27,7 +29,7 @@ export default function Q4Page() {
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q4.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
-  const [currentWildcard, setCurrentWildcard] = useState<WildcardEvent | null>(null);
+  const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [bigBetOptions, setBigBetOptions] = useState<BigBetOption[]>([]);
@@ -79,7 +81,8 @@ export default function Q4Page() {
   };
 
   const handleTriggerWildcard = () => {
-    const wildcard = getRandomWildcard();
+    const wildcard = getEnhancedWildcardForQuarter(context, 'Q4');
+    if (!wildcard) return;
     setCurrentWildcard(wildcard);
     setShowWildcardModal(true);
     triggerWildcard('Q4', wildcard);
@@ -87,7 +90,8 @@ export default function Q4Page() {
 
   const handleWildcardResponse = (choiceId: string) => {
     if (currentWildcard) {
-      respondToWildcard(currentWildcard.id, choiceId);
+      const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
+      respondToWildcard('Q4', currentWildcard, choiceId, impact);
       setShowWildcardModal(false);
       setCurrentWildcard(null);
     }
