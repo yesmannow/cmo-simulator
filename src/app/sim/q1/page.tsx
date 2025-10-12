@@ -19,7 +19,16 @@ import { ArrowRight, Zap, Target, Calendar } from 'lucide-react';
 
 export default function Q1Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const {
+    context,
+    addTactic,
+    removeTactic,
+    allocateBudget,
+    allocateTime,
+    triggerWildcard,
+    respondToWildcard,
+    completeQuarter
+  } = useSimulation();
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q1.tactics);
   const [availableTactics] = useState(SAMPLE_TACTICS);
@@ -65,6 +74,16 @@ export default function Q1Page() {
     const newTactics = selectedTactics.filter(t => t.id !== tacticId);
     setSelectedTactics(newTactics);
     removeTactic('Q1', tacticId);
+  };
+
+  const handleAllocationsUpdate = (newAllocations) => {
+    setAllocations(newAllocations);
+
+    const totalBudgetAllocation = newAllocations.reduce((sum, item) => sum + (item.budgetAmount || 0), 0);
+    const totalTimeAllocation = newAllocations.reduce((sum, item) => sum + (item.timeAmount || 0), 0);
+
+    allocateBudget('Q1', totalBudgetAllocation);
+    allocateTime('Q1', totalTimeAllocation);
   };
 
   const handleTriggerWildcard = () => {
@@ -204,7 +223,7 @@ export default function Q1Page() {
                 totalBudget={quarterBudget}
                 totalTime={quarterTime}
                 allocations={allocations}
-                onAllocationsChange={setAllocations}
+                onAllocationsChange={handleAllocationsUpdate}
                 remainingBudget={remainingBudget}
                 remainingTime={remainingTime}
               />

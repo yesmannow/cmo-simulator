@@ -48,10 +48,16 @@ export function useSimulation() {
     
     addTactic: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', tactic: any) =>
       send({ type: 'ADD_TACTIC', quarter, tactic }),
-    
+
     removeTactic: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', tacticId: string) =>
       send({ type: 'REMOVE_TACTIC', quarter, tacticId }),
-    
+
+    allocateBudget: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', amount: number) =>
+      send({ type: 'ALLOCATE_BUDGET', quarter, amount }),
+
+    allocateTime: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', hours: number) =>
+      send({ type: 'ALLOCATE_TIME', quarter, hours }),
+
     triggerWildcard: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', wildcard: any) =>
       send({ type: 'TRIGGER_WILDCARD', quarter, wildcard }),
     

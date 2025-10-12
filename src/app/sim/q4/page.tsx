@@ -23,7 +23,16 @@ import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles } from 'lucid
 
 export default function Q4Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const {
+    context,
+    addTactic,
+    removeTactic,
+    allocateBudget,
+    allocateTime,
+    triggerWildcard,
+    respondToWildcard,
+    completeQuarter
+  } = useSimulation();
   
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q4.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
@@ -76,6 +85,16 @@ export default function Q4Page() {
     const newTactics = selectedTactics.filter((t: Tactic) => t.id !== tacticId);
     setSelectedTactics(newTactics);
     removeTactic('Q4', tacticId);
+  };
+
+  const handleAllocationsUpdate = (newAllocations) => {
+    setAllocations(newAllocations);
+
+    const totalBudgetAllocation = newAllocations.reduce((sum: number, item) => sum + (item.budgetAmount || 0), 0);
+    const totalTimeAllocation = newAllocations.reduce((sum: number, item) => sum + (item.timeAmount || 0), 0);
+
+    allocateBudget('Q4', totalBudgetAllocation);
+    allocateTime('Q4', totalTimeAllocation);
   };
 
   const handleTriggerWildcard = () => {
@@ -274,7 +293,7 @@ export default function Q4Page() {
                 totalBudget={quarterBudget}
                 totalTime={quarterTime}
                 allocations={allocations}
-                onAllocationsChange={setAllocations}
+                onAllocationsChange={handleAllocationsUpdate}
                 remainingBudget={remainingBudget}
                 remainingTime={remainingTime}
               />

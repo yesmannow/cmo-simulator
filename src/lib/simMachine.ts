@@ -286,9 +286,11 @@ export const simulationMachine = createMachine({
               Q1: {
                 ...context.quarters.Q1,
                 tactics: [...context.quarters.Q1.tactics, event.tactic],
+                budgetSpent: context.quarters.Q1.budgetSpent + (event.tactic.cost || 0),
+                timeSpent: context.quarters.Q1.timeSpent + (event.tactic.timeRequired || 0),
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -302,13 +304,45 @@ export const simulationMachine = createMachine({
                 Q1: {
                   ...context.quarters.Q1,
                   tactics: context.quarters.Q1.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, context.quarters.Q1.budgetSpent - (tactic?.cost || 0)),
+                  timeSpent: Math.max(0, context.quarters.Q1.timeSpent - (tactic?.timeRequired || 0)),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q1.tactics.find(t => t.id === event.tacticId);
-              return context.remainingBudget + (tactic?.cost || 0);
+              const refund = Math.min(tactic?.cost || 0, context.quarters.Q1.budgetSpent);
+              return context.remainingBudget + refund;
             },
+          }),
+        },
+        ALLOCATE_BUDGET: {
+          guard: ({ event }) => event.quarter === 'Q1',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q1: {
+                ...context.quarters.Q1,
+                budgetSpent: Math.max(0, event.amount),
+              },
+            }),
+            remainingBudget: ({ context, event }) => {
+              const previous = context.quarters.Q1.budgetSpent;
+              const next = Math.max(0, event.amount);
+              return context.remainingBudget + (previous - next);
+            },
+          }),
+        },
+        ALLOCATE_TIME: {
+          guard: ({ event }) => event.quarter === 'Q1',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q1: {
+                ...context.quarters.Q1,
+                timeSpent: Math.max(0, event.hours),
+              },
+            }),
           }),
         },
         TRIGGER_WILDCARD: {
@@ -326,17 +360,28 @@ export const simulationMachine = createMachine({
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q1.wildcardEvents.find(w => w.id === event.wildcardId);
+              const currentQuarter = context.quarters.Q1;
+              const wildcard = currentQuarter.wildcardEvents.find(w => w.id === event.wildcardId);
               if (!wildcard) return context.quarters;
-              
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
               const choice = wildcard.choices.find(c => c.id === event.choiceId);
               if (!choice) return context.quarters;
-              
+
+              const updatedBudget =
+                currentQuarter.budgetSpent - (previousChoice?.cost || 0) + (choice.cost || 0);
+              const updatedTime =
+                currentQuarter.timeSpent - (previousChoice?.timeRequired || 0) + (choice.timeRequired || 0);
+
               return {
                 ...context.quarters,
                 Q1: {
-                  ...context.quarters.Q1,
-                  wildcardEvents: context.quarters.Q1.wildcardEvents.map(w =>
+                  ...currentQuarter,
+                  budgetSpent: Math.max(0, updatedBudget),
+                  timeSpent: Math.max(0, updatedTime),
+                  wildcardEvents: currentQuarter.wildcardEvents.map(w =>
                     w.id === event.wildcardId
                       ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
                       : w
@@ -346,8 +391,17 @@ export const simulationMachine = createMachine({
             },
             remainingBudget: ({ context, event }) => {
               const wildcard = context.quarters.Q1.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              if (!wildcard) return context.remainingBudget;
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
+              const choice = wildcard.choices.find(c => c.id === event.choiceId);
+              if (!choice) return context.remainingBudget;
+
+              const previousCost = previousChoice?.cost || 0;
+              const newCost = choice.cost || 0;
+              return context.remainingBudget + previousCost - newCost;
             },
           }),
         },
@@ -391,9 +445,11 @@ export const simulationMachine = createMachine({
               Q2: {
                 ...context.quarters.Q2,
                 tactics: [...context.quarters.Q2.tactics, event.tactic],
+                budgetSpent: context.quarters.Q2.budgetSpent + (event.tactic.cost || 0),
+                timeSpent: context.quarters.Q2.timeSpent + (event.tactic.timeRequired || 0),
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -407,13 +463,45 @@ export const simulationMachine = createMachine({
                 Q2: {
                   ...context.quarters.Q2,
                   tactics: context.quarters.Q2.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, context.quarters.Q2.budgetSpent - (tactic?.cost || 0)),
+                  timeSpent: Math.max(0, context.quarters.Q2.timeSpent - (tactic?.timeRequired || 0)),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q2.tactics.find(t => t.id === event.tacticId);
-              return context.remainingBudget + (tactic?.cost || 0);
+              const refund = Math.min(tactic?.cost || 0, context.quarters.Q2.budgetSpent);
+              return context.remainingBudget + refund;
             },
+          }),
+        },
+        ALLOCATE_BUDGET: {
+          guard: ({ event }) => event.quarter === 'Q2',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q2: {
+                ...context.quarters.Q2,
+                budgetSpent: Math.max(0, event.amount),
+              },
+            }),
+            remainingBudget: ({ context, event }) => {
+              const previous = context.quarters.Q2.budgetSpent;
+              const next = Math.max(0, event.amount);
+              return context.remainingBudget + (previous - next);
+            },
+          }),
+        },
+        ALLOCATE_TIME: {
+          guard: ({ event }) => event.quarter === 'Q2',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q2: {
+                ...context.quarters.Q2,
+                timeSpent: Math.max(0, event.hours),
+              },
+            }),
           }),
         },
         TRIGGER_WILDCARD: {
@@ -431,17 +519,28 @@ export const simulationMachine = createMachine({
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q2.wildcardEvents.find(w => w.id === event.wildcardId);
+              const currentQuarter = context.quarters.Q2;
+              const wildcard = currentQuarter.wildcardEvents.find(w => w.id === event.wildcardId);
               if (!wildcard) return context.quarters;
-              
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
               const choice = wildcard.choices.find(c => c.id === event.choiceId);
               if (!choice) return context.quarters;
-              
+
+              const updatedBudget =
+                currentQuarter.budgetSpent - (previousChoice?.cost || 0) + (choice.cost || 0);
+              const updatedTime =
+                currentQuarter.timeSpent - (previousChoice?.timeRequired || 0) + (choice.timeRequired || 0);
+
               return {
                 ...context.quarters,
                 Q2: {
-                  ...context.quarters.Q2,
-                  wildcardEvents: context.quarters.Q2.wildcardEvents.map(w =>
+                  ...currentQuarter,
+                  budgetSpent: Math.max(0, updatedBudget),
+                  timeSpent: Math.max(0, updatedTime),
+                  wildcardEvents: currentQuarter.wildcardEvents.map(w =>
                     w.id === event.wildcardId
                       ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
                       : w
@@ -451,8 +550,17 @@ export const simulationMachine = createMachine({
             },
             remainingBudget: ({ context, event }) => {
               const wildcard = context.quarters.Q2.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              if (!wildcard) return context.remainingBudget;
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
+              const choice = wildcard.choices.find(c => c.id === event.choiceId);
+              if (!choice) return context.remainingBudget;
+
+              const previousCost = previousChoice?.cost || 0;
+              const newCost = choice.cost || 0;
+              return context.remainingBudget + previousCost - newCost;
             },
           }),
         },
@@ -495,9 +603,11 @@ export const simulationMachine = createMachine({
               Q3: {
                 ...context.quarters.Q3,
                 tactics: [...context.quarters.Q3.tactics, event.tactic],
+                budgetSpent: context.quarters.Q3.budgetSpent + (event.tactic.cost || 0),
+                timeSpent: context.quarters.Q3.timeSpent + (event.tactic.timeRequired || 0),
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -511,13 +621,45 @@ export const simulationMachine = createMachine({
                 Q3: {
                   ...context.quarters.Q3,
                   tactics: context.quarters.Q3.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, context.quarters.Q3.budgetSpent - (tactic?.cost || 0)),
+                  timeSpent: Math.max(0, context.quarters.Q3.timeSpent - (tactic?.timeRequired || 0)),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q3.tactics.find(t => t.id === event.tacticId);
-              return context.remainingBudget + (tactic?.cost || 0);
+              const refund = Math.min(tactic?.cost || 0, context.quarters.Q3.budgetSpent);
+              return context.remainingBudget + refund;
             },
+          }),
+        },
+        ALLOCATE_BUDGET: {
+          guard: ({ event }) => event.quarter === 'Q3',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q3: {
+                ...context.quarters.Q3,
+                budgetSpent: Math.max(0, event.amount),
+              },
+            }),
+            remainingBudget: ({ context, event }) => {
+              const previous = context.quarters.Q3.budgetSpent;
+              const next = Math.max(0, event.amount);
+              return context.remainingBudget + (previous - next);
+            },
+          }),
+        },
+        ALLOCATE_TIME: {
+          guard: ({ event }) => event.quarter === 'Q3',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q3: {
+                ...context.quarters.Q3,
+                timeSpent: Math.max(0, event.hours),
+              },
+            }),
           }),
         },
         TRIGGER_WILDCARD: {
@@ -535,17 +677,28 @@ export const simulationMachine = createMachine({
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q3.wildcardEvents.find(w => w.id === event.wildcardId);
+              const currentQuarter = context.quarters.Q3;
+              const wildcard = currentQuarter.wildcardEvents.find(w => w.id === event.wildcardId);
               if (!wildcard) return context.quarters;
-              
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
               const choice = wildcard.choices.find(c => c.id === event.choiceId);
               if (!choice) return context.quarters;
-              
+
+              const updatedBudget =
+                currentQuarter.budgetSpent - (previousChoice?.cost || 0) + (choice.cost || 0);
+              const updatedTime =
+                currentQuarter.timeSpent - (previousChoice?.timeRequired || 0) + (choice.timeRequired || 0);
+
               return {
                 ...context.quarters,
                 Q3: {
-                  ...context.quarters.Q3,
-                  wildcardEvents: context.quarters.Q3.wildcardEvents.map(w =>
+                  ...currentQuarter,
+                  budgetSpent: Math.max(0, updatedBudget),
+                  timeSpent: Math.max(0, updatedTime),
+                  wildcardEvents: currentQuarter.wildcardEvents.map(w =>
                     w.id === event.wildcardId
                       ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
                       : w
@@ -555,8 +708,17 @@ export const simulationMachine = createMachine({
             },
             remainingBudget: ({ context, event }) => {
               const wildcard = context.quarters.Q3.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              if (!wildcard) return context.remainingBudget;
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
+              const choice = wildcard.choices.find(c => c.id === event.choiceId);
+              if (!choice) return context.remainingBudget;
+
+              const previousCost = previousChoice?.cost || 0;
+              const newCost = choice.cost || 0;
+              return context.remainingBudget + previousCost - newCost;
             },
           }),
         },
@@ -599,9 +761,11 @@ export const simulationMachine = createMachine({
               Q4: {
                 ...context.quarters.Q4,
                 tactics: [...context.quarters.Q4.tactics, event.tactic],
+                budgetSpent: context.quarters.Q4.budgetSpent + (event.tactic.cost || 0),
+                timeSpent: context.quarters.Q4.timeSpent + (event.tactic.timeRequired || 0),
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -615,13 +779,45 @@ export const simulationMachine = createMachine({
                 Q4: {
                   ...context.quarters.Q4,
                   tactics: context.quarters.Q4.tactics.filter(t => t.id !== event.tacticId),
+                  budgetSpent: Math.max(0, context.quarters.Q4.budgetSpent - (tactic?.cost || 0)),
+                  timeSpent: Math.max(0, context.quarters.Q4.timeSpent - (tactic?.timeRequired || 0)),
                 },
               };
             },
             remainingBudget: ({ context, event }) => {
               const tactic = context.quarters.Q4.tactics.find(t => t.id === event.tacticId);
-              return context.remainingBudget + (tactic?.cost || 0);
+              const refund = Math.min(tactic?.cost || 0, context.quarters.Q4.budgetSpent);
+              return context.remainingBudget + refund;
             },
+          }),
+        },
+        ALLOCATE_BUDGET: {
+          guard: ({ event }) => event.quarter === 'Q4',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q4: {
+                ...context.quarters.Q4,
+                budgetSpent: Math.max(0, event.amount),
+              },
+            }),
+            remainingBudget: ({ context, event }) => {
+              const previous = context.quarters.Q4.budgetSpent;
+              const next = Math.max(0, event.amount);
+              return context.remainingBudget + (previous - next);
+            },
+          }),
+        },
+        ALLOCATE_TIME: {
+          guard: ({ event }) => event.quarter === 'Q4',
+          actions: assign({
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q4: {
+                ...context.quarters.Q4,
+                timeSpent: Math.max(0, event.hours),
+              },
+            }),
           }),
         },
         TRIGGER_WILDCARD: {
@@ -639,17 +835,28 @@ export const simulationMachine = createMachine({
         RESPOND_TO_WILDCARD: {
           actions: assign({
             quarters: ({ context, event }) => {
-              const wildcard = context.quarters.Q4.wildcardEvents.find(w => w.id === event.wildcardId);
+              const currentQuarter = context.quarters.Q4;
+              const wildcard = currentQuarter.wildcardEvents.find(w => w.id === event.wildcardId);
               if (!wildcard) return context.quarters;
-              
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
               const choice = wildcard.choices.find(c => c.id === event.choiceId);
               if (!choice) return context.quarters;
-              
+
+              const updatedBudget =
+                currentQuarter.budgetSpent - (previousChoice?.cost || 0) + (choice.cost || 0);
+              const updatedTime =
+                currentQuarter.timeSpent - (previousChoice?.timeRequired || 0) + (choice.timeRequired || 0);
+
               return {
                 ...context.quarters,
                 Q4: {
-                  ...context.quarters.Q4,
-                  wildcardEvents: context.quarters.Q4.wildcardEvents.map(w =>
+                  ...currentQuarter,
+                  budgetSpent: Math.max(0, updatedBudget),
+                  timeSpent: Math.max(0, updatedTime),
+                  wildcardEvents: currentQuarter.wildcardEvents.map(w =>
                     w.id === event.wildcardId
                       ? { ...w, selectedChoice: event.choiceId, impact: choice.impact }
                       : w
@@ -659,8 +866,17 @@ export const simulationMachine = createMachine({
             },
             remainingBudget: ({ context, event }) => {
               const wildcard = context.quarters.Q4.wildcardEvents.find(w => w.id === event.wildcardId);
-              const choice = wildcard?.choices.find(c => c.id === event.choiceId);
-              return context.remainingBudget - (choice?.cost || 0);
+              if (!wildcard) return context.remainingBudget;
+
+              const previousChoice = wildcard.selectedChoice
+                ? wildcard.choices.find(c => c.id === wildcard.selectedChoice)
+                : undefined;
+              const choice = wildcard.choices.find(c => c.id === event.choiceId);
+              if (!choice) return context.remainingBudget;
+
+              const previousCost = previousChoice?.cost || 0;
+              const newCost = choice.cost || 0;
+              return context.remainingBudget + previousCost - newCost;
             },
           }),
         },
