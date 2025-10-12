@@ -56,6 +56,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the application.
 
+## Deployment
+
+**Note**: This project is not configured for Vercel deployment. Please use alternative hosting platforms or self-hosting solutions.
+
 ## Project Structure
 
 ```
