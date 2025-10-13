@@ -140,7 +140,7 @@ export default function BrandPicker({ currentTheme }: BrandPickerProps) {
           })
 
         if (error) {
-          console.error('Error saving theme:', error)
+          console.error('Error saving theme:', error.message || error)
         }
       }
     } catch (error) {

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient()
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch simulations for the user
     const { data: simulations, error } = await supabase
-      .from('simulations')
+      .from('simulations_enhanced')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
@@ -57,42 +57,43 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body = await request.json()
     const {
-      name,
-      revenue,
-      profit,
-      market_share,
-      customer_satisfaction,
-      brand_awareness,
-      duration_weeks,
-      budget,
-      target_market,
-      status = 'completed',
+      company_name,
+      time_horizon = '1-year',
+      industry = 'ecommerce',
+      company_profile = 'startup',
+      market_landscape = 'crowded',
+      budget_brand_awareness = 33,
+      budget_lead_generation = 33,
+      budget_conversion_optimization = 34,
+      total_budget = 500000,
+      status = 'in_progress',
     } = body
 
     // Validate required fields
-    if (!name) {
+    if (!company_name) {
       return NextResponse.json(
-        { error: 'Simulation name is required' },
+        { error: 'Company name is required' },
         { status: 400 }
       )
     }
 
     // Insert new simulation
     const { data: simulation, error } = await supabase
-      .from('simulations')
+      .from('simulations_enhanced')
       .insert({
         user_id: user.id,
-        name,
+        company_name,
+        time_horizon,
+        industry,
+        company_profile,
+        market_landscape,
+        budget_brand_awareness,
+        budget_lead_generation,
+        budget_conversion_optimization,
+        total_budget,
         status,
-        revenue: revenue || 0,
-        profit: profit || 0,
-        market_share: market_share || 0,
-        customer_satisfaction: customer_satisfaction || 0,
-        brand_awareness: brand_awareness || 0,
-        duration_weeks: duration_weeks || 12,
-        budget: budget || 0,
-        target_market: target_market || '',
-        completed_at: status === 'completed' ? new Date().toISOString() : null,
+        current_quarter: 'Q1',
+        started_at: new Date().toISOString(),
       })
       .select()
       .single()

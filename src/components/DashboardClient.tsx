@@ -7,6 +7,9 @@ import BrandPicker from '@/components/BrandPicker'
 import SimulationTable from '@/components/SimulationTable'
 import { useSimulations } from '@/hooks/useSimulations'
 import { Play, BarChart3, Users, Target } from 'lucide-react'
+import { HelpButton, TutorialOverlay } from '@/components/Tutorial'
+import HelpPanel from '@/components/HelpPanel'
+import { getTutorialForPhase } from '@/lib/tutorialData'
 
 interface DashboardClientProps {
   userEmail: string
@@ -17,22 +20,25 @@ interface DashboardClientProps {
 export default function DashboardClient({ userEmail, userCreatedAt, currentTheme }: DashboardClientProps) {
   const { simulations, loading, error, createSimulation } = useSimulations()
   const [isCreatingDemo, setIsCreatingDemo] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
+  const [tutorialStep, setTutorialStep] = useState(0)
 
   const handleStartNewSimulation = async () => {
-    // For now, create a demo simulation with sample data
+    // Create a new simulation with enhanced schema
     setIsCreatingDemo(true)
     try {
       await createSimulation({
-        name: `Marketing Campaign ${new Date().toLocaleDateString()}`,
-        revenue: Math.floor(Math.random() * 500000) + 100000,
-        profit: Math.floor(Math.random() * 100000) + 20000,
-        market_share: Math.floor(Math.random() * 15) + 5,
-        customer_satisfaction: Math.floor(Math.random() * 2) + 3.5,
-        brand_awareness: Math.floor(Math.random() * 20) + 10,
-        duration_weeks: 12,
-        budget: Math.floor(Math.random() * 200000) + 50000,
-        target_market: 'Young Professionals',
-        status: 'completed' as const,
+        company_name: `My Company ${new Date().toLocaleDateString()}`,
+        time_horizon: '1-year',
+        industry: 'ecommerce',
+        company_profile: 'startup',
+        market_landscape: 'crowded',
+        budget_brand_awareness: 33,
+        budget_lead_generation: 33,
+        budget_conversion_optimization: 34,
+        total_budget: 500000,
+        status: 'in_progress',
       })
     } catch (error) {
       console.error('Failed to create simulation:', error)
@@ -41,17 +47,39 @@ export default function DashboardClient({ userEmail, userCreatedAt, currentTheme
     }
   }
 
-  const totalRevenue = simulations.reduce((sum, sim) => sum + sim.revenue, 0)
-  const totalProfit = simulations.reduce((sum, sim) => sum + sim.profit, 0)
+  const dashboardTutorialSteps = getTutorialForPhase('dashboard')
+
+  const totalRevenue = simulations.reduce((sum, sim) => sum + (sim.total_revenue || 0), 0)
+  const totalProfit = simulations.reduce((sum, sim) => sum + (sim.total_profit || 0), 0)
   const avgMarketShare = simulations.length > 0 
-    ? simulations.reduce((sum, sim) => sum + sim.market_share, 0) / simulations.length 
+    ? simulations.reduce((sum, sim) => sum + (sim.final_market_share || 0), 0) / simulations.length 
     : 0
   const avgSatisfaction = simulations.length > 0
-    ? simulations.reduce((sum, sim) => sum + sim.customer_satisfaction, 0) / simulations.length
+    ? simulations.reduce((sum, sim) => sum + (sim.customer_satisfaction || 0), 0) / simulations.length
     : 0
 
   return (
     <div className="space-y-6">
+      {/* Header with Help Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--text)]">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back, {userEmail}
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <HelpButton onClick={() => setShowHelp(true)} />
+          <Button
+            onClick={() => setShowTutorial(true)}
+            variant="outline"
+            className="bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]"
+          >
+            Start Tutorial
+          </Button>
+        </div>
+      </div>
+
       {/* KPI Summary Cards */}
       {simulations.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -148,8 +176,8 @@ export default function DashboardClient({ userEmail, userCreatedAt, currentTheme
               </CardContent>
             </Card>
           ) : (
-            <SimulationTable 
-              simulations={simulations} 
+            <SimulationTable
+              simulations={simulations}
               onStartNewSimulation={handleStartNewSimulation}
             />
           )}
@@ -177,7 +205,7 @@ export default function DashboardClient({ userEmail, userCreatedAt, currentTheme
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button 
+              <Button
                 onClick={handleStartNewSimulation}
                 disabled={isCreatingDemo}
                 className="w-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white"
@@ -205,6 +233,27 @@ export default function DashboardClient({ userEmail, userCreatedAt, currentTheme
           </Card>
         </div>
       </div>
+
+      {/* Tutorial Overlay */}
+      {showTutorial && (
+        <TutorialOverlay
+          steps={dashboardTutorialSteps}
+          currentStep={tutorialStep}
+          onNext={() => setTutorialStep(prev => prev + 1)}
+          onPrevious={() => setTutorialStep(prev => prev - 1)}
+          onClose={() => setShowTutorial(false)}
+          onComplete={() => {
+            setShowTutorial(false);
+            setTutorialStep(0);
+          }}
+        />
+      )}
+
+      {/* Help Panel */}
+      <HelpPanel
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+      />
     </div>
   )
 }

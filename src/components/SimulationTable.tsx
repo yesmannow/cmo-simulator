@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   useReactTable,
   getCoreRowModel,
@@ -26,25 +27,31 @@ interface SimulationTableProps {
 }
 
 export default function SimulationTable({ simulations, onStartNewSimulation }: SimulationTableProps) {
+  const router = useRouter()
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor('name', {
+      columnHelper.accessor('company_name', {
         header: ({ column }) => (
           <Button
             variant="ghost"
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className="h-8 p-0 font-semibold"
           >
-            Simulation Name
+            Company Name
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
         cell: ({ row }) => (
-          <div className="font-medium">{row.getValue('name')}</div>
+          <button
+            onClick={() => router.push(`/sim/${row.original.id}`)}
+            className="font-medium text-left hover:text-[var(--accent)] transition-colors"
+          >
+            {row.getValue('company_name')}
+          </button>
         ),
       }),
       columnHelper.accessor('status', {
@@ -66,7 +73,7 @@ export default function SimulationTable({ simulations, onStartNewSimulation }: S
           )
         },
       }),
-      columnHelper.accessor('revenue', {
+      columnHelper.accessor('total_revenue', {
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -79,7 +86,7 @@ export default function SimulationTable({ simulations, onStartNewSimulation }: S
           </Button>
         ),
         cell: ({ row }) => {
-          const amount = parseFloat(row.getValue('revenue'))
+          const amount = parseFloat(row.getValue('total_revenue'))
           const formatted = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
@@ -87,7 +94,7 @@ export default function SimulationTable({ simulations, onStartNewSimulation }: S
           return <div className="font-medium">{formatted}</div>
         },
       }),
-      columnHelper.accessor('profit', {
+      columnHelper.accessor('total_profit', {
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -100,7 +107,7 @@ export default function SimulationTable({ simulations, onStartNewSimulation }: S
           </Button>
         ),
         cell: ({ row }) => {
-          const amount = parseFloat(row.getValue('profit'))
+          const amount = parseFloat(row.getValue('total_profit'))
           const formatted = new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
@@ -112,7 +119,7 @@ export default function SimulationTable({ simulations, onStartNewSimulation }: S
           )
         },
       }),
-      columnHelper.accessor('market_share', {
+      columnHelper.accessor('final_market_share', {
         header: ({ column }) => (
           <Button
             variant="ghost"
@@ -125,7 +132,7 @@ export default function SimulationTable({ simulations, onStartNewSimulation }: S
           </Button>
         ),
         cell: ({ row }) => {
-          const value = parseFloat(row.getValue('market_share'))
+          const value = parseFloat(row.getValue('final_market_share'))
           return <div className="font-medium">{value.toFixed(1)}%</div>
         },
       }),
@@ -163,7 +170,7 @@ export default function SimulationTable({ simulations, onStartNewSimulation }: S
         },
       }),
     ],
-    []
+    [router]
   )
 
   const table = useReactTable({
