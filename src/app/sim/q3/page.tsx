@@ -56,7 +56,7 @@ export default function Q3Page() {
       return { ...allocation, budgetAmount, timeAmount };
     });
     setAllocations(newAllocations);
-  }, [selectedTactics]);
+  }, [selectedTactics, allocations]);
 
   const handleAddTactic = (tactic: any) => {
     if (!selectedTactics.find(t => t.id === tactic.id)) {

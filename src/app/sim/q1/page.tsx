@@ -10,12 +10,27 @@ import { Target, ArrowRight } from 'lucide-react';
 import { useSimulation } from '@/hooks/useSimulation';
 import { SAMPLE_TACTICS } from '@/lib/tactics';
 
+interface SimpleTactic {
+  id: string;
+  name: string;
+  cost?: number;
+  category: string;
+}
+
+interface AllocationItem {
+  id: string;
+  name: string;
+  budgetAmount: number;
+  timeAmount: number;
+  color: string;
+}
+
 export default function Q1Page() {
   const router = useRouter();
   const { context, addTactic, removeTactic, completeQuarter } = useSimulation();
 
-  const [selectedTactics, setSelectedTactics] = useState<any[]>([]);
-  const [allocations, setAllocations] = useState([
+  const [selectedTactics, setSelectedTactics] = useState<SimpleTactic[]>([]);
+  const [allocations, setAllocations] = useState<AllocationItem[]>([
     { id: 'digital', name: 'Digital Marketing', budgetAmount: 0, timeAmount: 0, color: '#3b82f6' },
     { id: 'content', name: 'Content Creation', budgetAmount: 0, timeAmount: 0, color: '#10b981' },
     { id: 'traditional', name: 'Traditional Media', budgetAmount: 0, timeAmount: 0, color: '#f59e0b' },
@@ -24,28 +39,28 @@ export default function Q1Page() {
   ]);
 
   const quarterBudget = Math.floor((context?.totalBudget || 500000) / 4);
-  const usedBudget = selectedTactics.reduce((sum: number, tactic: any) => sum + (tactic.cost || 0), 0);
+  const usedBudget = selectedTactics.reduce((sum: number, tactic: SimpleTactic) => sum + (tactic.cost || 0), 0);
   const remainingBudget = quarterBudget - usedBudget;
 
   useEffect(() => {
-    const newAllocations = allocations.map((allocation: any) => {
-      const categoryTactics = selectedTactics.filter((t: any) => t.category === allocation.id);
-      const budgetAmount = categoryTactics.reduce((sum: number, t: any) => sum + (t.cost || 0), 0);
+    const newAllocations = allocations.map((allocation: AllocationItem) => {
+      const categoryTactics = selectedTactics.filter((t: SimpleTactic) => t.category === allocation.id);
+      const budgetAmount = categoryTactics.reduce((sum: number, t: SimpleTactic) => sum + (t.cost || 0), 0);
       return { ...allocation, budgetAmount };
     });
     setAllocations(newAllocations);
-  }, [selectedTactics]);
+  }, [selectedTactics, allocations]);
 
-  const handleAddTactic = (tactic: any) => {
-    if (!selectedTactics.find((t: any) => t.id === tactic.id)) {
+  const handleAddTactic = (tactic: SimpleTactic) => {
+    if (!selectedTactics.find((t: SimpleTactic) => t.id === tactic.id)) {
       const newTactics = [...selectedTactics, tactic];
       setSelectedTactics(newTactics);
-      if (addTactic) addTactic('Q1', tactic);
+      if (addTactic) addTactic('Q1', tactic as any);
     }
   };
 
   const handleRemoveTactic = (tacticId: string) => {
-    const newTactics = selectedTactics.filter((t: any) => t.id !== tacticId);
+    const newTactics = selectedTactics.filter((t: SimpleTactic) => t.id !== tacticId);
     setSelectedTactics(newTactics);
     if (removeTactic) removeTactic('Q1', tacticId);
   };
@@ -76,7 +91,7 @@ export default function Q1Page() {
 
             <TabsContent value="tactics" className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                {SAMPLE_TACTICS.slice(0, 6).map((tactic: any) => (
+                {SAMPLE_TACTICS.slice(0, 6).map((tactic: SimpleTactic) => (
                   <Card key={tactic.id} className="cursor-pointer hover:shadow-md transition-shadow">
                     <CardHeader>
                       <CardTitle className="text-lg">{tactic.name}</CardTitle>
