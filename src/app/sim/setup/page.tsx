@@ -388,7 +388,7 @@ export default function SetupPage() {
                           {data.companyName}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Don't worry about perfection - focus on progress
+                          Don&apos;t worry about perfection - focus on progress
                         </p>
                       </div>
                     </motion.div>

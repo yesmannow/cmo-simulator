@@ -58,7 +58,7 @@ export default function Q3Page() {
     setAllocations(newAllocations);
   }, [selectedTactics]);
 
-  const handleAddTactic = (tactic) => {
+  const handleAddTactic = (tactic: any) => {
     if (!selectedTactics.find(t => t.id === tactic.id)) {
       const newTactics = [...selectedTactics, tactic];
       setSelectedTactics(newTactics);
@@ -66,7 +66,7 @@ export default function Q3Page() {
     }
   };
 
-  const handleRemoveTactic = (tacticId) => {
+  const handleRemoveTactic = (tacticId: string) => {
     const newTactics = selectedTactics.filter(t => t.id !== tacticId);
     setSelectedTactics(newTactics);
     removeTactic('Q3', tacticId);
@@ -80,7 +80,7 @@ export default function Q3Page() {
     triggerWildcard('Q3', wildcard);
   };
 
-  const handleWildcardResponse = (choiceId) => {
+  const handleWildcardResponse = (choiceId: string) => {
     if (currentWildcard) {
       const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
       respondToWildcard('Q3', currentWildcard, choiceId, impact);
@@ -190,7 +190,7 @@ export default function Q3Page() {
                   <div className="text-muted-foreground">
                     <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <h4 className="text-lg font-medium mb-2">No tactics selected</h4>
-                    <p>Switch to the "Select Tactics" tab to build your marketing plan.</p>
+                    <p>Switch to the &quot;Select Tactics&quot; tab to build your marketing plan.</p>
                   </div>
                 </Card>
               ) : (
