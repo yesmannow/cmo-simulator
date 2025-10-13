@@ -55,7 +55,7 @@ export default function Q1Page() {
     if (!selectedTactics.find((t: SimpleTactic) => t.id === tactic.id)) {
       const newTactics = [...selectedTactics, tactic];
       setSelectedTactics(newTactics);
-      if (addTactic) addTactic('Q1', tactic as any);
+      if (addTactic) addTactic('Q1', tactic as any); // Type assertion for compatibility
     }
   };
 
@@ -91,22 +91,22 @@ export default function Q1Page() {
 
             <TabsContent value="tactics" className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                {SAMPLE_TACTICS.slice(0, 6).map((tactic: SimpleTactic) => (
-                  <Card key={tactic.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                {SAMPLE_TACTICS.slice(0, 6).map((tactic: unknown) => (
+                  <Card key={(tactic as SimpleTactic).id} className="cursor-pointer hover:shadow-md transition-shadow">
                     <CardHeader>
-                      <CardTitle className="text-lg">{tactic.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{tactic.category}</p>
+                      <CardTitle className="text-lg">{(tactic as SimpleTactic).name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{(tactic as SimpleTactic).category}</p>
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-2xl font-bold text-primary">
-                          ${tactic.cost?.toLocaleString() || 'N/A'}
+                          ${(tactic as SimpleTactic).cost?.toLocaleString() || 'N/A'}
                         </span>
                         <Button
-                          onClick={() => handleAddTactic(tactic)}
-                          disabled={selectedTactics.some((t: any) => t.id === tactic.id)}
+                          onClick={() => handleAddTactic(tactic as SimpleTactic)}
+                          disabled={selectedTactics.some((t: SimpleTactic) => t.id === (tactic as SimpleTactic).id)}
                         >
-                          {selectedTactics.some((t: any) => t.id === tactic.id) ? 'Selected' : 'Add'}
+                          {selectedTactics.some((t: SimpleTactic) => t.id === (tactic as SimpleTactic).id) ? 'Selected' : 'Add'}
                         </Button>
                       </div>
                     </CardContent>
@@ -133,7 +133,7 @@ export default function Q1Page() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {selectedTactics.map((tactic: any) => (
+                  {selectedTactics.map((tactic: SimpleTactic) => (
                     <Card key={tactic.id}>
                       <CardContent className="flex justify-between items-center p-4">
                         <div>

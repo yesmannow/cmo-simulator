@@ -58,7 +58,7 @@ export default function Q3Page() {
     setAllocations(newAllocations);
   }, [selectedTactics, allocations]);
 
-  const handleAddTactic = (tactic: any) => {
+  const handleAddTactic = (tactic: unknown) => {
     if (!selectedTactics.find(t => t.id === tactic.id)) {
       const newTactics = [...selectedTactics, tactic];
       setSelectedTactics(newTactics);
