@@ -13,9 +13,6 @@ export interface SimulationContext {
   
   // Strategic decisions
   strategy: {
-    companyName?: string;
-    industry?: string;
-    strategyType?: string;
     targetAudience?: string;
     brandPositioning?: string;
     primaryChannels?: string[];
@@ -52,29 +49,13 @@ export interface SimulationContext {
   hiredTalent: TalentCandidate[];
   selectedBigBet?: BigBetOption;
   bigBetOutcome?: BigBetOutcome;
-
+  
   // Enhanced KPIs
   morale: number;
   brandEquity: number;
-
+  
   // Simulation results
   finalResults?: SimulationResults;
-  aggregatedMetrics?: {
-    quarterly: Array<{
-      quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
-      revenue: number;
-      profit: number;
-      marketShare: number;
-      satisfaction: number;
-      awareness: number;
-      budgetSpent: number;
-    }>;
-    totalRevenue: number;
-    totalProfit: number;
-    totalBudgetSpent: number;
-    roiPercentage: number;
-  };
-  completionTimeMinutes?: number;
 }
 
 export interface QuarterData {
