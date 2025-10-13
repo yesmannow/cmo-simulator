@@ -56,7 +56,7 @@ export default function Q3Page() {
       return { ...allocation, budgetAmount, timeAmount };
     });
     setAllocations(newAllocations);
-  }, [selectedTactics, allocations]);
+  }, [selectedTactics]); // Removed allocations from dependency array to prevent infinite loop
 
   const handleAddTactic = (tactic: unknown) => {
     if (!selectedTactics.find(t => t.id === tactic.id)) {

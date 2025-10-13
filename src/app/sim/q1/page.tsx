@@ -49,7 +49,7 @@ export default function Q1Page() {
       return { ...allocation, budgetAmount };
     });
     setAllocations(newAllocations);
-  }, [selectedTactics, allocations]);
+  }, [selectedTactics]); // Removed allocations from dependency array to prevent infinite loop
 
   const handleAddTactic = (tactic: SimpleTactic) => {
     if (!selectedTactics.find((t: SimpleTactic) => t.id === tactic.id)) {
