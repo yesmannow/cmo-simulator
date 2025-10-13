@@ -1,4 +1,4 @@
-import { createMachine, interpret } from 'xstate';
+import { createActor } from 'xstate';
 import { simulationMachine } from '@/lib/simMachine';
 import { generateMockSimulationContext } from './mockData';
 
@@ -7,7 +7,7 @@ interface TestResult {
   success: boolean;
   error?: string;
   finalState: string;
-  context?: any;
+  context?: Record<string, unknown>;
   duration: number;
 }
 
@@ -104,17 +104,17 @@ export class SimulationPathTester {
     let success = false;
     let error: string | undefined;
     let finalState = '';
-    let context: any;
+    let context: Record<string, unknown> | undefined;
 
     try {
-      const service = interpret(this.machine.withContext(generateMockSimulationContext()));
+      const service = createActor(this.machine, { input: generateMockSimulationContext() });
       service.start();
 
       for (const eventType of events) {
         const currentState = service.getSnapshot();
         
         // Generate appropriate event data based on event type
-        const eventData = this.generateEventData(eventType, currentState.context);
+        const eventData = this.generateEventData(eventType);
         
         if (currentState.can({ type: eventType, ...eventData })) {
           service.send({ type: eventType, ...eventData });
@@ -125,7 +125,7 @@ export class SimulationPathTester {
 
       const finalSnapshot = service.getSnapshot();
       finalState = finalSnapshot.value as string;
-      context = finalSnapshot.context;
+      context = finalSnapshot.context as unknown as Record<string, unknown>;
       success = true;
       
       service.stop();
@@ -146,7 +146,7 @@ export class SimulationPathTester {
     });
   }
 
-  private generateEventData(eventType: string, context: any): any {
+  private generateEventData(eventType: string): Record<string, unknown> {
     switch (eventType) {
       case 'SET_STRATEGY':
         return {
@@ -249,7 +249,7 @@ export class SimulationPathTester {
       report += `### ${test.path[0]}\n`;
       report += `**Final State:** ${test.finalState}\n`;
       report += `**Duration:** ${test.duration}ms\n`;
-      report += `**Final Score:** ${test.context?.finalResults?.score || 'N/A'}\n\n`;
+      report += `**Final Score:** ${test.context && typeof test.context === 'object' && test.context !== null && 'finalResults' in test.context && test.context.finalResults && typeof test.context.finalResults === 'object' && test.context.finalResults !== null && 'score' in test.context.finalResults ? String((test.context.finalResults as { score?: unknown }).score || 'N/A') : 'N/A'}\n\n`;
     });
 
     return report;
@@ -258,7 +258,15 @@ export class SimulationPathTester {
 
 // Performance testing utilities
 export class SimulationPerformanceTester {
-  async benchmarkSimulation(iterations: number = 100): Promise<PerformanceResult> {
+  async benchmarkSimulation(iterations: number = 100): Promise<{
+    iterations: number;
+    successful: number;
+    failed: number;
+    averageTime: number;
+    minTime: number;
+    maxTime: number;
+    errors: string[];
+  }> {
     const results: number[] = [];
     const errors: string[] = [];
 
@@ -267,7 +275,7 @@ export class SimulationPerformanceTester {
         const startTime = performance.now();
         
         // Run a complete simulation
-        const service = interpret(simulationMachine.withContext(generateMockSimulationContext()));
+        const service = createActor(simulationMachine, { input: generateMockSimulationContext() });
         service.start();
         
         // Simulate a typical user flow
@@ -308,27 +316,25 @@ export class SimulationPerformanceTester {
       errors: errors.slice(0, 5) // First 5 errors
     };
   }
-
-  interface PerformanceResult {
-    iterations: number;
-    successful: number;
-    failed: number;
-    averageTime: number;
-    minTime: number;
-    maxTime: number;
-    errors: string[];
-  }
 }
 
 // Memory leak detection
 export class SimulationMemoryTester {
-  async detectMemoryLeaks(iterations: number = 50): Promise<MemoryTestResult> {
+  async detectMemoryLeaks(iterations: number = 50): Promise<{
+    initialMemory: number;
+    finalMemory: number;
+    memoryGrowth: number;
+    averageGrowthPerIteration: number;
+    iterations: number;
+    snapshots: number[];
+    hasLeak: boolean;
+  }> {
     const initialMemory = this.getMemoryUsage();
     const memorySnapshots: number[] = [];
 
     for (let i = 0; i < iterations; i++) {
       // Create and destroy simulation service
-      const service = interpret(simulationMachine.withContext(generateMockSimulationContext()));
+      const service = createActor(simulationMachine, { input: generateMockSimulationContext() });
       service.start();
       
       // Run through simulation
@@ -364,16 +370,6 @@ export class SimulationMemoryTester {
       return process.memoryUsage().heapUsed;
     }
     // Browser fallback
-    return (performance as any).memory?.usedJSHeapSize || 0;
-  }
-
-  interface MemoryTestResult {
-    initialMemory: number;
-    finalMemory: number;
-    memoryGrowth: number;
-    averageGrowthPerIteration: number;
-    iterations: number;
-    snapshots: number[];
-    hasLeak: boolean;
+    return (performance as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize || 0;
   }
 }
