@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Coefficient: The Science of Growth - Theming System */
+
+:root {
+  /* Shared Design Tokens */
+  --radius: 0.5rem;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, Menlo, Monaco, "Cascadia Code", "Roboto Mono", monospace;
+}
+
+/* Aurora Tech Theme (Default) - Core Coefficient Brand */
+[data-theme="aurora-tech"] {
+  --background: #0B1020; /* Deep Space Navy */
+  --foreground: #E7EEF7; /* Off-White/Light Gray */
+  --card: #121A2B; /* Dark Slate Surface */
+  --card-foreground: #E7EEF7;
+  --popover: #121A2B;
+  --popover-foreground: #E7EEF7;
+  --primary: #00CFFF; /* Signature Bright Sky Blue/Cyan */
+  --primary-foreground: #0B1020;
+  --secondary: #213049; /* Grid/Border color */
+  --secondary-foreground: #E7EEF7;
+  --muted: #90A4B8; /* Cool Muted Gray */
+  --muted-foreground: #9CA3AF;
+  --accent: #7AFFB3; /* Neon Green/Mint */
+  --accent-foreground: #0B1020;
+  --destructive: #EF4444;
+  --destructive-foreground: #E7EEF7;
+  --border: #213049;
+  --input: #213049;
+  --ring: #00CFFF;
+  --grid: #213049;
+  --surface: #121A2B;
+  --text: #E7EEF7;
+}
+
+/* Clinic Clean Theme - Medical & Professional */
+[data-theme="clinic-clean"] {
+  --background: #F6FAFF;
+  --foreground: #0E1726;
+  --card: #FFFFFF;
+  --card-foreground: #0E1726;
+  --popover: #FFFFFF;
+  --popover-foreground: #0E1726;
+  --primary: #2A72E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E7EEF7;
+  --secondary-foreground: #0E1726;
+  --muted: #E7EEF7;
+  --muted-foreground: #6B7280;
+  --accent: #12C2C2;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #E7EEF7;
+  --input: #E7EEF7;
+  --ring: #2A72E5;
+  --grid: #E7EEF7;
+  --surface: #FFFFFF;
+  --text: #0E1726;
+}
+
+/* Heritage Serif Theme - Luxe & Traditional */
+[data-theme="heritage-serif"] {
+  --background: #0D1022;
+  --foreground: #F0F4F7;
+  --card: #12162A;
+  --card-foreground: #F0F4F7;
+  --popover: #12162A;
+  --popover-foreground: #F0F4F7;
+  --primary: #C9A86A;
+  --primary-foreground: #0D1022;
+  --secondary: #2a334a;
+  --secondary-foreground: #F0F4F7;
+  --muted: #2a334a;
+  --muted-foreground: #9CA3AF;
+  --accent: #7EB2E6;
+  --accent-foreground: #0D1022;
+  --destructive: #EF4444;
+  --destructive-foreground: #F0F4F7;
+  --border: #2a334a;
+  --input: #2a334a;
+  --ring: #C9A86A;
+  --grid: #2a334a;
+  --surface: #12162A;
+  --text: #F0F4F7;
+}
+
+/* Base Styles */
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+}
+
+/* Aurora Background Animation */
+.aurora-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 20% 50%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, hsl(var(--accent) / 0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 40% 80%, hsl(var(--primary) / 0.1) 0%, transparent 50%);
+  animation: aurora-drift 20s ease-in-out infinite;
+}
+
+/* Coefficient Logo Animation */
+.coefficient-logo {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: coefficient-pulse 3s ease-in-out infinite;
+}
+
+/* Keyframe Animations */
+@keyframes aurora-drift {
+  0%, 100% {
+    transform: translateX(-50%) translateY(-50%) rotate(0deg);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-50%) rotate(180deg);
+  }
+}
+
+@keyframes coefficient-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-bg {
+    animation: none;
+  }
+  
+  .coefficient-logo {
+    animation: none;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Coefficient-specific utility classes */
+.coefficient-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+}
+
+.coefficient-text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.coefficient-border {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 0.5);
+  backdrop-filter: blur(10px);
+}
+
+/* Mathematical coefficient styling */
+.coefficient-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: hsl(var(--primary));
+}
+
+.coefficient-formula {
+  font-family: var(--font-mono);
+  background: hsl(var(--muted) / 0.5);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid hsl(var(--border));
+}
