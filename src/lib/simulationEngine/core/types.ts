@@ -1,0 +1,1 @@
+export enum Channel { TV = "tv", RADIO = "radio", PRINT = "print", DIGITAL = "digital", SOCIAL = "social", SEARCH = "search", EMAIL = "email", DISPLAY = "display", VIDEO = "video", OUTDOOR = "outdoor" }
