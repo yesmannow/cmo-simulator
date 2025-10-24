@@ -13,6 +13,10 @@ import { createClient } from '@/lib/supabase/client';
 import { SimulationState } from '@/lib/simulationEngine';
 import { LogoGenerator } from '@/components/LogoGenerator';
 import { difficultyConfigs, type DifficultyLevel } from '@/lib/difficultySystem';
+import { useValidation } from '@/hooks/useValidation';
+import { SimulationValidators } from '@/lib/validation';
+import { FieldError, FormError } from '@/components/FormError';
+import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
 import { 
   Building2, 
   Clock, 
@@ -359,6 +363,14 @@ export default function SetupPage() {
       conversionOptimization: 33
     }
   });
+
+  // Analytics tracking
+  usePageTracking();
+  const { trackStart } = useSimulationTracking();
+
+  // Validation state
+  const [companyNameError, setCompanyNameError] = useState<string | null>(null);
+  const [budgetError, setBudgetError] = useState<string | null>(null);
 
   const totalSteps = 7;
   const progress = (step / totalSteps) * 100;
