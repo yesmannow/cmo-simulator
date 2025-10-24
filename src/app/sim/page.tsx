@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useEnhancedSimulation } from '@/hooks/useEnhancedSimulation';
+import { useNewSimulation } from '@/hooks/useNewSimulation';
 
 export default function SimulationIndexPage() {
   const router = useRouter();
@@ -10,7 +10,7 @@ export default function SimulationIndexPage() {
     state,
     isLoading,
     error
-  } = useEnhancedSimulation();
+  } = useNewSimulation();
 
   useEffect(() => {
     if (isLoading) return; // Still loading

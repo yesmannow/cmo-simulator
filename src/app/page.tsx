@@ -5,6 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link'
 
 export default async function Home() {
+  // Skip authentication check for development testing
+  if (process.env.NODE_ENV === 'development') {
+    redirect('/sim/setup')
+  }
+
   const supabase = await createClient()
 
   const {

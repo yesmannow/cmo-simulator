@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { createClient } from '@/lib/supabase/client';
 import { SimulationState } from '@/lib/simulationEngine';
+import { LogoGenerator } from '@/components/LogoGenerator';
 import { difficultyConfigs, type DifficultyLevel } from '@/lib/difficultySystem';
 import { 
   Building2, 
@@ -99,6 +100,195 @@ const INDUSTRIES = [
     avgCustomerValue: 150,
     salesCycle: 'Short',
     competitionLevel: 'Very High'
+  },
+  {
+    id: 'saas' as const,
+    name: 'SaaS/Software',
+    icon: '💻',
+    description: 'B2B software, productivity tools, cloud services',
+    avgCustomerValue: 2500,
+    salesCycle: 'Medium',
+    competitionLevel: 'Very High'
+  },
+  {
+    id: 'fintech' as const,
+    name: 'Fintech',
+    icon: '💰',
+    description: 'Financial technology, payments, banking apps',
+    avgCustomerValue: 1200,
+    salesCycle: 'Medium',
+    competitionLevel: 'High'
+  },
+  {
+    id: 'education' as const,
+    name: 'Education Tech',
+    icon: '📚',
+    description: 'Online learning platforms, tutoring, corporate training',
+    avgCustomerValue: 800,
+    salesCycle: 'Medium',
+    competitionLevel: 'High'
+  },
+  {
+    id: 'real-estate' as const,
+    name: 'Real Estate',
+    icon: '🏠',
+    description: 'Property sales, rentals, property management',
+    avgCustomerValue: 15000,
+    salesCycle: 'Very Long',
+    competitionLevel: 'Medium'
+  },
+  {
+    id: 'food-delivery' as const,
+    name: 'Food Delivery',
+    icon: '🍕',
+    description: 'Restaurant delivery, meal kits, food platforms',
+    avgCustomerValue: 35,
+    salesCycle: 'Very Short',
+    competitionLevel: 'Very High'
+  },
+  {
+    id: 'fitness' as const,
+    name: 'Fitness & Wellness',
+    icon: '💪',
+    description: 'Gym franchises, fitness apps, wellness products',
+    avgCustomerValue: 200,
+    salesCycle: 'Short',
+    competitionLevel: 'High'
+  },
+  {
+    id: 'automotive' as const,
+    name: 'Automotive',
+    icon: '🚗',
+    description: 'Car dealerships, auto parts, electric vehicles',
+    avgCustomerValue: 25000,
+    salesCycle: 'Long',
+    competitionLevel: 'Medium'
+  },
+  {
+    id: 'travel' as const,
+    name: 'Travel & Hospitality',
+    icon: '✈️',
+    description: 'Hotels, airlines, booking platforms, tourism',
+    avgCustomerValue: 300,
+    salesCycle: 'Medium',
+    competitionLevel: 'High'
+  },
+  {
+    id: 'gaming' as const,
+    name: 'Gaming',
+    icon: '🎮',
+    description: 'Video games, esports, gaming platforms',
+    avgCustomerValue: 60,
+    salesCycle: 'Very Short',
+    competitionLevel: 'Very High'
+  },
+  {
+    id: 'fashion' as const,
+    name: 'Fashion & Apparel',
+    icon: '👗',
+    description: 'Clothing brands, luxury goods, fashion retail',
+    avgCustomerValue: 120,
+    salesCycle: 'Short',
+    competitionLevel: 'Very High'
+  },
+  {
+    id: 'construction' as const,
+    name: 'Construction',
+    icon: '🏗️',
+    description: 'Building contractors, construction services, materials',
+    avgCustomerValue: 50000,
+    salesCycle: 'Very Long',
+    competitionLevel: 'Medium'
+  },
+  {
+    id: 'energy' as const,
+    name: 'Clean Energy',
+    icon: '⚡',
+    description: 'Solar, wind, EV charging, sustainable energy',
+    avgCustomerValue: 8000,
+    salesCycle: 'Very Long',
+    competitionLevel: 'Medium'
+  },
+  {
+    id: 'agritech' as const,
+    name: 'AgriTech',
+    icon: '🌾',
+    description: 'Farm technology, precision agriculture, food tech',
+    avgCustomerValue: 10000,
+    salesCycle: 'Long',
+    competitionLevel: 'Low'
+  },
+  {
+    id: 'manufacturing' as const,
+    name: 'Manufacturing',
+    icon: '🏭',
+    description: 'Industrial equipment, B2B manufacturing, supply chain',
+    avgCustomerValue: 75000,
+    salesCycle: 'Very Long',
+    competitionLevel: 'Medium'
+  },
+  {
+    id: 'nonprofit' as const,
+    name: 'Non-Profit',
+    icon: '🤝',
+    description: 'Charities, foundations, social impact organizations',
+    avgCustomerValue: 250,
+    salesCycle: 'Medium',
+    competitionLevel: 'Low'
+  },
+  {
+    id: 'music' as const,
+    name: 'Music & Entertainment',
+    icon: '🎵',
+    description: 'Streaming services, artists, music platforms',
+    avgCustomerValue: 15,
+    salesCycle: 'Very Short',
+    competitionLevel: 'Very High'
+  },
+  {
+    id: 'sports' as const,
+    name: 'Sports',
+    icon: '⚽',
+    description: 'Sports teams, equipment, fan engagement',
+    avgCustomerValue: 80,
+    salesCycle: 'Short',
+    competitionLevel: 'High'
+  },
+  {
+    id: 'pet-care' as const,
+    name: 'Pet Care',
+    icon: '🐕',
+    description: 'Pet food, veterinary services, pet tech',
+    avgCustomerValue: 180,
+    salesCycle: 'Short',
+    competitionLevel: 'High'
+  },
+  {
+    id: 'home-services' as const,
+    name: 'Home Services',
+    icon: '🔧',
+    description: 'Cleaning, repairs, home improvement, maintenance',
+    avgCustomerValue: 150,
+    salesCycle: 'Short',
+    competitionLevel: 'High'
+  },
+  {
+    id: 'cannabis' as const,
+    name: 'Cannabis Industry',
+    icon: '🌿',
+    description: 'Cannabis products, dispensaries, wellness brands',
+    avgCustomerValue: 90,
+    salesCycle: 'Short',
+    competitionLevel: 'Medium'
+  },
+  {
+    id: 'space' as const,
+    name: 'Space Technology',
+    icon: '🚀',
+    description: 'Satellite services, space tourism, aerospace',
+    avgCustomerValue: 500000,
+    salesCycle: 'Very Long',
+    competitionLevel: 'Very Low'
   }
 ];
 
@@ -188,7 +378,47 @@ export default function SetupPage() {
 
   const saveAndContinue = async () => {
     try {
-      // Get the current user
+      // For development testing, skip database operations
+      if (process.env.NODE_ENV === 'development') {
+        // Initialize simulation state locally without database
+        const initialState: SimulationState = {
+          config: {
+            companyName: data.companyName,
+            timeHorizon: data.timeHorizon || '1-year',
+            industry: data.industry || 'healthcare',
+            companyProfile: data.companyProfile || 'startup',
+            marketLandscape: data.marketLandscape || 'crowded',
+            totalBudget: 500000, // Default budget for development
+            budgetAllocation: data.budgetAllocation,
+            difficulty: data.difficulty || 'intermediate',
+          },
+          currentQuarter: 'strategy',
+          status: 'in_progress',
+          simulationId: 'dev-' + Date.now(), // Mock ID for development
+          totalBudget: 500000,
+          budgetRemaining: 500000,
+          totalRevenue: 0,
+          totalProfit: 0,
+          brandEquity: 50.0,
+          teamMorale: 75.0,
+          currentMarketShare: 5.0,
+          competitorSpend: 0,
+          marketSaturation: 0.3,
+          quarterlyResults: [],
+          seoInvestments: [],
+          wildcardEvents: [],
+          decisions: [],
+        };
+
+        // Save to localStorage
+        localStorage.setItem('cmo-sim-state', JSON.stringify(initialState));
+
+        // Navigate to strategy session
+        router.push('/sim/strategy');
+        return;
+      }
+
+      // Production code for authenticated users
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -376,20 +606,27 @@ export default function SetupPage() {
                       autoFocus
                     />
                   </div>
-                  
                   {data.companyName && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20"
+                      className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg"
                     >
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-primary mb-2">
-                          {data.companyName}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="text-center flex-1">
+                          <div className="text-3xl font-bold text-primary mb-2">
+                            {data.companyName}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Don't worry about perfection - focus on progress
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Don&apos;t worry about perfection - focus on progress
-                        </p>
+                        <div className="ml-6">
+                          <LogoGenerator
+                            companyName={data.companyName}
+                            industry={data.industry || 'healthcare'}
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   )}
