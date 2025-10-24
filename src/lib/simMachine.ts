@@ -849,36 +849,93 @@ export const simulationMachine = createMachine({
 
 // Helper functions for calculations
 function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationContext['kpis']) {
-  let results = {
-    revenue: 0,
-    profit: 0,
-    marketShare: 0,
-    customerSatisfaction: 0,
-    brandAwareness: 0,
-  };
-  
-  // Calculate impact from tactics
+  let totalTraffic = 0;
+  let totalSpend = 0;
+
+  // Calculate traffic from different tactic categories
   quarter.tactics.forEach(tactic => {
-    results.revenue += tactic.expectedImpact.revenue;
-    results.marketShare += tactic.expectedImpact.marketShare;
-    results.customerSatisfaction += tactic.expectedImpact.customerSatisfaction;
-    results.brandAwareness += tactic.expectedImpact.brandAwareness;
-    results.profit += tactic.expectedImpact.revenue - tactic.cost; // Simple profit calculation
-  });
-  
-  // Calculate impact from wildcard responses
-  quarter.wildcardEvents.forEach(wildcard => {
-    if (wildcard.impact) {
-      results.revenue += wildcard.impact.revenue;
-      results.profit += wildcard.impact.profit;
-      currentKPIs.marketShare += wildcard.impact?.marketShare || 0;
-      currentKPIs.customerSatisfaction += wildcard.impact?.customerSatisfaction || 0;
-      currentKPIs.brandAwareness += wildcard.impact?.brandAwareness || 0;
-      // Note: morale and brandEquity are tracked at context level, not in currentKPIs
+    totalSpend += tactic.cost;
+
+    // Map tactic categories to traffic generation
+    switch (tactic.category) {
+      case 'digital':
+        // Digital ads: $1 spent = ~5 visitors (lower efficiency due to competition)
+        totalTraffic += tactic.cost * 5;
+        break;
+      case 'content':
+        // Content/SEO: $1 spent = ~10 visitors (compounding effect)
+        totalTraffic += tactic.cost * 10;
+        break;
+      case 'events':
+        // Events: $1 spent = ~8 visitors (high touch, high conversion)
+        totalTraffic += tactic.cost * 8;
+        break;
+      case 'partnerships':
+        // Partnerships: $1 spent = ~12 visitors (leveraged reach)
+        totalTraffic += tactic.cost * 12;
+        break;
+      case 'traditional':
+        // Traditional media: $1 spent = ~3 visitors (broader reach, lower efficiency)
+        totalTraffic += tactic.cost * 3;
+        break;
+      default:
+        totalTraffic += tactic.cost * 4; // Default
     }
   });
+
+  // Apply market saturation penalty (more competition = harder to get traffic)
+  const marketSaturation = Math.min(currentKPIs.marketShare / 50, 0.8); // Max 80% penalty
+  totalTraffic *= (1 - marketSaturation);
+
+  // Convert traffic to leads (5% conversion rate)
+  const leads = Math.floor(totalTraffic * 0.05);
+
+  // Convert leads to customers (15% conversion rate, affected by brand equity)
+  const brandMultiplier = 0.8 + (currentKPIs.brandAwareness / 100) * 0.4; // 0.8 to 1.2x
+  const conversions = Math.floor(leads * 0.15 * brandMultiplier);
+
+  // Calculate revenue based on industry
+  let customerValue = 150; // Default ecommerce
+  // Note: We don't have industry context here, so we'll use a blended average
+  // In a real implementation, this would be passed from context
+
+  const revenue = conversions * customerValue;
+
+  // Calculate other KPIs
+  let marketShare = 0;
+  let customerSatisfaction = 0;
+  let brandAwareness = 0;
+
+  quarter.tactics.forEach(tactic => {
+    marketShare += tactic.expectedImpact.marketShare;
+    customerSatisfaction += tactic.expectedImpact.customerSatisfaction;
+    brandAwareness += tactic.expectedImpact.brandAwareness;
+  });
+
+  // Calculate impact from wildcard responses
+  let wildcardRevenueImpact = 0;
+  let wildcardProfitImpact = 0;
+  let wildcardMarketShareImpact = 0;
+  let wildcardCustomerSatisfactionImpact = 0;
+  let wildcardBrandAwarenessImpact = 0;
   
-  return results;
+  quarter.wildcardEvents.forEach(wildcard => {
+    if (wildcard.impact) {
+      wildcardRevenueImpact += wildcard.impact.revenue;
+      wildcardProfitImpact += wildcard.impact.profit;
+      wildcardMarketShareImpact += wildcard.impact?.marketShare || 0;
+      wildcardCustomerSatisfactionImpact += wildcard.impact?.customerSatisfaction || 0;
+      wildcardBrandAwarenessImpact += wildcard.impact?.brandAwareness || 0;
+    }
+  });
+
+  return {
+    revenue: revenue + wildcardRevenueImpact,
+    profit: revenue - totalSpend + wildcardProfitImpact,
+    marketShare: marketShare + wildcardMarketShareImpact,
+    customerSatisfaction: customerSatisfaction + wildcardCustomerSatisfactionImpact,
+    brandAwareness: brandAwareness + wildcardBrandAwarenessImpact,
+  };
 }
 
 function calculateFinalResults(context: SimulationContext): SimulationResults {

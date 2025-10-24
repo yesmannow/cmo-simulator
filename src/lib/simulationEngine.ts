@@ -15,14 +15,16 @@ import {
   calculateMarketSaturation,
   ScoringContext,
   QuarterPerformance as ScoringQuarterPerformance,
-  TacticUsage
+  TacticUsage,
+  // NEW: Adstock functions
+  updateAdstockHistory,
+  getTotalAdstockTraffic,
+  type AdstockHistory
 } from './scoringEngine';
 
 import { generateWildcardEvent, WildcardEvent } from './advancedWildcards';
 import { SAMPLE_TACTICS } from './tactics';
 import { DifficultyLevel } from './difficultySystem';
-
-// Helper function to map tactic categories to scoringEngine categories
 function mapTacticCategory(category: string): 'seo' | 'paid-ads' | 'content' | 'social' | 'events' | 'pr' {
   const categoryMap: Record<string, 'seo' | 'paid-ads' | 'content' | 'social' | 'events' | 'pr'> = {
     'digital': 'paid-ads',
@@ -134,6 +136,9 @@ export interface SimulationState {
 
   // Decisions
   decisions: QuarterlyDecisions[];
+
+  // NEW: Adstock history for advanced MMM modeling
+  adstockHistory?: AdstockHistory;
 }
 
 /**
@@ -207,6 +212,39 @@ export function processQuarter(
   
   const newSeoInvestments = [...state.seoInvestments, seoSpend];
   
+  // Calculate channel spends for adstock modeling
+  const channelSpends = {
+    digital: decisions.tactics
+      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'digital')
+      .reduce((sum, t) => sum + t.budgetAllocated, 0),
+    content: seoSpend,
+    events: decisions.tactics
+      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'events')
+      .reduce((sum, t) => sum + t.budgetAllocated, 0),
+    partnerships: decisions.tactics
+      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'partnerships')
+      .reduce((sum, t) => sum + t.budgetAllocated, 0),
+    traditional: decisions.tactics
+      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'traditional')
+      .reduce((sum, t) => sum + t.budgetAllocated, 0),
+    social: decisions.tactics
+      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'social')
+      .reduce((sum, t) => sum + t.budgetAllocated, 0),
+    pr: decisions.tactics
+      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'pr')
+      .reduce((sum, t) => sum + t.budgetAllocated, 0)
+  };
+
+  // Update adstock history with current quarter spends
+  const updatedAdstockHistory = updateAdstockHistory(
+    state.adstockHistory,
+    decisions.quarter,
+    channelSpends
+  );
+
+  // Calculate total traffic using adstock effects
+  const totalTraffic = getTotalAdstockTraffic(updatedAdstockHistory, decisions.quarter);
+  
   // Calculate traffic from various sources
   const seoTraffic = calculateSEOImpact(
     newSeoInvestments,
@@ -214,13 +252,7 @@ export function processQuarter(
     getIndustryFactor(state.config.industry)
   );
   
-  const paidAdsSpend = decisions.tactics
-    .filter(t => {
-      const tactic = SAMPLE_TACTICS.find(st => st.id === t.tacticId);
-      return tactic?.category === 'digital';
-    })
-    .reduce((sum, t) => sum + t.budgetAllocated, 0);
-  
+  const paidAdsSpend = channelSpends.digital;
   const paidAdsResult = calculatePaidAdsImpact(
     paidAdsSpend,
     state.marketSaturation,
@@ -241,11 +273,11 @@ export function processQuarter(
     }
   }
   
-  // Calculate base revenue from tactics
+  // Calculate base revenue from adstock traffic
   let baseRevenue = 0;
-  const leads = Math.floor((seoTraffic + paidAdsResult.traffic) * 0.05); // 5% lead rate
+  const leads = Math.floor(totalTraffic * 0.05); // 5% lead rate from adstock traffic
   const conversions = Math.floor(leads * 0.15 * conversionRateMultiplier); // 15% conversion rate
-  
+
   const avgCustomerValue = getAvgCustomerValue(state.config.industry);
   baseRevenue = conversions * avgCustomerValue;
   
@@ -361,7 +393,8 @@ export function processQuarter(
     marketSaturation: newMarketSaturation,
     quarterlyResults: [...state.quarterlyResults, quarterResult],
     seoInvestments: newSeoInvestments,
-    decisions: [...state.decisions, decisions]
+    decisions: [...state.decisions, decisions],
+    adstockHistory: updatedAdstockHistory
   };
   
   return newState;

@@ -39,7 +39,9 @@ import {
   FileText,
   Share2
 } from 'lucide-react';
-import { SimulationContext } from '@/lib/simMachine';
+import { useAIRecommendations } from '@/hooks/useAIInsights';
+import { InsightContext } from '@/lib/aiInsights';
+import { AIInsightsPanel } from '@/components/AIInsightsPanel';
 
 interface EnhancedDebriefProps {
   context: SimulationContext;
@@ -50,6 +52,37 @@ interface EnhancedDebriefProps {
 
 export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: EnhancedDebriefProps) {
   const [activeTab, setActiveTab] = useState('overview');
+
+  // AI Insights
+  const aiContext: InsightContext = {
+    industry: context.strategy?.marketLandscape === 'disruptor' ? 'healthcare' :
+             context.strategy?.marketLandscape === 'crowded' ? 'ecommerce' : 'legal',
+    currentQuarter: 'Q4',
+    quarterlyResults: {
+      revenue: context.quarters.Q4.results.revenue,
+      roi: ((context.quarters.Q4.results.revenue - context.quarters.Q4.budgetSpent) / context.quarters.Q4.budgetSpent) * 100,
+      marketShare: context.quarters.Q4.results.marketShare,
+      brandEquity: context.brandEquity,
+      channel_performance: [
+        { channel: 'digital', spend: 0, roi: 0, conversions: 0 },
+        { channel: 'content', spend: 0, roi: 0, conversions: 0 },
+        { channel: 'events', spend: 0, roi: 0, conversions: 0 },
+        { channel: 'partnerships', spend: 0, roi: 0, conversions: 0 },
+      ]
+    },
+    channelSpends: {
+      digital: 0,
+      content: 0,
+      events: 0,
+      partnerships: 0,
+      social: 0,
+      traditional: 0,
+    },
+    totalBudget: context.totalBudget,
+    marketShare: context.quarters.Q4.results.marketShare
+  };
+
+  const { recommendations, isLoading } = useAIRecommendations(aiContext);
 
   // Calculate comprehensive metrics
   const quarterlyData = [
@@ -386,9 +419,17 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
 
         <TabsContent value="insights" className="space-y-6">
           <div className="grid gap-6">
+            <AIInsightsPanel
+              recommendations={recommendations}
+              isLoading={isLoading}
+              onDismiss={(id: string) => console.log('Dismissed recommendation:', id)}
+              onAccept={(id: string) => console.log('Accepted recommendation:', id)}
+            />
+
+            {/* Fallback insights if AI fails */}
             <Card>
               <CardHeader>
-                <CardTitle>Strategic Insights & Recommendations</CardTitle>
+                <CardTitle>Performance Highlights</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
@@ -403,7 +444,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
                       </div>
                     </div>
                   )}
-                  
+
                   {finalMarketShare > 25 && (
                     <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
                       <Target className="h-5 w-5 text-blue-600 mt-0.5" />

@@ -442,7 +442,7 @@ export default function SetupPage() {
 
       // Calculate total budget based on difficulty and time horizon
       const budget = data.difficulty && data.timeHorizon
-        ? difficultyConfigs[data.difficulty].initialBudget
+        ? difficultyConfigs[data.difficulty as DifficultyLevel]?.initialBudget || 500000
         : data.timeHorizon
         ? TIME_HORIZONS.find(h => h.id === data.timeHorizon)?.budget || 500000
         : 500000;
@@ -551,7 +551,7 @@ export default function SetupPage() {
   };
 
   const selectedBudget = data.difficulty && data.timeHorizon
-    ? difficultyConfigs[data.difficulty].initialBudget
+    ? difficultyConfigs[data.difficulty as DifficultyLevel]?.initialBudget || 0
     : data.timeHorizon
     ? TIME_HORIZONS.find(h => h.id === data.timeHorizon)?.budget || 0
     : 0;
@@ -613,7 +613,7 @@ export default function SetupPage() {
                       id="company-name"
                       placeholder="e.g., Apex Health, Innovate Legal, Urban Outfitters Co."
                       value={data.companyName}
-                      onChange={(e) => setData({ ...data, companyName: e.target.value })}
+                      onChange={(e: any) => setData({ ...data, companyName: e.target.value })}
                       className="text-lg h-12"
                       autoFocus
                     />
