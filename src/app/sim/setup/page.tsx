@@ -9,13 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { createClient } from '@/lib/supabase/client';
-import { SimulationState } from '@/lib/simulationEngine';
-import { LogoGenerator } from '@/components/LogoGenerator';
-import { difficultyConfigs, type DifficultyLevel } from '@/lib/difficultySystem';
-import { useValidation } from '@/hooks/useValidation';
-import { SimulationValidators } from '@/lib/validation';
-import { FieldError, FormError } from '@/components/FormError';
 import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
 import { 
   Building2, 
