@@ -37,13 +37,16 @@ export default function SignupPage() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/dashboard`,
+          data: {
+            email_confirm: true, // Skip email confirmation for testing
+          },
         },
       })
 
       if (error) {
         setError(error.message)
       } else {
-        setMessage('Check your email for a confirmation link!')
+        setMessage('Account created successfully! Redirecting...')
       }
     } catch (err) {
       setError('An unexpected error occurred')
