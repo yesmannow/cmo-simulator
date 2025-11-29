@@ -14,3 +14,4 @@ export {
   type LevelData 
 } from './LevelProgress';
 export { EnhancedLeaderboard, type EnhancedLeaderboardEntry } from './EnhancedLeaderboard';
+export { AchievementDashboard, type AchievementDashboardProps } from './AchievementDashboard';
