@@ -11,6 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { LogoGenerator } from '@/components/LogoGenerator';
 import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
+import { DifficultyLevel, difficultyConfigs } from '@/lib/difficultySystem';
+import { SimulationState } from '@/lib/simulationEngine';
+import { createClient } from '@/lib/supabase/client';
 import { 
   Building2, 
   Clock, 

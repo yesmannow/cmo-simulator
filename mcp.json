@@ -1,0 +1,50 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/servers/main/schemas/mcp-config.schema.json",
+  "name": "cmo-simulator",
+  "version": "0.1.0",
+  "description": "CMO Marketing Simulator - A marketing strategy simulation game",
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./src"]
+    }
+  },
+  "context": {
+    "projectType": "nextjs",
+    "framework": "React 19 with Next.js 15",
+    "styling": "Tailwind CSS v4",
+    "stateManagement": "Zustand, XState",
+    "database": "Supabase",
+    "testing": "Jest",
+    "buildTools": ["turbopack", "eslint", "typescript"]
+  },
+  "commands": {
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm run test",
+    "typecheck": "npx tsc --noEmit"
+  },
+  "importantPaths": {
+    "components": "src/components",
+    "lib": "src/lib",
+    "app": "src/app",
+    "engine": "src/engine",
+    "types": "src/types",
+    "hooks": "src/hooks"
+  },
+  "conventions": {
+    "componentNaming": "PascalCase",
+    "fileNaming": "kebab-case for files, PascalCase for components",
+    "stateManagement": "Use Zustand store in src/lib/store.ts",
+    "simulationEngine": "Core logic in src/lib/simulationEngine.ts and src/engine/",
+    "uiComponents": "Use shadcn/ui components from src/components/ui/"
+  }
+}
