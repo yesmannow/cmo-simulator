@@ -498,3 +498,36 @@ export interface PaginatedResponse<T> extends APIResponse<T[]> {
     total_pages: number;
   };
 }
+
+// ============================================================================
+// LAB ITEM TYPES (Educational Portfolio System)
+// ============================================================================
+
+export type LabItemType = 'app' | 'tool';
+export type LabItemStatus = 'operational' | 'beta' | 'offline';
+
+export interface LabItemContext {
+  problem: string;
+  solution: string;
+  impact: string;
+  target: string;
+  usage: string;
+}
+
+export interface LabItem {
+  id: string;
+  title: string;
+  type: LabItemType;
+  category: string;
+  tagline: string;
+  techStack: string[];
+  status?: LabItemStatus;
+  
+  // Educational layer - deep context for each item
+  context: LabItemContext;
+  
+  // For apps - link to the app
+  link?: string;
+  // For tools - CLI command to run
+  command?: string;
+}

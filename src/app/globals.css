@@ -181,3 +181,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Lab Page Brand Colors */
+:root {
+  --brand-teal: #40E0D0;
+  --brand-orange: #FFA500;
+}
+
+/* Motion-safe animations */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-smooth-in {
+    animation: smoothIn 0.4s ease-out;
+  }
+  
+  @keyframes smoothIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
