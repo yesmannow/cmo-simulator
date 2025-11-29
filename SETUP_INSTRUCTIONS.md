@@ -33,7 +33,7 @@ import { AchievementDashboard } from '@/components/gamification';
 <AchievementDashboard />
 
 // With custom user progress data
-<AchievementDashboard 
+<AchievementDashboard
   userProgress={{
     totalXP: 5000,
     currentLevel: 8,
@@ -171,7 +171,7 @@ Update `src/app/progress/page.tsx`:
 import { AchievementDashboard } from '@/components/gamification';
 
 // Replace or enhance existing progress display
-<AchievementDashboard 
+<AchievementDashboard
   userProgress={{
     totalXP,
     currentLevel: levelData.currentLevel,
@@ -276,13 +276,13 @@ src/
 **Solution:** Ensure `framer-motion` is installed and component has `'use client'` directive
 
 ### Issue: Tailwind classes not applying
-**Solution:** 
+**Solution:**
 - Check `globals.css` has `@import "tailwindcss"`
 - Restart dev server
 - Clear `.next` cache: `npm run clean && npm run dev`
 
 ### Issue: Icons not showing
-**Solution:** 
+**Solution:**
 - Verify `lucide-react` is installed
 - Check icon import: `import { Trophy } from 'lucide-react'`
 

@@ -5,22 +5,20 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DailyChallenges,
   StreakBadge,
   LevelProgress,
   EnhancedLeaderboard,
   AchievementBadge,
   type DailyChallenge,
-  type StreakData,
-  XP_REWARDS
+  type StreakData
 } from '@/components/gamification';
 import { ACHIEVEMENT_DEFINITIONS } from '@/lib/achievements/achievements';
-import { 
-  Trophy, 
-  Target, 
-  Flame, 
-  Star, 
+import {
+  Trophy,
+  Flame,
+  Star,
   Award,
   TrendingUp,
   ArrowLeft
@@ -91,7 +89,7 @@ export default function ProgressPage() {
                 </p>
               </div>
             </div>
-            
+
             {/* Quick Stats in Header */}
             <div className="flex items-center gap-4">
               <StreakBadge streak={streakData} compact />
@@ -122,7 +120,7 @@ export default function ProgressPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -134,7 +132,7 @@ export default function ProgressPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -146,7 +144,7 @@ export default function ProgressPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -189,7 +187,7 @@ export default function ProgressPage() {
             >
               <LevelProgress totalXP={totalXP} />
             </motion.div>
-            
+
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -206,7 +204,7 @@ export default function ProgressPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <DailyChallenges 
+              <DailyChallenges
                 onChallengeComplete={handleChallengeComplete}
                 completedChallengeIds={completedChallenges}
               />
@@ -245,7 +243,7 @@ export default function ProgressPage() {
                         criteria: achievementDef.criteria,
                         created_at: new Date().toISOString()
                       };
-                      
+
                       return (
                         <AchievementBadge
                           key={achievementDef.name}
@@ -256,7 +254,7 @@ export default function ProgressPage() {
                       );
                     })}
                   </div>
-                  
+
                   <Button variant="outline" className="w-full mt-4">
                     View All Achievements
                   </Button>

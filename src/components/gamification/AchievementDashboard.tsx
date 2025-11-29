@@ -17,12 +17,7 @@ import {
   Flame,
   BarChart3,
   Calendar,
-  Users,
-  Medal,
-  Crown,
-  Sparkles,
-  ArrowRight,
-  Filter
+  Medal
 } from 'lucide-react';
 import { AchievementBadge } from './AchievementBadge';
 import { LevelProgress, calculateLevelData, type LevelData } from './LevelProgress';
@@ -208,19 +203,19 @@ const DEFAULT_PROGRESS: AchievementDashboardProps['userProgress'] = {
   }
 };
 
-export function AchievementDashboard({ 
+export function AchievementDashboard({
   userProgress = DEFAULT_PROGRESS,
-  compact = false 
+  compact = false
 }: AchievementDashboardProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedRarity, setSelectedRarity] = useState<string>('all');
-  
+
   const levelData = calculateLevelData(userProgress.totalXP);
-  
+
   // Filter achievements
   const categories = ['all', ...new Set(userProgress.allAchievements.map(a => a.category))];
   const rarities = ['all', 'common', 'rare', 'epic', 'legendary'];
-  
+
   const filteredAchievements = userProgress.allAchievements.filter(achievement => {
     const categoryMatch = selectedCategory === 'all' || achievement.category === selectedCategory;
     const rarityMatch = selectedRarity === 'all' || achievement.rarity === selectedRarity;
@@ -415,7 +410,7 @@ export function AchievementDashboard({
                     <TabsTrigger value="locked">Locked</TabsTrigger>
                     <TabsTrigger value="progress">In Progress</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="all" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <AnimatePresence mode="popLayout">
@@ -441,7 +436,7 @@ export function AchievementDashboard({
                       </AnimatePresence>
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value="unlocked" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {userProgress.unlockedAchievements
@@ -462,7 +457,7 @@ export function AchievementDashboard({
                         ))}
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value="locked" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredAchievements
@@ -483,7 +478,7 @@ export function AchievementDashboard({
                         ))}
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value="progress" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredAchievements
