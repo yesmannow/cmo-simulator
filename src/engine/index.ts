@@ -2,6 +2,7 @@ import { SimulationState, PlayerInput, MarketConditions, Channel } from '../type
 import { calculateAdstockAll } from './adstock';
 import { applyHillTransformAll } from './saturation';
 import { applySynergy } from './synergy';
+import { safeDivide, clamp, isValidNumber, validateCalculationResult } from '@/lib/utils/calculationHelpers';
 
 // Channel-specific parameters
 const DECAY_RATES: Record<Channel, number> = {
@@ -118,12 +119,23 @@ export function runSimulationTick(
   let totalTraffic = 0;
 
   for (const channel of Object.keys(synergisticResponses) as Channel[]) {
-    const response = synergisticResponses[channel];
-    const spend = playerInputs.channelBudgets[channel];
-    const traffic = response * spend * TRAFFIC_EFFICIENCY[channel] * marketConditions.economicIndex;
+    const response = synergisticResponses[channel] || 0;
+    const spend = playerInputs.channelBudgets[channel] || 0;
+    const efficiency = TRAFFIC_EFFICIENCY[channel] || 0.01;
+    const economicIndex = clamp(marketConditions.economicIndex, 0.1, 2.0); // Clamp economic index
+
+    // Response is 0-1 from Hill transform, multiply by spend and efficiency
+    const traffic = validateCalculationResult(
+      response * spend * efficiency * economicIndex,
+      `Traffic for ${channel}`,
+      0
+    );
     trafficSources[channel] = traffic;
     totalTraffic += traffic;
   }
+
+  // Ensure totalTraffic is valid
+  totalTraffic = validateCalculationResult(totalTraffic, 'Total traffic', 0);
 
   // Calculate leads and conversions (like old engine)
   const leadRate = 0.05; // 5% of traffic becomes leads
@@ -133,17 +145,30 @@ export function runSimulationTick(
   const conversions = Math.floor(leads * baseConversionRate);
 
   // Get industry data for realistic revenue calculation
-  // Industry should be passed from simulation config, default to healthcare
-  const industry = (config as any)?.industry || 'healthcare';
+  // Default to healthcare if industry is not available in state
+  // TODO: Add industry to SimulationState if needed for different industries
+  const industry = 'healthcare'; // Default industry
   const industryData = INDUSTRY_DATA[industry];
   const customerValue = industryData.avgCustomerValue;
 
   // Calculate base revenue
-  const baseRevenue = conversions * customerValue;
+  const baseRevenue = validateCalculationResult(
+    conversions * customerValue,
+    'Base revenue',
+    0
+  );
 
   // Apply market conditions
-  const seasonalMultiplier = marketConditions.seasonalityIndex * industryData.seasonalityFactor;
-  const finalRevenue = baseRevenue * seasonalMultiplier;
+  const seasonalMultiplier = clamp(
+    marketConditions.seasonalityIndex * industryData.seasonalityFactor,
+    0.1, // Minimum 10% of normal
+    3.0  // Maximum 300% of normal
+  );
+  const finalRevenue = validateCalculationResult(
+    baseRevenue * seasonalMultiplier,
+    'Final revenue',
+    0
+  );
 
   // Calculate channel contributions proportionally
   const channelContributions: Record<Channel, number> = {} as Record<Channel, number>;
@@ -151,17 +176,21 @@ export function runSimulationTick(
 
   for (const channel of Object.keys(trafficSources) as Channel[]) {
     const channelTraffic = trafficSources[channel];
-    const channelContribution = (channelTraffic / totalTraffic) * finalRevenue;
-    channelContributions[channel] = channelContribution || 0;
+    // Safe division to prevent division by zero
+    const trafficShare = safeDivide(channelTraffic, totalTraffic, 0);
+    const channelContribution = trafficShare * finalRevenue;
+    channelContributions[channel] = validateCalculationResult(channelContribution, `Channel contribution for ${channel}`, 0);
     totalChannelContribution += channelContribution;
   }
 
   // Calculate ROI per channel
   const channelRoi: Record<Channel, number> = {} as Record<Channel, number>;
   for (const channel of Object.keys(channelContributions) as Channel[]) {
-    const spend = playerInputs.channelBudgets[channel];
-    const contribution = channelContributions[channel];
-    channelRoi[channel] = spend > 0 ? (contribution / spend) * 100 : 0;
+    const spend = playerInputs.channelBudgets[channel] || 0;
+    const contribution = channelContributions[channel] || 0;
+    // Use safe ROI calculation
+    const roi = spend > 0 ? safeDivide(contribution, spend, 0) * 100 : 0;
+    channelRoi[channel] = validateCalculationResult(roi, `ROI for ${channel}`, -Infinity, Infinity);
   }
 
   // Base sales (organic, not from marketing spend)

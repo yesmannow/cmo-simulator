@@ -32,12 +32,16 @@ export default function EngineDemoPage() {
       economicIndex: 0.9 + Math.random() * 0.2 // Random economic conditions
     };
 
+    // Store current state for achievement checks (before update)
+    const currentState = simulationState;
+
     advanceTick(playerInputs, marketConditions);
     setAnimationTrigger(prev => prev + 1);
 
-    // Check for achievements
+    // Check for achievements using current state
+    // Note: We check current state since achievements should trigger on the state that caused them
     const newAchievements = [];
-    if (simulationState.results.totalSales > 500000) {
+    if (currentState.results.totalSales > 500000) {
       newAchievements.push('Revenue Champion! 🎉');
       setScore(prev => prev + 100);
     }
@@ -45,7 +49,7 @@ export default function EngineDemoPage() {
       newAchievements.push('Big Spender! 💰');
       setScore(prev => prev + 50);
     }
-    if (simulationState.results.incrementalSales > simulationState.results.baseSales) {
+    if (currentState.results.incrementalSales > currentState.results.baseSales) {
       newAchievements.push('Marketing Master! 📈');
       setScore(prev => prev + 75);
     }
@@ -150,7 +154,7 @@ export default function EngineDemoPage() {
                   <div className="text-right">
                     <div className="font-bold text-lg">${budget.toLocaleString()}</div>
                     <div className="text-xs text-gray-500">
-                      {simulationState.results.channelRoi[channel as Channel]?.toFixed(1)}% ROI
+                      {simulationState.results.channelRoi[channel as Channel]?.toFixed(1) || '0.0'}% ROI
                     </div>
                   </div>
                 </div>
@@ -212,7 +216,9 @@ export default function EngineDemoPage() {
                   <div
                     className="h-4 bg-blue-200 rounded transition-all duration-1000 ease-out"
                     style={{
-                      width: `${Math.min((simulationState.results.baseSales / simulationState.results.totalSales) * 100, 100)}%`,
+                      width: `${simulationState.results.totalSales > 0
+                        ? Math.min((simulationState.results.baseSales / simulationState.results.totalSales) * 100, 100)
+                        : 0}%`,
                       minWidth: '20px'
                     }}
                   ></div>
@@ -227,7 +233,9 @@ export default function EngineDemoPage() {
                   <div
                     className="h-4 bg-green-400 rounded transition-all duration-1000 ease-out"
                     style={{
-                      width: `${Math.min((simulationState.results.incrementalSales / simulationState.results.totalSales) * 100, 100)}%`,
+                      width: `${simulationState.results.totalSales > 0
+                        ? Math.min((simulationState.results.incrementalSales / simulationState.results.totalSales) * 100, 100)
+                        : 0}%`,
                       minWidth: '20px'
                     }}
                   ></div>
@@ -254,7 +262,9 @@ export default function EngineDemoPage() {
                         <div
                           className="bg-gradient-to-r from-blue-400 to-purple-500 h-2 rounded-full transition-all duration-1000"
                           style={{
-                            width: `${Math.min((contribution / simulationState.results.incrementalSales) * 100, 100)}%`
+                            width: `${simulationState.results.incrementalSales > 0
+                              ? Math.min((contribution / simulationState.results.incrementalSales) * 100, 100)
+                              : 0}%`
                           }}
                         ></div>
                       </div>
@@ -280,11 +290,15 @@ export default function EngineDemoPage() {
               <div className="text-2xl mb-1">🎯</div>
               <div className="text-xs font-medium text-gray-600">Best Channel</div>
               <div className="text-sm font-bold text-purple-600 capitalize">
-                {Object.entries(simulationState.results.channelContributions)
-                  .reduce((best, [channel, contrib]) =>
+                {(() => {
+                  const entries = Object.entries(simulationState.results.channelContributions);
+                  if (entries.length === 0) return 'None';
+                  const bestChannel = entries.reduce((best, [channel, contrib]) =>
                     contrib > (simulationState.results.channelContributions[best] || 0) ? channel : best,
-                    Object.keys(simulationState.results.channelContributions)[0]
-                  )?.replace('-', ' ') || 'None'}
+                    entries[0][0]
+                  );
+                  return bestChannel?.replace('-', ' ') || 'None';
+                })()}
               </div>
             </div>
           </div>

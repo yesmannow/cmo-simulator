@@ -6,18 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { 
-  DollarSign, 
-  Clock, 
-  TrendingUp, 
-  Users, 
-  Target, 
+import {
+  DollarSign,
+  Clock,
+  TrendingUp,
+  Users,
+  Target,
   Heart,
   GripVertical,
   X,
-  Plus
+  Plus,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 import { Tactic } from '@/lib/simMachine';
+import { RiskRewardIndicator } from '@/components/education/RiskRewardIndicator';
+import { DefinitionTooltip } from '@/components/ui/DefinitionTooltip';
 
 interface TacticCardProps {
   tactic: Tactic;
@@ -29,9 +33,27 @@ interface TacticCardProps {
   showRemoveButton?: boolean;
 }
 
-export function TacticCard({ 
-  tactic, 
-  onRemove, 
+// Map tactic to risk/reward analysis ID
+function getRiskRewardIdForTactic(tacticId: string, category: Tactic['category']): string {
+  // Map common tactic patterns to risk/reward IDs
+  if (tacticId.includes('google') || tacticId.includes('sem') || tacticId.includes('paid')) {
+    return 'google-ads';
+  }
+  if (category === 'content' || tacticId.includes('content') || tacticId.includes('blog') || tacticId.includes('seo')) {
+    return 'content-marketing';
+  }
+  if (category === 'events' || tacticId.includes('event') || tacticId.includes('trade')) {
+    return 'events';
+  }
+  if (category === 'digital') {
+    return 'google-ads'; // Default for digital
+  }
+  return 'content-marketing'; // Default fallback
+}
+
+export function TacticCard({
+  tactic,
+  onRemove,
   onAdd,
   isSelected = false,
   isDraggable = false,
@@ -79,7 +101,7 @@ export function TacticCard({
   };
 
   return (
-    <Card 
+    <Card
       ref={setNodeRef}
       style={style}
       className={`relative transition-all duration-200 ${
@@ -87,7 +109,7 @@ export function TacticCard({
       } ${isDragging ? 'shadow-2xl' : 'hover:shadow-md'}`}
     >
       {isDraggable && (
-        <div 
+        <div
           {...attributes}
           {...listeners}
           className="absolute top-2 left-2 cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted"
@@ -140,7 +162,7 @@ export function TacticCard({
         {/* Expected Impact */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">Expected Impact</h4>
-          
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -151,7 +173,7 @@ export function TacticCard({
                 +${tactic.expectedImpact.revenue.toLocaleString()}
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="h-3 w-3 text-blue-600" />
@@ -161,7 +183,7 @@ export function TacticCard({
                 +{tactic.expectedImpact.marketShare}%
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Heart className="h-3 w-3 text-pink-600" />
@@ -171,7 +193,7 @@ export function TacticCard({
                 +{tactic.expectedImpact.customerSatisfaction}%
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Users className="h-3 w-3 text-purple-600" />
@@ -187,20 +209,34 @@ export function TacticCard({
         {/* ROI Indicator */}
         <div className="pt-2 border-t">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground">ROI Potential</span>
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <DefinitionTooltip termId="roi" variant="simple" showIcon={true}>
+                ROI Potential
+              </DefinitionTooltip>
+            </span>
             <span className="text-xs font-medium">
               {((tactic.expectedImpact.revenue / tactic.cost) * 100).toFixed(0)}%
             </span>
           </div>
-          <Progress 
-            value={Math.min(((tactic.expectedImpact.revenue / tactic.cost) * 100) / 3, 100)} 
+          <Progress
+            value={Math.min(((tactic.expectedImpact.revenue / tactic.cost) * 100) / 3, 100)}
             className="h-2"
+          />
+        </div>
+
+        {/* Risk & Reward Analysis */}
+        <div className="pt-2 border-t">
+          <RiskRewardIndicator
+            decisionId={getRiskRewardIdForTactic(tactic.id, tactic.category)}
+            variant="detailed"
+            showDetails={false}
+            className="w-full"
           />
         </div>
 
         {/* Action Button */}
         {showAddButton && onAdd && (
-          <Button 
+          <Button
             onClick={onAdd}
             className="w-full mt-4"
             variant={isSelected ? "default" : "outline"}

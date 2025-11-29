@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSimulation } from '@/hooks/useSimulation';
 import { logger } from '@/lib/logger';
-import { KPIDashboard } from '@/components/simulation/KPIDashboard';
+import { EnhancedKPIDashboard } from '@/components/simulation/EnhancedKPIDashboard';
 import { TacticCard, DraggableTacticCard } from '@/components/simulation/TacticCard';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { BigBetModal } from '@/components/simulation/BigBetModal';
@@ -22,7 +22,11 @@ import { Tactic } from '@/lib/simMachine';
 import { BigBetOption } from '@/lib/talentMarket';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
-import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles } from 'lucide-react';
+import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles, HelpCircle } from 'lucide-react';
+import CountUp from 'react-countup';
+import { InlineDefinition } from '@/components/ui/DefinitionTooltip';
+import { ContextualHelp } from '@/components/help/ContextualHelp';
+import { SmartHintPanel } from '@/components/help/SmartHintPanel';
 
 export default function Q4Page() {
   const router = useRouter();
@@ -52,8 +56,21 @@ export default function Q4Page() {
   const remainingBudget = quarterBudget - usedBudget;
   const remainingTime = quarterTime - usedTime;
 
-  // Calculate year-end push bonus
-  const ytdRevenue = context.quarters.Q1.results.revenue + context.quarters.Q2.results.revenue + context.quarters.Q3.results.revenue;
+  // Calculate year-to-date revenue from all completed quarters
+  // Include Q4 if it has been completed (revenue > 0)
+  const calculateYTDRevenue = () => {
+    let total = 0;
+    const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
+    quarters.forEach((q) => {
+      const quarterData = context.quarters[q];
+      if (quarterData?.results?.revenue) {
+        total += quarterData.results.revenue;
+      }
+    });
+    return total;
+  };
+
+  const ytdRevenue = calculateYTDRevenue();
   const finalPushBonus = ytdRevenue > 800000 ? 1.5 : ytdRevenue > 500000 ? 1.3 : 1.1; // Up to 50% bonus for exceptional performance
   const isOnTrack = ytdRevenue > 1200000; // On track for 2M+ annual revenue
 
@@ -128,6 +145,18 @@ export default function Q4Page() {
 
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center gap-3">
+          <ContextualHelp
+            context="Q4 Final Quarter - Year-End Push"
+            termIds={['revenue', 'roi', 'market-share', 'brand-awareness', 'customer-satisfaction', 'budget', 'tactics']}
+            tips={[
+              'Q4 is your final chance to hit the $2M annual revenue target',
+              'Year-end bonuses can multiply your tactic effectiveness by up to 50%',
+              'Review Q1-Q3 results to see what tactics worked best',
+              'Consider making a "Big Bet" for maximum impact',
+              'Balance aggressive growth with sustainable practices'
+            ]}
+            className="absolute top-4 right-4"
+          />
           <Badge variant="secondary" className="text-lg px-4 py-2">
             <Calendar className="h-4 w-4 mr-2" />
             Quarter 4 - Final Sprint
@@ -153,27 +182,82 @@ export default function Q4Page() {
         </p>
 
         <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
-            <div className="font-semibold text-blue-800">Year-to-Date Revenue</div>
-            <div className="text-2xl font-bold text-blue-900">${ytdRevenue.toLocaleString()}</div>
-            <div className="text-sm text-blue-600">
-              {isOnTrack ? '🎯 On track for 2M+ target!' : `${((ytdRevenue / 2000000) * 100).toFixed(1)}% to target`}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-lg p-4 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+            <div className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+              Year-to-Date <InlineDefinition termId="revenue">Revenue</InlineDefinition>
+            </div>
+            <div className="text-2xl font-bold text-blue-900">
+              $<CountUp end={ytdRevenue} duration={1.5} separator="," />
+            </div>
+            <div className="text-sm text-blue-600 mt-2">
+              {isOnTrack ? (
+                <span className="flex items-center gap-1">
+                  <span>🎯</span>
+                  <span>On track for 2M+ target!</span>
+                </span>
+              ) : (
+                <span>
+                  <CountUp end={(ytdRevenue / 2000000) * 100} duration={1.5} decimals={1} />% to target
+                </span>
+              )}
+            </div>
+            {/* Progress indicator */}
+            <div className="mt-3 h-2 bg-blue-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000"
+                style={{ width: `${Math.min((ytdRevenue / 2000000) * 100, 100)}%` }}
+              />
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-            <div className="font-semibold text-green-800">Q4 Effectiveness Bonus</div>
-            <div className="text-2xl font-bold text-green-900">+{((finalPushBonus - 1) * 100).toFixed(0)}%</div>
-            <div className="text-sm text-green-600">
-              {finalPushBonus >= 1.5 ? '🚀 Maximum boost unlocked!' :
-               finalPushBonus >= 1.3 ? '⚡ Strong momentum bonus!' :
-               '📈 Year-end push active!'}
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 relative overflow-hidden hover:shadow-lg transition-all duration-300">
+            <div className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+              Q4 Effectiveness Bonus
+              <InlineDefinition termId="roi">
+                <HelpCircle className="h-3 w-3 text-green-600" />
+              </InlineDefinition>
+            </div>
+            <div className="text-2xl font-bold text-green-900">
+              +<CountUp end={(finalPushBonus - 1) * 100} duration={1.5} decimals={0} />%
+            </div>
+            <div className="text-sm text-green-600 mt-2">
+              {finalPushBonus >= 1.5 ? (
+                <span className="flex items-center gap-1">
+                  <span>🚀</span>
+                  <span>Maximum boost unlocked!</span>
+                </span>
+              ) : finalPushBonus >= 1.3 ? (
+                <span className="flex items-center gap-1">
+                  <span>⚡</span>
+                  <span>Strong momentum bonus!</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <span>📈</span>
+                  <span>Year-end push active!</span>
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      <KPIDashboard context={context} quarter="Q4" showQuarterlyBreakdown={true} />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Performance Dashboard</h2>
+          <SmartHintPanel
+            context={context}
+            currentQuarter="Q4"
+            tacticsSelected={selectedTactics.length}
+          />
+        </div>
+        <EnhancedKPIDashboard
+          context={context}
+          quarter="Q4"
+          showQuarterlyBreakdown={true}
+          selectedTactics={selectedTactics}
+        />
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
@@ -414,10 +498,10 @@ export default function Q4Page() {
         onSelect={handleSelectBigBet}
         availableBudget={remainingBudget}
         currentKPIs={{
-          revenue: context.quarters.Q1.results.revenue + context.quarters.Q2.results.revenue + context.quarters.Q3.results.revenue,
-          marketShare: context.quarters.Q3.results.marketShare || 15,
-          customerSatisfaction: context.quarters.Q3.results.customerSatisfaction || 75,
-          brandAwareness: context.quarters.Q3.results.brandAwareness || 60
+          revenue: ytdRevenue,
+          marketShare: context.quarters.Q4.results.marketShare || context.quarters.Q3.results.marketShare || 15,
+          customerSatisfaction: context.quarters.Q4.results.customerSatisfaction || context.quarters.Q3.results.customerSatisfaction || 75,
+          brandAwareness: context.quarters.Q4.results.brandAwareness || context.quarters.Q3.results.brandAwareness || 60
         }}
       />
     </div>

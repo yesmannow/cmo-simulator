@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  AlertTriangle, 
+import {
+  TrendingUp,
+  DollarSign,
+  AlertTriangle,
   Target,
   Zap,
   Award,
@@ -18,6 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { BigBetOption } from '@/lib/talentMarket';
+import { RiskRewardIndicator } from '@/components/education/RiskRewardIndicator';
 
 interface BigBetModalProps {
   bigBets: BigBetOption[];
@@ -33,11 +34,11 @@ interface BigBetModalProps {
   };
 }
 
-export function BigBetModal({ 
-  bigBets, 
-  isOpen, 
-  onClose, 
-  onSelect, 
+export function BigBetModal({
+  bigBets,
+  isOpen,
+  onClose,
+  onSelect,
   availableBudget,
   currentKPIs
 }: BigBetModalProps) {
@@ -47,14 +48,14 @@ export function BigBetModal({
 
   const handleSelectBet = (bet: BigBetOption) => {
     setSelectedBet(bet);
-    
+
     // Simulate outcome calculation
-    const successProbability = Math.max(0.2, Math.min(0.8, 
-      (currentKPIs.revenue / 1000000) * 0.1 + 
-      (currentKPIs.marketShare / 100) * 0.3 + 
+    const successProbability = Math.max(0.2, Math.min(0.8,
+      (currentKPIs.revenue / 1000000) * 0.1 +
+      (currentKPIs.marketShare / 100) * 0.3 +
       (1 - bet.risk) * 0.4
     ));
-    
+
     const isSuccess = Math.random() < successProbability;
     setOutcome(isSuccess ? 'success' : 'failure');
     setShowOutcome(true);
@@ -116,10 +117,10 @@ export function BigBetModal({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Card 
+                    <Card
                       className={`cursor-pointer transition-all duration-200 ${
-                        selectedBet?.id === bet.id 
-                          ? 'ring-2 ring-purple-500 shadow-lg' 
+                        selectedBet?.id === bet.id
+                          ? 'ring-2 ring-purple-500 shadow-lg'
                           : 'hover:shadow-md'
                       } ${!canAfford(bet) ? 'opacity-60' : ''}`}
                       onClick={() => canAfford(bet) && handleSelectBet(bet)}
@@ -143,6 +144,15 @@ export function BigBetModal({
                       </CardHeader>
 
                       <CardContent className="space-y-4">
+                        {/* Risk & Reward Analysis */}
+                        <div>
+                          <RiskRewardIndicator
+                            decisionId="big-bet"
+                            variant="detailed"
+                            showDetails={false}
+                          />
+                        </div>
+
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           <div className="text-center">
                             <div className="flex items-center justify-center gap-1 text-green-600">
@@ -226,8 +236,8 @@ export function BigBetModal({
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                   className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${
-                    outcome === 'success' 
-                      ? 'bg-green-100 text-green-600' 
+                    outcome === 'success'
+                      ? 'bg-green-100 text-green-600'
                       : 'bg-red-100 text-red-600'
                   }`}
                 >
@@ -247,7 +257,7 @@ export function BigBetModal({
                     {outcome === 'success' ? 'Big Bet Pays Off!' : 'Big Bet Falls Short'}
                   </h3>
                   <p className="text-muted-foreground mt-2">
-                    {outcome === 'success' 
+                    {outcome === 'success'
                       ? `Your investment in ${selectedBet?.name} has exceeded expectations!`
                       : `Your investment in ${selectedBet?.name} didn't deliver the expected results.`
                     }
@@ -273,7 +283,7 @@ export function BigBetModal({
                             outcome === 'success' ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {outcome === 'success' ? '+' : '-'}${
-                              Math.round(selectedBet.potentialImpact.revenue * 
+                              Math.round(selectedBet.potentialImpact.revenue *
                                 (outcome === 'success' ? 1 : 0.3)
                               ).toLocaleString()
                             }
@@ -285,7 +295,7 @@ export function BigBetModal({
                             outcome === 'success' ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {outcome === 'success' ? '+' : '-'}{
-                              Math.round(selectedBet.potentialImpact.marketShare * 
+                              Math.round(selectedBet.potentialImpact.marketShare *
                                 (outcome === 'success' ? 1 : 0.3)
                               )
                             }%
@@ -297,7 +307,7 @@ export function BigBetModal({
                             outcome === 'success' ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {outcome === 'success' ? '+' : '-'}{
-                              Math.round(selectedBet.potentialImpact.brandAwareness * 
+                              Math.round(selectedBet.potentialImpact.brandAwareness *
                                 (outcome === 'success' ? 1 : 0.3)
                               )
                             }%
@@ -309,7 +319,7 @@ export function BigBetModal({
                             outcome === 'success' ? 'text-green-600' : 'text-red-600'
                           }`}>
                             {outcome === 'success' ? '+' : '-'}{
-                              Math.round(selectedBet.potentialImpact.customerSatisfaction * 
+                              Math.round(selectedBet.potentialImpact.customerSatisfaction *
                                 (outcome === 'success' ? 1 : 0.3)
                               )
                             }%
@@ -319,7 +329,7 @@ export function BigBetModal({
 
                       <div className="pt-4 border-t">
                         <div className="text-sm text-muted-foreground">
-                          {outcome === 'success' 
+                          {outcome === 'success'
                             ? "This strategic investment has positioned your company for accelerated growth and market leadership."
                             : "While this investment didn't pay off as expected, the learnings will inform future strategic decisions."
                           }

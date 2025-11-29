@@ -23,19 +23,45 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
     // Sum revenue from all quarters that have results
     quarters.forEach((q) => {
       const quarterData = context.quarters[q];
-      // Check if quarter has results (revenue > 0 indicates it was completed)
-      // Also check if results object exists and has revenue property
-      if (quarterData?.results?.revenue && quarterData.results.revenue > 0) {
-        total += quarterData.results.revenue;
+      // Check if quarter has results (revenue >= 0, but only count if tactics were used)
+      // A quarter is considered complete if it has tactics or if revenue > 0
+      if (quarterData?.results?.revenue !== undefined) {
+        // Count revenue even if it's 0, as long as the quarter has been processed
+        // But prefer to use actual calculated revenue
+        if (quarterData.tactics.length > 0 || quarterData.results.revenue > 0) {
+          total += quarterData.results.revenue;
+        }
       }
     });
 
-    // Fallback to context.kpis.revenue if calculated total is 0
+    // Fallback to context.kpis.revenue if calculated total is 0 and no quarters have been processed
     // This handles edge cases where quarters might not have results yet
-    return total > 0 ? total : context.kpis.revenue;
+    return total > 0 ? total : (context.kpis.revenue || 0);
+  };
+
+  // Calculate current metrics from the most recent completed quarter or current quarter
+  const getCurrentMetrics = () => {
+    const quarters = ['Q4', 'Q3', 'Q2', 'Q1'] as const;
+    for (const q of quarters) {
+      const quarterData = context.quarters[q];
+      if (quarterData?.results && (quarterData.tactics.length > 0 || quarterData.results.revenue > 0)) {
+        return {
+          marketShare: quarterData.results.marketShare || context.kpis.marketShare,
+          customerSatisfaction: quarterData.results.customerSatisfaction || context.kpis.customerSatisfaction,
+          brandAwareness: quarterData.results.brandAwareness || context.kpis.brandAwareness,
+        };
+      }
+    }
+    // Fallback to context KPIs
+    return {
+      marketShare: context.kpis.marketShare,
+      customerSatisfaction: context.kpis.customerSatisfaction,
+      brandAwareness: context.kpis.brandAwareness,
+    };
   };
 
   const totalRevenue = calculateTotalRevenue();
+  const currentMetrics = getCurrentMetrics();
 
   const kpis = [
     {
@@ -50,7 +76,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
     },
     {
       title: 'Market Share',
-      value: context.kpis.marketShare,
+      value: currentMetrics.marketShare,
       format: (val: number) => `${val.toFixed(1)}%`,
       icon: Target,
       color: 'text-blue-600',
@@ -60,7 +86,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
     },
     {
       title: 'Customer Satisfaction',
-      value: context.kpis.customerSatisfaction,
+      value: currentMetrics.customerSatisfaction,
       format: (val: number) => `${val.toFixed(1)}%`,
       icon: Heart,
       color: 'text-pink-600',
@@ -70,7 +96,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
     },
     {
       title: 'Brand Awareness',
-      value: context.kpis.brandAwareness,
+      value: currentMetrics.brandAwareness,
       format: (val: number) => `${val.toFixed(1)}%`,
       icon: Users,
       color: 'text-purple-600',
@@ -185,7 +211,11 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
               {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((q) => {
                 const quarterData = context.quarters[q];
                 const isActive = quarter === q;
-                const hasResults = quarterData.results.revenue > 0;
+                // A quarter has results if it has tactics or if revenue has been calculated
+                const hasResults = quarterData.tactics.length > 0 || (quarterData.results.revenue !== undefined && quarterData.results.revenue > 0);
+                const revenue = quarterData.results.revenue || 0;
+                const tacticsCount = quarterData.tactics.length || 0;
+                const budgetSpent = quarterData.budgetSpent || 0;
 
                 return (
                   <div key={q} className={`p-4 rounded-lg border-2 ${
@@ -201,17 +231,17 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                       <div className="flex justify-between">
                         <span>Revenue:</span>
                         <span className="font-medium">
-                          ${quarterData.results.revenue.toLocaleString()}
+                          ${revenue.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Tactics:</span>
-                        <span className="font-medium">{quarterData.tactics.length}</span>
+                        <span className="font-medium">{tacticsCount}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Budget:</span>
                         <span className="font-medium">
-                          ${quarterData.budgetSpent.toLocaleString()}
+                          ${budgetSpent.toLocaleString()}
                         </span>
                       </div>
                     </div>

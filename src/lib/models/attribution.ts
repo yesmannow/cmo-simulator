@@ -34,7 +34,7 @@ export interface Touchpoint {
 }
 
 export interface AttributionResult {
-  channelAttribution: Record<Channel, number>; // Attribution weights (sum to 1.0)
+  channelAttribution: Partial<Record<Channel, number>>; // Attribution weights (sum to 1.0)
   totalAttribution: number; // Should equal 1.0
   model: AttributionModelType;
 }
@@ -54,7 +54,7 @@ export function calculateAttribution(
     };
   }
 
-  let channelAttribution: Record<Channel, number> = {};
+  let channelAttribution: Partial<Record<Channel, number>> = {};
 
   switch (model) {
     case 'first-touch':
@@ -78,16 +78,19 @@ export function calculateAttribution(
   }
 
   // Normalize to ensure sum equals 1.0
-  const total = Object.values(channelAttribution).reduce((sum, val) => sum + val, 0);
+  const total = Object.values(channelAttribution).reduce((sum, val) => sum + (val || 0), 0);
   if (total > 0) {
     Object.keys(channelAttribution).forEach(channel => {
-      channelAttribution[channel as Channel] /= total;
+      const currentValue = channelAttribution[channel as Channel];
+      if (currentValue !== undefined) {
+        channelAttribution[channel as Channel] = currentValue / total;
+      }
     });
   }
 
   return {
     channelAttribution,
-    totalAttribution: Object.values(channelAttribution).reduce((sum, val) => sum + val, 0),
+    totalAttribution: Object.values(channelAttribution).reduce((sum, val) => sum + (val || 0), 0),
     model
   };
 }
@@ -95,7 +98,7 @@ export function calculateAttribution(
 /**
  * First-Touch Attribution: 100% credit to first touchpoint
  */
-function calculateFirstTouch(touchpoints: Touchpoint[]): Record<Channel, number> {
+function calculateFirstTouch(touchpoints: Touchpoint[]): Partial<Record<Channel, number>> {
   const first = touchpoints[0];
   return { [first.channel]: 1.0 };
 }
@@ -103,7 +106,7 @@ function calculateFirstTouch(touchpoints: Touchpoint[]): Record<Channel, number>
 /**
  * Last-Touch Attribution: 100% credit to last touchpoint
  */
-function calculateLastTouch(touchpoints: Touchpoint[]): Record<Channel, number> {
+function calculateLastTouch(touchpoints: Touchpoint[]): Partial<Record<Channel, number>> {
   const last = touchpoints[touchpoints.length - 1];
   return { [last.channel]: 1.0 };
 }
@@ -111,9 +114,9 @@ function calculateLastTouch(touchpoints: Touchpoint[]): Record<Channel, number> 
 /**
  * Linear Attribution: Equal credit to all touchpoints
  */
-function calculateLinear(touchpoints: Touchpoint[]): Record<Channel, number> {
+function calculateLinear(touchpoints: Touchpoint[]): Partial<Record<Channel, number>> {
   const equalWeight = 1 / touchpoints.length;
-  const attribution: Record<Channel, number> = {};
+  const attribution: Partial<Record<Channel, number>> = {};
 
   touchpoints.forEach(tp => {
     attribution[tp.channel] = (attribution[tp.channel] || 0) + equalWeight;
@@ -129,8 +132,8 @@ function calculateLinear(touchpoints: Touchpoint[]): Record<Channel, number> {
 function calculateTimeDecay(
   touchpoints: Touchpoint[],
   halfLifeDays: number = 7
-): Record<Channel, number> {
-  const attribution: Record<Channel, number> = {};
+): Partial<Record<Channel, number>> {
+  const attribution: Partial<Record<Channel, number>> = {};
 
   // Calculate weights using exponential decay
   const weights = touchpoints.map(tp => {
@@ -153,8 +156,8 @@ function calculateTimeDecay(
  * Position-Based Attribution: 40% first, 40% last, 20% distributed
  * Also known as "U-shaped" attribution
  */
-function calculatePositionBased(touchpoints: Touchpoint[]): Record<Channel, number> {
-  const attribution: Record<Channel, number> = {};
+function calculatePositionBased(touchpoints: Touchpoint[]): Partial<Record<Channel, number>> {
+  const attribution: Partial<Record<Channel, number>> = {};
   const firstWeight = 0.4;
   const lastWeight = 0.4;
   const middleWeight = touchpoints.length > 2
@@ -182,10 +185,16 @@ function calculatePositionBased(touchpoints: Touchpoint[]): Record<Channel, numb
  * Game theory approach: Fair credit distribution based on marginal contributions
  *
  * This is computationally expensive but provides the most fair attribution
+ * For large touchpoint sets (>10), we use approximation
  */
-function calculateShapleyValue(touchpoints: Touchpoint[]): Record<Channel, number> {
+function calculateShapleyValue(touchpoints: Touchpoint[]): Partial<Record<Channel, number>> {
   const channels = [...new Set(touchpoints.map(tp => tp.channel))];
-  const shapleyValues: Record<Channel, number> = {};
+  const shapleyValues: Partial<Record<Channel, number>> = {};
+
+  // For performance, use approximation for large touchpoint sets
+  if (touchpoints.length > 10) {
+    return calculateShapleyValueApproximation(touchpoints);
+  }
 
   // For each channel, calculate its Shapley value
   channels.forEach(channel => {
@@ -219,6 +228,40 @@ function calculateShapleyValue(touchpoints: Touchpoint[]): Record<Channel, numbe
 }
 
 /**
+ * Approximate Shapley value using Monte Carlo sampling
+ * Much faster for large touchpoint sets
+ */
+function calculateShapleyValueApproximation(touchpoints: Touchpoint[]): Partial<Record<Channel, number>> {
+  const channels = [...new Set(touchpoints.map(tp => tp.channel))];
+  const shapleyValues: Partial<Record<Channel, number>> = {};
+  const samples = Math.min(1000, Math.pow(2, touchpoints.length)); // Limit samples
+
+  channels.forEach(channel => {
+    let totalContribution = 0;
+    const channelTouches = touchpoints.filter(tp => tp.channel === channel);
+
+    // Sample random permutations
+    for (let i = 0; i < samples; i++) {
+      const shuffled = [...touchpoints].sort(() => Math.random() - 0.5);
+      const channelIndex = shuffled.findIndex(tp => tp.channel === channel);
+
+      if (channelIndex >= 0) {
+        const before = shuffled.slice(0, channelIndex);
+        const after = [...before, ...channelTouches];
+
+        const valueBefore = calculateConversionValue(before);
+        const valueAfter = calculateConversionValue(after);
+        totalContribution += valueAfter - valueBefore;
+      }
+    }
+
+    shapleyValues[channel] = totalContribution / samples;
+  });
+
+  return shapleyValues;
+}
+
+/**
  * Calculate conversion value for a set of touchpoints
  * This is a simplified model - in production, this would use actual conversion data
  */
@@ -229,14 +272,16 @@ function calculateConversionValue(touchpoints: Touchpoint[]): number {
   let conversionRate = 0.05; // 5% base
 
   // Each touchpoint increases conversion probability
-  touchpoints.forEach(tp => {
+  // Apply diminishing returns for multiple touchpoints
+  touchpoints.forEach((tp, index) => {
     const channelMultiplier = getChannelMultiplier(tp.channel);
-    const recencyMultiplier = Math.exp(-tp.timestamp / 30); // 30-day decay
-    conversionRate += 0.02 * channelMultiplier * recencyMultiplier;
+    const recencyMultiplier = Math.exp(-Math.max(0, tp.timestamp) / 30); // 30-day decay, ensure non-negative
+    const diminishingReturn = 1 / (1 + index * 0.1); // Diminishing returns
+    conversionRate += 0.02 * channelMultiplier * recencyMultiplier * diminishingReturn;
   });
 
   // Cap at 25% max conversion rate
-  return Math.min(conversionRate, 0.25);
+  return Math.min(Math.max(0, conversionRate), 0.25);
 }
 
 /**
@@ -301,7 +346,7 @@ export function compareAttributionModels(
     'data-driven'
   ];
 
-  const results: Record<AttributionModelType, AttributionResult> = {} as any;
+  const results = {} as Record<AttributionModelType, AttributionResult>;
 
   models.forEach(model => {
     results[model] = calculateAttribution(touchpoints, model);
@@ -317,9 +362,9 @@ export function calculateRevenueAttribution(
   touchpoints: Touchpoint[],
   totalRevenue: number,
   model: AttributionModelType
-): Record<Channel, number> {
+): Partial<Record<Channel, number>> {
   const attribution = calculateAttribution(touchpoints, model);
-  const revenueAttribution: Record<Channel, number> = {};
+  const revenueAttribution: Partial<Record<Channel, number>> = {};
 
   Object.entries(attribution.channelAttribution).forEach(([channel, weight]) => {
     revenueAttribution[channel as Channel] = totalRevenue * weight;

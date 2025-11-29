@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useSimulation } from '@/hooks/useSimulation';
 import { ArrowRight, Target, Users, Megaphone, DollarSign } from 'lucide-react';
+import { TutorialOnboardingPopup } from '@/components/onboarding/TutorialOnboardingPopup';
 
 const CHANNEL_OPTIONS = [
   { id: 'digital', name: 'Digital Marketing', icon: '💻' },
@@ -41,7 +42,8 @@ const POSITIONING_OPTIONS = [
 export default function StrategySessionPage() {
   const router = useRouter();
   const { context, setStrategy, completeStrategySession, startSimulation } = useSimulation();
-  
+  const [showTutorialPopup, setShowTutorialPopup] = useState(false);
+
   const [formData, setFormData] = useState({
     targetAudience: context.strategy.targetAudience || '',
     brandPositioning: context.strategy.brandPositioning || '',
@@ -50,11 +52,22 @@ export default function StrategySessionPage() {
     customPositioning: '',
   });
 
+  // Show tutorial popup on first visit
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hasSeenTutorial = localStorage.getItem('cmo-sim-tutorial-offered');
+      if (!hasSeenTutorial) {
+        setShowTutorialPopup(true);
+        localStorage.setItem('cmo-sim-tutorial-offered', 'true');
+      }
+    }
+  }, []);
+
   const handleChannelToggle = (channelId: string) => {
     const updatedChannels = formData.primaryChannels.includes(channelId)
       ? formData.primaryChannels.filter(id => id !== channelId)
       : [...formData.primaryChannels, channelId];
-    
+
     setFormData({ ...formData, primaryChannels: updatedChannels });
     setStrategy({ primaryChannels: updatedChannels });
   };
@@ -94,7 +107,18 @@ export default function StrategySessionPage() {
   const canComplete = formData.targetAudience && formData.brandPositioning && formData.primaryChannels.length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <>
+      <TutorialOnboardingPopup
+        isOpen={showTutorialPopup}
+        onStartTutorial={() => {
+          setShowTutorialPopup(false);
+          // Tutorial will handle its own display
+        }}
+        onSkip={() => setShowTutorialPopup(false)}
+        onClose={() => setShowTutorialPopup(false)}
+      />
+
+      <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
@@ -148,7 +172,7 @@ export default function StrategySessionPage() {
                 </Button>
               ))}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="custom-audience">Custom Audience</Label>
               <div className="flex gap-2">
@@ -197,7 +221,7 @@ export default function StrategySessionPage() {
                 </Button>
               ))}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="custom-positioning">Custom Positioning</Label>
               <div className="flex gap-2">
@@ -248,7 +272,7 @@ export default function StrategySessionPage() {
               </Button>
             ))}
           </div>
-          
+
           {formData.primaryChannels.length > 0 && (
             <div className="mt-4 p-3 bg-primary/10 rounded-lg">
               <p className="text-sm font-medium mb-2">Selected Channels:</p>
@@ -285,6 +309,7 @@ export default function StrategySessionPage() {
           Please complete all sections to continue
         </p>
       )}
-    </div>
+      </div>
+    </>
   );
 }

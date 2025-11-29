@@ -20,6 +20,7 @@ import {
   Crown,
 } from 'lucide-react';
 import type { EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
+import { RiskRewardIndicator } from '@/components/education/RiskRewardIndicator';
 
 interface WildcardModalProps {
   wildcard: EnhancedWildcardEvent | null;
@@ -154,7 +155,15 @@ export function WildcardModal({ wildcard, isOpen, onClose, onChoose }: WildcardM
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">{choice.description}</p>
-                  
+
+                  {/* Risk & Reward Analysis */}
+                  <div className="mb-4">
+                    <RiskRewardIndicator
+                      decisionId={wildcard.type === 'crisis' ? 'crisis-event' : 'opportunity-event'}
+                      variant="compact"
+                    />
+                  </div>
+
                   {/* Impact Preview */}
                   <div className="grid grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 text-sm">
                     <div className="text-center">
@@ -165,7 +174,7 @@ export function WildcardModal({ wildcard, isOpen, onClose, onChoose }: WildcardM
                       </div>
                       <div className="text-xs text-muted-foreground">Revenue</div>
                     </div>
-                    
+
                     <div className="text-center">
                       <div className={`font-semibold ${
                         choice.impact.profit >= 0 ? 'text-green-600' : 'text-red-600'
@@ -174,7 +183,7 @@ export function WildcardModal({ wildcard, isOpen, onClose, onChoose }: WildcardM
                       </div>
                       <div className="text-xs text-muted-foreground">Profit</div>
                     </div>
-                    
+
                     <div className="text-center">
                       <div className={`font-semibold ${
                         choice.impact.marketShare >= 0 ? 'text-green-600' : 'text-red-600'
@@ -183,7 +192,7 @@ export function WildcardModal({ wildcard, isOpen, onClose, onChoose }: WildcardM
                       </div>
                       <div className="text-xs text-muted-foreground">Market Share</div>
                     </div>
-                    
+
                     <div className="text-center">
                       <div className={`font-semibold ${
                         choice.impact.customerSatisfaction >= 0 ? 'text-green-600' : 'text-red-600'
@@ -192,7 +201,7 @@ export function WildcardModal({ wildcard, isOpen, onClose, onChoose }: WildcardM
                       </div>
                       <div className="text-xs text-muted-foreground">Satisfaction</div>
                     </div>
-                    
+
                     <div className="text-center">
                       <div className={`font-semibold ${
                         choice.impact.brandAwareness >= 0 ? 'text-green-600' : 'text-red-600'
@@ -238,7 +247,7 @@ export function WildcardModal({ wildcard, isOpen, onClose, onChoose }: WildcardM
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleChoose}
               disabled={!selectedChoice}
             >

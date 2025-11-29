@@ -10,7 +10,7 @@ export interface SimulationContext {
   simulationId?: string;
   userId?: string;
   startedAt?: Date;
-  
+
   // Strategic decisions
   strategy: {
     targetAudience?: string;
@@ -20,7 +20,7 @@ export interface SimulationContext {
     marketLandscape?: MarketLandscape;
     timeHorizon?: TimeHorizon;
   };
-  
+
   // Quarterly data
   quarters: {
     Q1: QuarterData;
@@ -28,11 +28,11 @@ export interface SimulationContext {
     Q3: QuarterData;
     Q4: QuarterData;
   };
-  
+
   // Overall simulation metrics
   totalBudget: number;
   remainingBudget: number;
-  
+
   // KPIs tracking
   kpis: {
     revenue: number;
@@ -41,19 +41,19 @@ export interface SimulationContext {
     customerSatisfaction: number;
     brandAwareness: number;
   };
-  
+
   // Wildcard events
   wildcards: WildcardEvent[];
-  
+
   // Talent and Big Bets
   hiredTalent: TalentCandidate[];
   selectedBigBet?: BigBetOption;
   bigBetOutcome?: BigBetOutcome;
-  
+
   // Enhanced KPIs
   morale: number;
   brandEquity: number;
-  
+
   // Simulation results
   finalResults?: SimulationResults;
 }
@@ -281,7 +281,7 @@ export const simulationMachine = createMachine({
         },
       },
     },
-    
+
     strategySession: {
       on: {
         SET_STRATEGY: {
@@ -305,7 +305,7 @@ export const simulationMachine = createMachine({
         },
       },
     },
-    
+
     Q1: {
       on: {
         ADD_TACTIC: {
@@ -318,7 +318,7 @@ export const simulationMachine = createMachine({
                 tactics: [...context.quarters.Q1.tactics, event.tactic],
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -423,18 +423,18 @@ export const simulationMachine = createMachine({
             kpis: ({ context }) => {
               const q1Results = calculateQuarterResults(context.quarters.Q1, context.kpis);
               return {
-                revenue: context.kpis.revenue + q1Results.revenue,
-                profit: context.kpis.profit + q1Results.profit,
-                marketShare: Math.max(0, Math.min(100, context.kpis.marketShare + q1Results.marketShare)),
-                customerSatisfaction: Math.max(0, Math.min(100, context.kpis.customerSatisfaction + q1Results.customerSatisfaction)),
-                brandAwareness: Math.max(0, Math.min(100, context.kpis.brandAwareness + q1Results.brandAwareness)),
+                revenue: context.kpis.revenue + q1Results.revenue, // Cumulative
+                profit: context.kpis.profit + q1Results.profit, // Cumulative
+                marketShare: Math.max(0, Math.min(100, q1Results.marketShare)), // Absolute value
+                customerSatisfaction: Math.max(0, Math.min(100, q1Results.customerSatisfaction)), // Absolute value
+                brandAwareness: Math.max(0, Math.min(100, q1Results.brandAwareness)), // Absolute value
               };
             },
           }),
         },
       },
     },
-    
+
     Q2: {
       on: {
         ADD_TACTIC: {
@@ -447,7 +447,7 @@ export const simulationMachine = createMachine({
                 tactics: [...context.quarters.Q2.tactics, event.tactic],
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -551,18 +551,18 @@ export const simulationMachine = createMachine({
             kpis: ({ context }) => {
               const q2Results = calculateQuarterResults(context.quarters.Q2, context.kpis);
               return {
-                revenue: context.kpis.revenue + q2Results.revenue,
-                profit: context.kpis.profit + q2Results.profit,
-                marketShare: Math.max(0, Math.min(100, context.kpis.marketShare + q2Results.marketShare)),
-                customerSatisfaction: Math.max(0, Math.min(100, context.kpis.customerSatisfaction + q2Results.customerSatisfaction)),
-                brandAwareness: Math.max(0, Math.min(100, context.kpis.brandAwareness + q2Results.brandAwareness)),
+                revenue: context.kpis.revenue + q2Results.revenue, // Cumulative
+                profit: context.kpis.profit + q2Results.profit, // Cumulative
+                marketShare: Math.max(0, Math.min(100, q2Results.marketShare)), // Absolute value
+                customerSatisfaction: Math.max(0, Math.min(100, q2Results.customerSatisfaction)), // Absolute value
+                brandAwareness: Math.max(0, Math.min(100, q2Results.brandAwareness)), // Absolute value
               };
             },
           }),
         },
       },
     },
-    
+
     Q3: {
       on: {
         ADD_TACTIC: {
@@ -575,7 +575,7 @@ export const simulationMachine = createMachine({
                 tactics: [...context.quarters.Q3.tactics, event.tactic],
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -679,18 +679,18 @@ export const simulationMachine = createMachine({
             kpis: ({ context }) => {
               const q3Results = calculateQuarterResults(context.quarters.Q3, context.kpis);
               return {
-                revenue: context.kpis.revenue + q3Results.revenue,
-                profit: context.kpis.profit + q3Results.profit,
-                marketShare: Math.max(0, Math.min(100, context.kpis.marketShare + q3Results.marketShare)),
-                customerSatisfaction: Math.max(0, Math.min(100, context.kpis.customerSatisfaction + q3Results.customerSatisfaction)),
-                brandAwareness: Math.max(0, Math.min(100, context.kpis.brandAwareness + q3Results.brandAwareness)),
+                revenue: context.kpis.revenue + q3Results.revenue, // Cumulative
+                profit: context.kpis.profit + q3Results.profit, // Cumulative
+                marketShare: Math.max(0, Math.min(100, q3Results.marketShare)), // Absolute value
+                customerSatisfaction: Math.max(0, Math.min(100, q3Results.customerSatisfaction)), // Absolute value
+                brandAwareness: Math.max(0, Math.min(100, q3Results.brandAwareness)), // Absolute value
               };
             },
           }),
         },
       },
     },
-    
+
     Q4: {
       on: {
         ADD_TACTIC: {
@@ -703,7 +703,7 @@ export const simulationMachine = createMachine({
                 tactics: [...context.quarters.Q4.tactics, event.tactic],
               },
             }),
-            remainingBudget: ({ context, event }) => 
+            remainingBudget: ({ context, event }) =>
               context.remainingBudget - event.tactic.cost,
           }),
         },
@@ -807,18 +807,18 @@ export const simulationMachine = createMachine({
             kpis: ({ context }) => {
               const q4Results = calculateQuarterResults(context.quarters.Q4, context.kpis);
               return {
-                revenue: context.kpis.revenue + q4Results.revenue,
-                profit: context.kpis.profit + q4Results.profit,
-                marketShare: Math.max(0, Math.min(100, context.kpis.marketShare + q4Results.marketShare)),
-                customerSatisfaction: Math.max(0, Math.min(100, context.kpis.customerSatisfaction + q4Results.customerSatisfaction)),
-                brandAwareness: Math.max(0, Math.min(100, context.kpis.brandAwareness + q4Results.brandAwareness)),
+                revenue: context.kpis.revenue + q4Results.revenue, // Cumulative
+                profit: context.kpis.profit + q4Results.profit, // Cumulative
+                marketShare: Math.max(0, Math.min(100, q4Results.marketShare)), // Absolute value
+                customerSatisfaction: Math.max(0, Math.min(100, q4Results.customerSatisfaction)), // Absolute value
+                brandAwareness: Math.max(0, Math.min(100, q4Results.brandAwareness)), // Absolute value
               };
             },
           }),
         },
       },
     },
-    
+
     debrief: {
       entry: assign({
         finalResults: ({ context }) => calculateFinalResults(context),
@@ -835,7 +835,7 @@ export const simulationMachine = createMachine({
         },
       },
     },
-    
+
     completed: {
       on: {
         RESTART_SIMULATION: {
@@ -851,10 +851,14 @@ export const simulationMachine = createMachine({
 function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationContext['kpis']) {
   let totalTraffic = 0;
   let totalSpend = 0;
+  let totalExpectedRevenue = 0; // Sum of tactic expected revenue impacts
 
-  // Calculate traffic from different tactic categories
+  // Calculate traffic and revenue from different tactic categories
   quarter.tactics.forEach(tactic => {
     totalSpend += tactic.cost;
+
+    // Add expected revenue impact from tactic
+    totalExpectedRevenue += tactic.expectedImpact.revenue || 0;
 
     // Map tactic categories to traffic generation
     switch (tactic.category) {
@@ -884,33 +888,70 @@ function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationCo
   });
 
   // Apply market saturation penalty (more competition = harder to get traffic)
-  const marketSaturation = Math.min(currentKPIs.marketShare / 50, 0.8); // Max 80% penalty
-  totalTraffic *= (1 - marketSaturation);
+  // Clamp market saturation between 0 and 0.8 (max 80% penalty)
+  const marketSaturation = Math.min(Math.max(currentKPIs.marketShare / 50, 0), 0.8);
+  totalTraffic = Math.max(0, totalTraffic * (1 - marketSaturation));
 
   // Convert traffic to leads (5% conversion rate)
-  const leads = Math.floor(totalTraffic * 0.05);
+  const leads = Math.floor(Math.max(0, totalTraffic * 0.05));
 
   // Convert leads to customers (15% conversion rate, affected by brand equity)
-  const brandMultiplier = 0.8 + (currentKPIs.brandAwareness / 100) * 0.4; // 0.8 to 1.2x
-  const conversions = Math.floor(leads * 0.15 * brandMultiplier);
+  // Clamp brand awareness to ensure multiplier stays in range
+  const brandAwarenessClamped = Math.max(0, Math.min(100, currentKPIs.brandAwareness));
+  const brandMultiplier = 0.8 + (brandAwarenessClamped / 100) * 0.4; // 0.8 to 1.2x
+  const conversions = Math.floor(Math.max(0, leads * 0.15 * brandMultiplier));
 
-  // Calculate revenue based on industry
-  let customerValue = 150; // Default ecommerce
-  // Note: We don't have industry context here, so we'll use a blended average
-  // In a real implementation, this would be passed from context
+  // Calculate revenue from traffic-based conversions
+  // Use dynamic customer value based on brand awareness and market share
+  // Reuse brandAwarenessClamped from above (line 900)
+  const baseCustomerValue = 200; // Base customer value
+  const marketShareClamped = Math.max(0, Math.min(100, currentKPIs.marketShare));
+  const brandValueMultiplier = 0.7 + (brandAwarenessClamped / 100) * 0.6; // 0.7 to 1.3x
+  const marketShareValueMultiplier = 0.8 + (marketShareClamped / 100) * 0.4; // 0.8 to 1.2x
+  const customerValue = Math.max(0, baseCustomerValue * brandValueMultiplier * marketShareValueMultiplier);
 
-  const revenue = conversions * customerValue;
+  const trafficBasedRevenue = conversions * customerValue;
+
+  // Combine traffic-based revenue with tactic expected revenue impacts
+  // Use a weighted approach: 60% from traffic/conversions, 40% from tactic expected impacts
+  const baseRevenue = (trafficBasedRevenue * 0.6) + (totalExpectedRevenue * 0.4);
+
+  // Apply efficiency multiplier based on budget utilization
+  // Better budget utilization = better results
+  // Clamp to prevent unrealistic multipliers
+  const budgetEfficiency = totalSpend > 0
+    ? Math.min(1.2, Math.max(0.5, 1.0 + (totalSpend / 500000) * 0.2))
+    : 1.0;
+  const efficiencyAdjustedRevenue = Math.max(0, baseRevenue * budgetEfficiency);
 
   // Calculate other KPIs
-  let marketShare = 0;
-  let customerSatisfaction = 0;
-  let brandAwareness = 0;
+  // Start with current values and add tactic impacts
+  let marketShareDelta = 0;
+  let customerSatisfactionDelta = 0;
+  let brandAwarenessDelta = 0;
 
   quarter.tactics.forEach(tactic => {
-    marketShare += tactic.expectedImpact.marketShare;
-    customerSatisfaction += tactic.expectedImpact.customerSatisfaction;
-    brandAwareness += tactic.expectedImpact.brandAwareness;
+    marketShareDelta += tactic.expectedImpact.marketShare || 0;
+    customerSatisfactionDelta += tactic.expectedImpact.customerSatisfaction || 0;
+    brandAwarenessDelta += tactic.expectedImpact.brandAwareness || 0;
   });
+
+  // Apply diminishing returns for KPIs (harder to improve as you get higher)
+  // Formula: effectiveness = 1 - (current_value / 100) * 0.5
+  // This means at 0%, you get 100% effectiveness, at 100% you get 50% effectiveness
+  const marketShareEffectiveness = 1 - (currentKPIs.marketShare / 100) * 0.5;
+  const satisfactionEffectiveness = 1 - (currentKPIs.customerSatisfaction / 100) * 0.5;
+  const awarenessEffectiveness = 1 - (currentKPIs.brandAwareness / 100) * 0.5;
+
+  // Apply effectiveness multipliers to deltas
+  const adjustedMarketShareDelta = marketShareDelta * marketShareEffectiveness;
+  const adjustedSatisfactionDelta = customerSatisfactionDelta * satisfactionEffectiveness;
+  const adjustedAwarenessDelta = brandAwarenessDelta * awarenessEffectiveness;
+
+  // Calculate new absolute values
+  let marketShare = Math.max(0, Math.min(100, currentKPIs.marketShare + adjustedMarketShareDelta));
+  let customerSatisfaction = Math.max(0, Math.min(100, currentKPIs.customerSatisfaction + adjustedSatisfactionDelta));
+  let brandAwareness = Math.max(0, Math.min(100, currentKPIs.brandAwareness + adjustedAwarenessDelta));
 
   // Calculate impact from wildcard responses
   let wildcardRevenueImpact = 0;
@@ -918,23 +959,27 @@ function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationCo
   let wildcardMarketShareImpact = 0;
   let wildcardCustomerSatisfactionImpact = 0;
   let wildcardBrandAwarenessImpact = 0;
-  
+
   quarter.wildcardEvents.forEach(wildcard => {
     if (wildcard.impact) {
-      wildcardRevenueImpact += wildcard.impact.revenue;
-      wildcardProfitImpact += wildcard.impact.profit;
+      wildcardRevenueImpact += wildcard.impact.revenue || 0;
+      wildcardProfitImpact += wildcard.impact.profit || 0;
       wildcardMarketShareImpact += wildcard.impact?.marketShare || 0;
       wildcardCustomerSatisfactionImpact += wildcard.impact?.customerSatisfaction || 0;
       wildcardBrandAwarenessImpact += wildcard.impact?.brandAwareness || 0;
     }
   });
 
+  // Final revenue calculation
+  const finalRevenue = Math.max(0, efficiencyAdjustedRevenue + wildcardRevenueImpact);
+  const finalProfit = finalRevenue - totalSpend + wildcardProfitImpact;
+
   return {
-    revenue: revenue + wildcardRevenueImpact,
-    profit: revenue - totalSpend + wildcardProfitImpact,
-    marketShare: marketShare + wildcardMarketShareImpact,
-    customerSatisfaction: customerSatisfaction + wildcardCustomerSatisfactionImpact,
-    brandAwareness: brandAwareness + wildcardBrandAwarenessImpact,
+    revenue: finalRevenue,
+    profit: finalProfit,
+    marketShare: Math.max(0, Math.min(100, marketShare + wildcardMarketShareImpact)),
+    customerSatisfaction: Math.max(0, Math.min(100, customerSatisfaction + wildcardCustomerSatisfactionImpact)),
+    brandAwareness: Math.max(0, Math.min(100, brandAwareness + wildcardBrandAwarenessImpact)),
   };
 }
 
@@ -945,7 +990,7 @@ function calculateFinalResults(context: SimulationContext): SimulationResults {
     ...context.quarters.Q3.wildcardEvents,
     ...context.quarters.Q4.wildcardEvents,
   ];
-  
+
   // Calculate overall score based on KPIs
   const score = Math.round(
     (context.kpis.revenue / 1000000) * 25 + // Revenue weight: 25%
@@ -953,7 +998,7 @@ function calculateFinalResults(context: SimulationContext): SimulationResults {
     (context.kpis.customerSatisfaction) * 0.25 + // Customer satisfaction weight: 25%
     (context.kpis.brandAwareness) * 0.25 // Brand awareness weight: 25%
   );
-  
+
   // Determine grade
   let grade: 'A' | 'B' | 'C' | 'D' | 'F';
   if (score >= 90) grade = 'A';
@@ -961,10 +1006,10 @@ function calculateFinalResults(context: SimulationContext): SimulationResults {
   else if (score >= 70) grade = 'C';
   else if (score >= 60) grade = 'D';
   else grade = 'F';
-  
+
   // Generate recommendations based on performance
   const recommendations = generateRecommendations(context);
-  
+
   return {
     finalKPIs: context.kpis,
     quarterlyBreakdown: context.quarters,
@@ -978,26 +1023,26 @@ function calculateFinalResults(context: SimulationContext): SimulationResults {
 
 function generateRecommendations(context: SimulationContext): string[] {
   const recommendations: string[] = [];
-  
+
   if (context.kpis.revenue < 500000) {
     recommendations.push("Focus on revenue-generating tactics like digital advertising and partnerships.");
   }
-  
+
   if (context.kpis.marketShare < 15) {
     recommendations.push("Increase market share through competitive pricing and brand differentiation.");
   }
-  
+
   if (context.kpis.customerSatisfaction < 70) {
     recommendations.push("Invest in customer experience improvements and support initiatives.");
   }
-  
+
   if (context.kpis.brandAwareness < 40) {
     recommendations.push("Boost brand awareness through content marketing and social media campaigns.");
   }
-  
+
   if (context.remainingBudget > context.totalBudget * 0.2) {
     recommendations.push("You left significant budget unused. Consider more aggressive marketing investments.");
   }
-  
+
   return recommendations;
 }

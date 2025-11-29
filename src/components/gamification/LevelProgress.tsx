@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -129,19 +129,25 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
   const [levelData, setLevelData] = useState<LevelData | null>(null);
   const [animatedXP, setAnimatedXP] = useState(totalXP);
   const [isLevelingUp, setIsLevelingUp] = useState(false);
+  const prevLevelRef = useRef<number | null>(null);
 
+  // Calculate level data when totalXP changes
   useEffect(() => {
     const data = calculateLevelData(totalXP);
 
-    // Check for level up
-    if (levelData && data.currentLevel > levelData.currentLevel) {
+    // Check for level up by comparing with previous level
+    if (prevLevelRef.current !== null && data.currentLevel > prevLevelRef.current) {
       setIsLevelingUp(true);
       setTimeout(() => setIsLevelingUp(false), 2000);
     }
 
+    // Update previous level reference
+    prevLevelRef.current = data.currentLevel;
     setLevelData(data);
+  }, [totalXP]);
 
-    // Animate XP change
+  // Animate XP change separately to avoid dependency issues
+  useEffect(() => {
     if (showAnimation && animatedXP !== totalXP) {
       const diff = totalXP - animatedXP;
       const duration = Math.min(Math.abs(diff) * 5, 1000);
@@ -161,7 +167,7 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
 
       requestAnimationFrame(animate);
     }
-  }, [totalXP, animatedXP, showAnimation, levelData]);
+  }, [totalXP, showAnimation]); // Removed animatedXP and levelData from dependencies
 
   if (!levelData) return null;
 
