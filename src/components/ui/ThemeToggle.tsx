@@ -47,7 +47,9 @@ export function ThemeToggle({
     );
   }
 
-  const currentTheme = resolvedTheme || theme;
+  // Use resolvedTheme for display (actual theme), theme for selection (user preference)
+  const displayTheme = resolvedTheme || theme; // For icon display
+  const selectedTheme = theme; // For checkmark (user's selected preference)
 
   return (
     <DropdownMenu>
@@ -58,9 +60,9 @@ export function ThemeToggle({
           className={cn(className)}
           aria-label="Toggle theme"
         >
-          {currentTheme === 'light' ? (
+          {displayTheme === 'light' ? (
             <Sun className="h-4 w-4" />
-          ) : currentTheme === 'dark' ? (
+          ) : displayTheme === 'dark' ? (
             <Moon className="h-4 w-4" />
           ) : (
             <Monitor className="h-4 w-4" />
@@ -72,21 +74,21 @@ export function ThemeToggle({
         <DropdownMenuItem onClick={() => setTheme('light')}>
           <Sun className="mr-2 h-4 w-4" />
           <span>Light</span>
-          {currentTheme === 'light' && (
+          {selectedTheme === 'light' && (
             <span className="ml-auto text-xs">✓</span>
           )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('dark')}>
           <Moon className="mr-2 h-4 w-4" />
           <span>Dark</span>
-          {currentTheme === 'dark' && (
+          {selectedTheme === 'dark' && (
             <span className="ml-auto text-xs">✓</span>
           )}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')}>
           <Monitor className="mr-2 h-4 w-4" />
           <span>System</span>
-          {currentTheme === 'system' && (
+          {selectedTheme === 'system' && (
             <span className="ml-auto text-xs">✓</span>
           )}
         </DropdownMenuItem>
