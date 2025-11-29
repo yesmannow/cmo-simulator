@@ -6,21 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Gamepad2, ArrowRight } from 'lucide-react';
 
+// Delay before auto-redirect in demo mode (milliseconds)
+const AUTO_REDIRECT_DELAY_MS = 100;
+
 export default function LoginPage() {
   const router = useRouter();
 
-  // For development/demo mode, automatically redirect to the simulator setup
+  // For demo mode, automatically redirect to the simulator setup
+  // This app currently runs in demo mode without authentication
   useEffect(() => {
-    // Check if we're in demo mode (no Supabase configured)
-    const isDemo = !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
-    if (isDemo || process.env.NODE_ENV === 'development') {
-      // Short delay to show the page briefly, then redirect
-      const timer = setTimeout(() => {
-        router.push('/sim/setup');
-      }, 100);
-      return () => clearTimeout(timer);
-    }
+    // Auto-redirect to setup - this app is designed to work without authentication
+    const timer = setTimeout(() => {
+      router.push('/sim/setup');
+    }, AUTO_REDIRECT_DELAY_MS);
+    return () => clearTimeout(timer);
   }, [router]);
 
   const handleStartDemo = () => {
