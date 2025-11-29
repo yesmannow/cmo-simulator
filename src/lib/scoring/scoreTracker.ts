@@ -6,7 +6,7 @@
  */
 
 import { SimulationState } from '../simulationEngine';
-import { calculateAdvancedScore, ScoreComponents } from './advancedScoring';
+import { calculateAdvancedScore, calculateScoreComponents, ScoreComponents } from './advancedScoring';
 import { ScoringContext } from '../scoringEngine';
 
 export interface ScoreTracker {
@@ -54,7 +54,7 @@ export function createScoreTracker(
   const scoreVelocity = calculateVelocity(historicalScores);
 
   // Get component trends
-  const componentTrends = calculateScoreComponents(context);
+  const componentTrends = calculateScoreComponentsForTracker(context);
 
   // Calculate percentile (requires leaderboard data - placeholder for now)
   const percentile = calculatePercentile(currentScore);
@@ -85,7 +85,6 @@ function calculateCurrentScore(
   difficulty: 'beginner' | 'intermediate' | 'advanced',
   industry: string
 ): number {
-  const { calculateAdvancedScore } = require('./advancedScoring');
   const score = calculateAdvancedScore(context, difficulty, industry);
   return score.totalScore;
 }
@@ -119,8 +118,7 @@ function calculateVelocity(scores: number[]): number {
 /**
  * Calculate component trends
  */
-function calculateScoreComponents(context: ScoringContext): ScoreComponents {
-  const { calculateScoreComponents } = require('./advancedScoring');
+function calculateScoreComponentsForTracker(context: ScoringContext): ScoreComponents {
   return calculateScoreComponents(context);
 }
 
