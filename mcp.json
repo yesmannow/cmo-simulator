@@ -13,7 +13,7 @@
     },
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/runner/work/cmo-simulator/cmo-simulator/src"]
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./src"]
     }
   },
   "context": {

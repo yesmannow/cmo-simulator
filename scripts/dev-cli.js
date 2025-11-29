@@ -31,8 +31,8 @@ const COMMANDS = {
     command: 'npx tsc --noEmit'
   },
   clean: {
-    description: 'Clean build artifacts and node_modules',
-    command: 'rm -rf .next node_modules'
+    description: 'Clean build artifacts',
+    command: 'rm -rf .next'
   },
   reinstall: {
     description: 'Clean and reinstall dependencies',
@@ -69,7 +69,10 @@ function runCommand(cmd) {
     });
     console.log('\n✅ Command completed successfully!\n');
   } catch (error) {
-    console.error('\n❌ Command failed with error');
+    console.error('\n❌ Command failed');
+    if (error.message) {
+      console.error(`   Error: ${error.message}`);
+    }
     process.exit(1);
   }
 }
