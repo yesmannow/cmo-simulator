@@ -211,20 +211,34 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_anon_key
 
 ### Cloudflare Pages Deployment
 
-This project is configured for deployment to Cloudflare Pages using the OpenNext adapter.
+This project is configured for deployment to Cloudflare Pages using the **OpenNext adapter** (`@opennextjs/cloudflare`), NOT the default `@cloudflare/next-on-pages` package.
 
-**Cloudflare Pages Build Settings:**
-- **Build command:** `npx opennextjs-cloudflare build`
-- **Build output directory:** `.open-next`
-- **Compatibility flags:** `nodejs_compat` (set in Pages project settings)
+> ⚠️ **Important:** Do NOT use the default "Next.js" framework preset settings in Cloudflare Pages. The default preset uses `@cloudflare/next-on-pages` with a different build output directory. This project requires the OpenNext adapter settings below.
+
+**Cloudflare Pages Dashboard Build Configuration:**
+
+| Setting | Value |
+|---------|-------|
+| **Framework preset** | `None` |
+| **Build command** | `npx opennextjs-cloudflare build` |
+| **Build output directory** | `.open-next` |
+| **Root directory** | `/` (leave default) |
+
+**Compatibility Flags (Required):**
+- Navigate to: Settings → Functions → Compatibility flags
+- Add `nodejs_compat` for **both** Production and Preview environments
 
 **Steps:**
 1. Connect your GitHub repository to Cloudflare Pages
-2. Set the build command to: `npx opennextjs-cloudflare build`
-3. Set the build output directory to: `.open-next`
-4. Add your environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)
-5. In Functions > Compatibility flags, add `nodejs_compat` for both production and preview
-6. Deploy!
+2. **Framework preset**: Select "None"
+3. **Build command**: Set to `npx opennextjs-cloudflare build`
+4. **Build output directory**: Set to `.open-next`
+5. Add your environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+6. In Settings → Functions → Compatibility flags, add `nodejs_compat` for both production and preview
+7. (Optional) Enable build comments in Settings → Builds & deployments to get build status and preview links on pull requests
+8. Deploy!
 
 For more information, see the [OpenNext Cloudflare documentation](https://opennext.js.org/cloudflare/get-started).
 
