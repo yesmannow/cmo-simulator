@@ -1,13 +1,24 @@
 /**
  * Advanced Scoring Engine for CMO Simulator
- * 
+ *
  * This engine implements complex, realistic calculations with:
  * - Hidden metrics (Brand Equity, Team Morale)
  * - Compounding effects (SEO grows exponentially)
  * - Diminishing returns (paid ads saturate)
  * - Share of Voice model for market share
  * - Strategic scoring that rewards multiple paths to success
+ *
+ * Enhanced with:
+ * - Multiplicative scoring (exponential curves)
+ * - Bass Diffusion Model for market share
+ * - Customer Lifetime Value (CLV) for ROI
+ * - Dynamic competitive response
  */
+
+import { calculateAdvancedScore } from './scoring/advancedScoring';
+import { calculateMarketShareBass, calculateMarketMaturity } from './models/marketShare';
+import { calculateAdvancedROI, getIndustryCLV } from './models/roi';
+import { simulateCompetitiveResponse } from './models/competitive';
 
 export interface ScoringContext {
   // Strategic Foundation
@@ -46,12 +57,12 @@ export interface QuarterPerformance {
   wildcardResponse?: WildcardResponse;
   talentHired?: TalentHire[];
   bigBet?: BigBetExecution;
-  
+
   // Spend & Time
   budgetSpent: number;
   teamHoursUsed: number;
   timeSpent: number;
-  
+
   // Results
   results: {
     revenue: number;
@@ -108,7 +119,7 @@ export interface FinalScore {
   };
   grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
   percentile: number;
-  
+
   // Final KPIs
   finalKPIs: {
     revenue: number;
@@ -118,7 +129,7 @@ export interface FinalScore {
     brandAwareness: number;
     roi: number; // Return on Investment %
   };
-  
+
   // Strategic Insights
   strengths: string[];
   weaknesses: string[];
@@ -330,16 +341,16 @@ export function calculateMarketShare(
 ): number {
   const totalMarketSpend = yourSpend + competitorSpend;
   const shareOfVoice = yourSpend / totalMarketSpend;
-  
+
   // Brand equity provides a multiplier (strong brands get more bang for buck)
   const brandMultiplier = 1 + (brandEquity / 200); // 0.5 to 1.5x
-  
+
   // Market share moves toward share of voice, but with inertia
   const targetShare = shareOfVoice * brandMultiplier * 100;
   const inertia = 0.3; // 30% of previous share persists
-  
+
   const newShare = (previousMarketShare * inertia) + (targetShare * (1 - inertia));
-  
+
   return Math.min(Math.max(newShare, 0), 100); // Clamp between 0-100%
 }
 
@@ -353,22 +364,22 @@ export function calculateSEOImpact(
   industryFactor: number = 1.0
 ): number {
   let cumulativeTraffic = 0;
-  
+
   quarterlyInvestments.forEach((investment, index) => {
     const quartersActive = currentQuarter - index;
-    
+
     if (quartersActive >= 0) {
       // Base traffic from investment
       const baseTraffic = investment * 0.5; // $1 = 0.5 visitors initially
-      
+
       // Compound growth: 15% per quarter
       const growthRate = 0.15;
       const compoundedTraffic = baseTraffic * Math.pow(1 + growthRate, quartersActive);
-      
+
       cumulativeTraffic += compoundedTraffic;
     }
   });
-  
+
   return cumulativeTraffic * industryFactor;
 }
 
@@ -383,17 +394,17 @@ export function calculatePaidAdsImpact(
 ): { traffic: number; cost: number; effectiveness: number } {
   // Base cost per click increases with competition
   const baseCPC = 2.0 + (competitorActivity * 0.5);
-  
+
   // Diminishing returns curve: effectiveness drops as spend increases
   // Using logarithmic decay
   const saturationPenalty = 1 - (marketSaturation * 0.4); // Up to 40% penalty
   const spendEfficiency = Math.log10(spend + 1) / Math.log10(spend + 10000);
-  
+
   const effectiveSpend = spend * saturationPenalty * spendEfficiency;
   const traffic = effectiveSpend / baseCPC;
   const actualCPC = spend / traffic;
   const effectiveness = (baseCPC / actualCPC) * 100; // % of optimal efficiency
-  
+
   return {
     traffic: Math.floor(traffic),
     cost: spend,
@@ -417,17 +428,17 @@ export function calculateBrandEquity(
 ): number {
   // Natural decay: 5% per quarter if no maintenance
   const decay = currentEquity * 0.05;
-  
+
   // Positive influences
   const contentBoost = quarterlyActions.contentQuality * 0.1;
   const prBoost = quarterlyActions.prActivity * 0.15;
   const satisfactionBoost = quarterlyActions.customerSatisfaction * 0.08;
-  
+
   // Negative influences
   const controversyPenalty = quarterlyActions.controversies * 5;
-  
+
   const newEquity = currentEquity - decay + contentBoost + prBoost + satisfactionBoost - controversyPenalty;
-  
+
   return Math.min(Math.max(newEquity, 0), 100); // Clamp 0-100
 }
 
@@ -449,18 +460,18 @@ export function calculateTeamMorale(
   // Burnout penalty if overworked
   const utilizationRate = quarterlyFactors.hoursWorked / quarterlyFactors.maxCapacity;
   const burnoutPenalty = utilizationRate > 0.9 ? (utilizationRate - 0.9) * 50 : 0;
-  
+
   // Training boost
   const trainingBoost = Math.min(quarterlyFactors.trainingInvestment / 10000, 5);
-  
+
   // Success boost
   const successBoost = quarterlyFactors.campaignSuccesses * 3;
-  
+
   // Crisis penalty
   const crisisPenalty = quarterlyFactors.crises * 8;
-  
+
   const newMorale = currentMorale - burnoutPenalty + trainingBoost + successBoost - crisisPenalty;
-  
+
   return Math.min(Math.max(newMorale, 0), 100);
 }
 
@@ -487,88 +498,234 @@ export function calculateConversionRate(
   const brandBoost = brandEquity / 200; // 0 to 0.5x boost
   const websiteMultiplier = websiteQuality / 100; // 0 to 1x
   const targetingMultiplier = targetingAccuracy / 100; // 0 to 1x
-  
+
   const finalRate = baseRate * (1 + brandBoost) * websiteMultiplier * targetingMultiplier;
-  
+
   return Math.min(finalRate, 0.25); // Cap at 25% conversion rate
 }
 
 /**
  * Calculate final Strategy Score
  * This is the main leaderboard metric
+ *
+ * Now uses advanced scoring with:
+ * - Multiplicative scoring (exponential curves)
+ * - Bass Diffusion Model for market share
+ * - CLV-based ROI calculation
+ * - Difficulty and industry adjustments
  */
-export function calculateFinalScore(context: ScoringContext): FinalScore {
+export function calculateFinalScore(
+  context: ScoringContext,
+  difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate',
+  useAdvancedScoring: boolean = true
+): FinalScore {
   const totalRevenue = context.quarters.reduce((sum, q) => sum + q.results.revenue, 0);
   const totalProfit = totalRevenue - context.budgetSpent;
-  const roi = (totalProfit / context.budgetSpent) * 100;
-  
-  // Calculate final market share (from last quarter)
-  const finalMarketShare = context.quarters[context.quarters.length - 1]?.results.marketShare 
-    ? calculateMarketShare(
-        context.budgetSpent / 4, // Avg quarterly spend
-        context.competitorSpend / 4,
-        5, // Starting share
-        context.brandEquity
-      )
-    : 5;
-  
-  // Strategy Score Components
-  const marketShareScore = finalMarketShare * 1000;
-  const roiScore = Math.max(roi, 0) * 100;
-  const brandEquityScore = context.brandEquity * 10;
-  
-  const strategyScore = Math.floor(marketShareScore + roiScore + brandEquityScore);
-  
-  // Determine grade
-  let grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
-  if (strategyScore >= 8000) grade = 'A+';
-  else if (strategyScore >= 6000) grade = 'A';
-  else if (strategyScore >= 4000) grade = 'B';
-  else if (strategyScore >= 2000) grade = 'C';
-  else if (strategyScore >= 1000) grade = 'D';
-  else grade = 'F';
-  
-  // Generate insights
-  const strengths: string[] = [];
-  const weaknesses: string[] = [];
-  const recommendations: string[] = [];
-  
-  if (roi > 150) strengths.push('Exceptional ROI - highly efficient budget use');
-  if (finalMarketShare > 15) strengths.push('Strong market presence achieved');
-  if (context.brandEquity > 70) strengths.push('Built powerful brand equity');
-  
-  if (roi < 50) weaknesses.push('Low ROI - budget efficiency needs improvement');
-  if (finalMarketShare < 8) weaknesses.push('Limited market penetration');
-  if (context.teamMorale < 50) weaknesses.push('Team burnout affected performance');
-  
-  if (context.annualAllocation.brandAwareness < 20) {
-    recommendations.push('Invest more in brand awareness for long-term growth');
+
+  if (useAdvancedScoring) {
+    // Use new advanced scoring system
+    const advancedScore = calculateAdvancedScore(
+      context,
+      difficulty,
+      context.industry
+    );
+
+    // Use Bass Diffusion Model for market share
+    const previousShares = context.quarters.map(q => q.results.marketShare);
+    const currentShare = previousShares[previousShares.length - 1] || 5;
+
+    const finalMarketShare = calculateMarketShareBass({
+      currentShare,
+      yourSpend: context.budgetSpent / 4, // Avg quarterly spend
+      competitorSpend: context.competitorSpend / 4,
+      brandEquity: context.brandEquity,
+      marketMaturity: context.marketSaturation,
+      quartersElapsed: context.quarters.length,
+      previousShares
+    });
+
+    // Use advanced ROI with CLV
+    const customerAcquisitions = context.quarters.reduce((sum, q) => {
+      // Estimate acquisitions from revenue (rough estimate)
+      const avgCustomerValue = getAvgCustomerValueForIndustry(context.industry);
+      return sum + (q.results.revenue / avgCustomerValue);
+    }, 0);
+
+    const industryCLV = getIndustryCLV(context.industry);
+
+    const roiResult = calculateAdvancedROI({
+      immediateRevenue: totalRevenue,
+      spend: context.budgetSpent,
+      customerAcquisitions: Math.max(1, customerAcquisitions),
+      avgCLV: industryCLV.avgCLV,
+      retentionRate: industryCLV.retentionRate,
+      brandEquity: context.brandEquity,
+      industry: context.industry
+    });
+
+    // Determine grade based on new scoring scale
+    let grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
+    if (advancedScore.totalScore >= 12000) grade = 'A+';
+    else if (advancedScore.totalScore >= 9000) grade = 'A';
+    else if (advancedScore.totalScore >= 6000) grade = 'B';
+    else if (advancedScore.totalScore >= 3000) grade = 'C';
+    else if (advancedScore.totalScore >= 1500) grade = 'D';
+    else grade = 'F';
+
+    // Generate insights
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+    const recommendations: string[] = [];
+
+    if (roiResult.weightedROI > 150) strengths.push('Exceptional ROI - highly efficient budget use');
+    if (finalMarketShare > 15) strengths.push('Strong market presence achieved');
+    if (context.brandEquity > 70) strengths.push('Built powerful brand equity');
+    if (advancedScore.strategicScore > 1500) strengths.push('Excellent strategic thinking and planning');
+    if (advancedScore.consistencyScore > 1000) strengths.push('Consistent quarter-over-quarter growth');
+
+    if (roiResult.weightedROI < 50) weaknesses.push('Low ROI - budget efficiency needs improvement');
+    if (finalMarketShare < 8) weaknesses.push('Limited market penetration');
+    if (context.teamMorale < 50) weaknesses.push('Team burnout affected performance');
+    if (advancedScore.efficiencyScore < 500) weaknesses.push('Budget utilization could be improved');
+
+    if (context.annualAllocation.brandAwareness < 20) {
+      recommendations.push('Invest more in brand awareness for long-term growth');
+    }
+    if (context.brandEquity < 50) {
+      recommendations.push('Focus on content quality and PR to build brand equity');
+    }
+    if (advancedScore.strategicScore < 1000) {
+      recommendations.push('Balance your marketing mix across awareness, lead gen, and conversion');
+    }
+    if (advancedScore.consistencyScore < 500) {
+      recommendations.push('Focus on sustainable growth strategies for consistent results');
+    }
+
+    return {
+      strategyScore: advancedScore.totalScore,
+      breakdown: {
+        marketShareScore: advancedScore.marketShareScore,
+        roiScore: advancedScore.roiScore,
+        brandEquityScore: advancedScore.brandEquityScore
+      },
+      grade,
+      percentile: 0, // Calculate from leaderboard position
+      finalKPIs: {
+        revenue: totalRevenue,
+        profit: totalProfit,
+        marketShare: finalMarketShare,
+        customerSatisfaction: 75, // Calculate from tactics
+        brandAwareness: context.brandEquity,
+        roi: roiResult.weightedROI
+      },
+      strengths,
+      weaknesses,
+      recommendations
+    };
+  } else {
+    // Fallback to original scoring (backward compatibility)
+    const roi = context.budgetSpent > 0 ? (totalProfit / context.budgetSpent) * 100 : 0;
+
+    // Calculate final market share (from last quarter)
+    const finalMarketShare = context.quarters[context.quarters.length - 1]?.results.marketShare
+      ? calculateMarketShare(
+          context.budgetSpent / 4, // Avg quarterly spend
+          context.competitorSpend / 4,
+          5, // Starting share
+          context.brandEquity
+        )
+      : 5;
+
+    // Strategy Score Components
+    const marketShareScore = finalMarketShare * 1000;
+    const roiScore = Math.max(roi, 0) * 100;
+    const brandEquityScore = context.brandEquity * 10;
+
+    const strategyScore = Math.floor(marketShareScore + roiScore + brandEquityScore);
+
+    // Determine grade
+    let grade: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';
+    if (strategyScore >= 8000) grade = 'A+';
+    else if (strategyScore >= 6000) grade = 'A';
+    else if (strategyScore >= 4000) grade = 'B';
+    else if (strategyScore >= 2000) grade = 'C';
+    else if (strategyScore >= 1000) grade = 'D';
+    else grade = 'F';
+
+    // Generate insights
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+    const recommendations: string[] = [];
+
+    if (roi > 150) strengths.push('Exceptional ROI - highly efficient budget use');
+    if (finalMarketShare > 15) strengths.push('Strong market presence achieved');
+    if (context.brandEquity > 70) strengths.push('Built powerful brand equity');
+
+    if (roi < 50) weaknesses.push('Low ROI - budget efficiency needs improvement');
+    if (finalMarketShare < 8) weaknesses.push('Limited market penetration');
+    if (context.teamMorale < 50) weaknesses.push('Team burnout affected performance');
+
+    if (context.annualAllocation.brandAwareness < 20) {
+      recommendations.push('Invest more in brand awareness for long-term growth');
+    }
+    if (context.brandEquity < 50) {
+      recommendations.push('Focus on content quality and PR to build brand equity');
+    }
+
+    return {
+      strategyScore,
+      breakdown: {
+        marketShareScore,
+        roiScore,
+        brandEquityScore
+      },
+      grade,
+      percentile: 0, // Calculate based on leaderboard position
+      finalKPIs: {
+        revenue: totalRevenue,
+        profit: totalProfit,
+        marketShare: finalMarketShare,
+        customerSatisfaction: 75, // Calculate from tactics
+        brandAwareness: context.brandEquity,
+        roi
+      },
+      strengths,
+      weaknesses,
+      recommendations
+    };
   }
-  if (context.brandEquity < 50) {
-    recommendations.push('Focus on content quality and PR to build brand equity');
-  }
-  
-  return {
-    strategyScore,
-    breakdown: {
-      marketShareScore,
-      roiScore,
-      brandEquityScore
-    },
-    grade,
-    percentile: 0, // Calculate based on leaderboard position
-    finalKPIs: {
-      revenue: totalRevenue,
-      profit: totalProfit,
-      marketShare: finalMarketShare,
-      customerSatisfaction: 75, // Calculate from tactics
-      brandAwareness: context.brandEquity,
-      roi
-    },
-    strengths,
-    weaknesses,
-    recommendations
+}
+
+/**
+ * Helper function to get average customer value by industry
+ */
+function getAvgCustomerValueForIndustry(industry: string): number {
+  const values: Record<string, number> = {
+    healthcare: 5000,
+    legal: 8000,
+    ecommerce: 150,
+    saas: 2500,
+    fintech: 1200,
+    'real-estate': 15000,
+    'food-delivery': 35,
+    fitness: 200,
+    automotive: 25000,
+    travel: 300,
+    gaming: 60,
+    fashion: 120,
+    construction: 50000,
+    energy: 8000,
+    agritech: 10000,
+    manufacturing: 75000,
+    nonprofit: 250,
+    music: 15,
+    sports: 80,
+    'pet-care': 180,
+    'home-services': 150,
+    cannabis: 90,
+    space: 500000
   };
+  return values[industry] || 1000;
 }
 
 /**
@@ -580,7 +737,7 @@ export function simulateCompetitorSpend(
   quarter: number
 ): number {
   let baseCompetitorSpend: number;
-  
+
   switch (landscape) {
     case 'disruptor':
       // One large incumbent with 5x your budget
@@ -595,10 +752,10 @@ export function simulateCompetitorSpend(
       baseCompetitorSpend = yourSpend * 1.2;
       break;
   }
-  
+
   // Competitors increase spend over time
   const growthFactor = 1 + (quarter * 0.1);
-  
+
   return baseCompetitorSpend * growthFactor;
 }
 
@@ -611,7 +768,7 @@ export function calculateMarketSaturation(
 ): number {
   // Saturation increases as spend approaches market capacity
   const saturationRatio = totalMarketSpend / marketSize;
-  
+
   // Sigmoid curve for saturation (0 to 1)
   return 1 / (1 + Math.exp(-5 * (saturationRatio - 0.5)));
 }

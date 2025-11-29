@@ -22,6 +22,11 @@ import {
   type AdstockHistory
 } from './scoringEngine';
 
+// Import new advanced models
+import { calculateMarketShareBass, calculateMarketMaturity } from './models/marketShare';
+import { calculateAdvancedROI, getIndustryCLV } from './models/roi';
+import { simulateCompetitiveResponse } from './models/competitive';
+
 import { generateWildcardEvent, WildcardEvent } from './advancedWildcards';
 import { SAMPLE_TACTICS } from './tactics';
 import { DifficultyLevel } from './difficultySystem';
@@ -48,53 +53,53 @@ export interface SimulationConfig {
   companyProfile: 'startup' | 'enterprise';
   marketLandscape: 'disruptor' | 'crowded' | 'frontier';
   difficulty: DifficultyLevel;
-  
+
   // Budget Allocation
   budgetAllocation: {
     brandAwareness: number;
     leadGeneration: number;
     conversionOptimization: number;
   };
-  
+
   // Total budget (calculated from time horizon)
   totalBudget: number;
 }
 
 export interface QuarterlyDecisions {
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
-  
+
   // Tactics selected
   tactics: {
     tacticId: string;
     budgetAllocated: number;
     timeAllocated: number;
   }[];
-  
+
   // A/B Test result (Q1)
   abTestResult?: {
     selectedCorrectly: boolean;
     cpaImpact: number;
     conversionImpact: number;
   };
-  
+
   // Wildcard response
   wildcardResponse?: {
     eventId: string;
     choiceId: string;
   };
-  
+
   // Talent hire (Q2)
   talentHire?: {
     candidateId: string;
     salary: number;
   };
-  
+
   // Strategic initiative
   strategicInitiative?: {
     type: 'double-down' | 'diversify' | 'training' | 'research';
     investment: number;
   };
-  
+
   // Big bet (Q4)
   bigBet?: {
     betId: string;
@@ -151,16 +156,16 @@ export function initializeSimulation(config: SimulationConfig): SimulationState 
     '3-year': 1000000,
     '5-year': 2000000
   };
-  
+
   const totalBudget = budgetMap[config.timeHorizon];
-  
+
   // Initial competitor spend based on landscape
   const initialCompetitorSpend = simulateCompetitorSpend(
     config.marketLandscape,
     totalBudget / 4, // Quarterly budget
     0 // Q0
   );
-  
+
   return {
     config,
     currentQuarter: 'Q1',
@@ -190,18 +195,18 @@ export function processQuarter(
   decisions: QuarterlyDecisions
 ): SimulationState {
   const quarterIndex = ['Q1', 'Q2', 'Q3', 'Q4'].indexOf(decisions.quarter);
-  
+
   // Calculate budget spent this quarter
   const budgetSpent = decisions.tactics.reduce((sum, t) => sum + t.budgetAllocated, 0) +
     (decisions.wildcardResponse ? getWildcardCost(state, decisions.wildcardResponse) : 0) +
     (decisions.talentHire?.salary || 0) +
     (decisions.strategicInitiative?.investment || 0) +
     (decisions.bigBet?.investment || 0);
-  
+
   // Calculate team hours used
   const teamHoursUsed = decisions.tactics.reduce((sum, t) => sum + t.timeAllocated, 0);
   const maxTeamHours = state.config.companyProfile === 'startup' ? 400 : 800;
-  
+
   // Track SEO investments for compounding
   const seoSpend = decisions.tactics
     .filter(t => {
@@ -209,9 +214,9 @@ export function processQuarter(
       return tactic?.category === 'content' || tactic?.id.includes('seo');
     })
     .reduce((sum, t) => sum + t.budgetAllocated, 0);
-  
+
   const newSeoInvestments = [...state.seoInvestments, seoSpend];
-  
+
   // Calculate channel spends for adstock modeling
   const channelSpends = {
     digital: decisions.tactics
@@ -244,25 +249,25 @@ export function processQuarter(
 
   // Calculate total traffic using adstock effects
   const totalTraffic = getTotalAdstockTraffic(updatedAdstockHistory, decisions.quarter);
-  
+
   // Calculate traffic from various sources
   const seoTraffic = calculateSEOImpact(
     newSeoInvestments,
     quarterIndex,
     getIndustryFactor(state.config.industry)
   );
-  
+
   const paidAdsSpend = channelSpends.digital;
   const paidAdsResult = calculatePaidAdsImpact(
     paidAdsSpend,
     state.marketSaturation,
     state.competitorSpend / (4 * 100000) // Normalize competitor activity
   );
-  
+
   // Apply A/B test impact (Q1 only)
   let conversionRateMultiplier = 1.0;
   let cpaMultiplier = 1.0;
-  
+
   if (decisions.abTestResult) {
     if (decisions.abTestResult.selectedCorrectly) {
       conversionRateMultiplier = 1 + (decisions.abTestResult.conversionImpact / 100);
@@ -272,7 +277,7 @@ export function processQuarter(
       cpaMultiplier = 1 + (decisions.abTestResult.cpaImpact / 100);
     }
   }
-  
+
   // Calculate base revenue from adstock traffic
   let baseRevenue = 0;
   const leads = Math.floor(totalTraffic * 0.05); // 5% lead rate from adstock traffic
@@ -280,24 +285,24 @@ export function processQuarter(
 
   const avgCustomerValue = getAvgCustomerValue(state.config.industry);
   baseRevenue = conversions * avgCustomerValue;
-  
+
   // Apply morale multiplier
   const moraleAdjustedRevenue = applyMoraleMultiplier(baseRevenue, state.teamMorale);
-  
+
   // Apply wildcard impact
   let wildcardRevenueImpact = 0;
   let wildcardBrandEquityImpact = 0;
   let wildcardMoraleImpact = 0;
-  
+
   if (decisions.wildcardResponse) {
     const impact = getWildcardImpact(state, decisions.wildcardResponse);
     wildcardRevenueImpact = impact.revenue;
     wildcardBrandEquityImpact = impact.brandEquity || 0;
     wildcardMoraleImpact = impact.morale || 0;
   }
-  
+
   const finalRevenue = moraleAdjustedRevenue + wildcardRevenueImpact;
-  
+
   // Update brand equity
   const contentQuality = (seoSpend / budgetSpent) * 100;
   const newBrandEquity = calculateBrandEquity(state.brandEquity, {
@@ -306,45 +311,69 @@ export function processQuarter(
     customerSatisfaction: 75,
     controversies: 0
   });
-  
-  const brandEquityWithWildcard = Math.max(0, Math.min(100, 
+
+  const brandEquityWithWildcard = Math.max(0, Math.min(100,
     newBrandEquity + wildcardBrandEquityImpact
   ));
-  
+
   // Update team morale
   const newTeamMorale = calculateTeamMorale(state.teamMorale, {
     hoursWorked: teamHoursUsed,
     maxCapacity: maxTeamHours,
-    trainingInvestment: decisions.strategicInitiative?.type === 'training' 
-      ? decisions.strategicInitiative.investment 
+    trainingInvestment: decisions.strategicInitiative?.type === 'training'
+      ? decisions.strategicInitiative.investment
       : 0,
     campaignSuccesses: conversions > 50 ? 1 : 0,
     crises: wildcardRevenueImpact < 0 ? 1 : 0
   });
-  
+
   const moraleWithWildcard = Math.max(0, Math.min(100,
     newTeamMorale + wildcardMoraleImpact
   ));
-  
-  // Calculate market share
+
+  // Calculate market share using enhanced Bass Diffusion Model
   const quarterlyCompetitorSpend = simulateCompetitorSpend(
     state.config.marketLandscape,
     budgetSpent,
     quarterIndex
   );
-  
-  const newMarketShare = calculateMarketShare(
-    budgetSpent,
-    quarterlyCompetitorSpend,
-    state.currentMarketShare,
-    brandEquityWithWildcard
-  );
-  
-  // Update market saturation
-  const totalMarketSpend = budgetSpent + quarterlyCompetitorSpend;
+
+  // Use competitive response model to get dynamic competitor spend
+  const previousShares = state.quarterlyResults.map(q => q.results.marketShare);
+  const growthRate = previousShares.length >= 2
+    ? (previousShares[previousShares.length - 1] - previousShares[previousShares.length - 2]) /
+      Math.max(previousShares[previousShares.length - 2], 1)
+    : 0;
+
+  const dynamicCompetitorSpend = simulateCompetitiveResponse({
+    yourMarketShare: state.currentMarketShare,
+    yourSpend: budgetSpent,
+    competitorSpend: quarterlyCompetitorSpend,
+    marketLandscape: state.config.marketLandscape,
+    yourGrowthRate: growthRate,
+    quarter: quarterIndex + 1,
+    yourBrandEquity: brandEquityWithWildcard
+  });
+
+  // Calculate market maturity
+  const totalMarketSpend = budgetSpent + dynamicCompetitorSpend;
   const marketSize = 10000000; // $10M market
+  const marketMaturity = calculateMarketMaturity(totalMarketSpend, marketSize);
+
+  // Use Bass Diffusion Model for market share
+  const newMarketShare = calculateMarketShareBass({
+    currentShare: state.currentMarketShare,
+    yourSpend: budgetSpent,
+    competitorSpend: dynamicCompetitorSpend,
+    brandEquity: brandEquityWithWildcard,
+    marketMaturity,
+    quartersElapsed: quarterIndex + 1,
+    previousShares
+  });
+
+  // Update market saturation
   const newMarketSaturation = calculateMarketSaturation(totalMarketSpend, marketSize);
-  
+
   // Create quarter result
   const quarterResult: QuarterPerformance = {
     quarter: decisions.quarter,
@@ -379,7 +408,7 @@ export function processQuarter(
       referral: 0
     }
   };
-  
+
   // Update state
   const newState: SimulationState = {
     ...state,
@@ -396,28 +425,33 @@ export function processQuarter(
     decisions: [...state.decisions, decisions],
     adstockHistory: updatedAdstockHistory
   };
-  
+
   return newState;
 }
 
 /**
  * Calculate final score and generate results
+ * Now uses advanced scoring with difficulty adjustment
  */
 export function finalizeSimulation(state: SimulationState) {
-  return calculateFinalScore({
-    timeHorizon: state.config.timeHorizon,
-    industry: state.config.industry,
-    companyProfile: state.config.companyProfile,
-    marketLandscape: state.config.marketLandscape,
-    totalBudget: state.totalBudget,
-    budgetSpent: state.totalBudget - state.budgetRemaining,
-    annualAllocation: state.config.budgetAllocation,
-    brandEquity: state.brandEquity,
-    teamMorale: state.teamMorale,
-    quarters: state.quarterlyResults as unknown as ScoringQuarterPerformance[],
-    competitorSpend: state.competitorSpend,
-    marketSaturation: state.marketSaturation
-  } as ScoringContext);
+  return calculateFinalScore(
+    {
+      timeHorizon: state.config.timeHorizon,
+      industry: state.config.industry,
+      companyProfile: state.config.companyProfile,
+      marketLandscape: state.config.marketLandscape,
+      totalBudget: state.totalBudget,
+      budgetSpent: state.totalBudget - state.budgetRemaining,
+      annualAllocation: state.config.budgetAllocation,
+      brandEquity: state.brandEquity,
+      teamMorale: state.teamMorale,
+      quarters: state.quarterlyResults as unknown as ScoringQuarterPerformance[],
+      competitorSpend: state.competitorSpend,
+      marketSaturation: state.marketSaturation
+    } as ScoringContext,
+    state.config.difficulty,
+    true // Use advanced scoring
+  );
 }
 
 // Helper functions
@@ -482,25 +516,25 @@ export function validateDecisions(state: SimulationState, decisions: QuarterlyDe
   errors: string[];
 } {
   const errors: string[] = [];
-  
+
   // Check budget
   const totalSpend = decisions.tactics.reduce((sum, t) => sum + t.budgetAllocated, 0);
   if (totalSpend > state.budgetRemaining) {
     errors.push(`Total spend ($${totalSpend}) exceeds remaining budget ($${state.budgetRemaining})`);
   }
-  
+
   // Check team hours
   const totalHours = decisions.tactics.reduce((sum, t) => sum + t.timeAllocated, 0);
   const maxHours = state.config.companyProfile === 'startup' ? 400 : 800;
   if (totalHours > maxHours) {
     errors.push(`Total hours (${totalHours}) exceeds team capacity (${maxHours})`);
   }
-  
+
   // Check at least one tactic selected
   if (decisions.tactics.length === 0) {
     errors.push('Must select at least one tactic');
   }
-  
+
   return {
     valid: errors.length === 0,
     errors
