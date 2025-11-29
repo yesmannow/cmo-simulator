@@ -5,12 +5,13 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
+    "build:cloudflare": "npx opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "cli": "node scripts/dev-cli.js",
-    "clean": "rm -rf .next",
+    "clean": "rm -rf .next .open-next",
     "setup": "npm install && npm run build"
   },
   "dependencies": {
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@opennextjs/cloudflare": "^1.14.0",
     "@tailwindcss/postcss": "^4",
     "@types/jest": "^30.0.0",
     "@types/node": "^20",
