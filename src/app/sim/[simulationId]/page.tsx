@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { SimulationState } from '@/lib/simulationEngine';
+import { logger } from '@/lib/logger';
 
 export default function SimulationPage() {
   const router = useRouter();
@@ -102,7 +103,7 @@ export default function SimulationPage() {
             router.push('/sim/strategy');
         }
       } catch (error) {
-        console.error('Error loading simulation:', error);
+        logger.error('Error loading simulation', error);
         setError('Failed to load simulation');
         setLoading(false);
       }

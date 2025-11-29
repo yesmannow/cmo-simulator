@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Check } from 'lucide-react'
@@ -123,7 +124,7 @@ export default function BrandPicker({ currentTheme }: BrandPickerProps) {
   const handleThemeChange = async (themeId: string) => {
     setLoading(true)
     setSelectedTheme(themeId)
-    
+
     // Apply theme immediately for instant feedback
     applyTheme(themeId)
 
@@ -140,11 +141,11 @@ export default function BrandPicker({ currentTheme }: BrandPickerProps) {
           })
 
         if (error) {
-          console.error('Error saving theme:', error.message || error)
+          logger.error('Error saving theme', error)
         }
       }
     } catch (error) {
-      console.error('Error updating theme:', error)
+      logger.error('Error updating theme', error)
     } finally {
       setLoading(false)
     }
@@ -190,7 +191,7 @@ export default function BrandPicker({ currentTheme }: BrandPickerProps) {
           </Card>
         ))}
       </div>
-      
+
       {loading && (
         <div className="text-sm text-muted-foreground text-center">
           Saving theme preference...

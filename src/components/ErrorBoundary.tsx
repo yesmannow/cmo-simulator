@@ -7,6 +7,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import { ErrorHandler, SimulatorError } from '@/lib/errors';
+import { logger } from '@/lib/logger';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       // Default error UI
-      const errorContext = this.state.error 
+      const errorContext = this.state.error
         ? ErrorHandler.handle(this.state.error)
         : null;
 
@@ -162,7 +163,7 @@ export function AsyncErrorBoundary({ children }: { children: ReactNode }) {
     <ErrorBoundary
       onError={(error, errorInfo) => {
         // Additional async error handling
-        console.error('Async Error:', error, errorInfo);
+        logger.error('Async Error', error, { errorInfo });
       }}
     >
       {children}

@@ -1,25 +1,26 @@
 import { supabase } from '@/lib/supabase/client';
 import { ACHIEVEMENT_DEFINITIONS } from '@/lib/achievements/achievements';
 import { generateMockLeaderboardEntries } from '@/lib/testing/mockData';
+import { logger } from '@/lib/logger';
 
 export class DatabaseSeeder {
   // Seed achievements table
   static async seedAchievements(): Promise<void> {
     try {
-      console.log('Seeding achievements...');
-      
+      logger.info('Seeding achievements...');
+
       const { error } = await supabase
         .from('achievements')
-        .upsert(ACHIEVEMENT_DEFINITIONS, { 
+        .upsert(ACHIEVEMENT_DEFINITIONS, {
           onConflict: 'name',
-          ignoreDuplicates: false 
+          ignoreDuplicates: false
         });
 
       if (error) throw error;
-      
-      console.log(`✅ Seeded ${ACHIEVEMENT_DEFINITIONS.length} achievements`);
+
+      logger.info(`Seeded ${ACHIEVEMENT_DEFINITIONS.length} achievements`);
     } catch (error) {
-      console.error('❌ Error seeding achievements:', error);
+      logger.error('Error seeding achievements', error);
       throw error;
     }
   }
@@ -27,8 +28,8 @@ export class DatabaseSeeder {
   // Seed sample users
   static async seedUsers(): Promise<string[]> {
     try {
-      console.log('Seeding sample users...');
-      
+      logger.info('Seeding sample users...');
+
       const sampleUsers = [
         {
           username: 'MarketingMaven',
@@ -84,20 +85,20 @@ export class DatabaseSeeder {
 
       const { data, error } = await supabase
         .from('users')
-        .upsert(sampleUsers, { 
+        .upsert(sampleUsers, {
           onConflict: 'username',
-          ignoreDuplicates: false 
+          ignoreDuplicates: false
         })
         .select('id');
 
       if (error) throw error;
-      
+
       const userIds = data?.map(user => user.id) || [];
-      console.log(`✅ Seeded ${userIds.length} sample users`);
-      
+      logger.info(`Seeded ${userIds.length} sample users`);
+
       return userIds;
     } catch (error) {
-      console.error('❌ Error seeding users:', error);
+      logger.error('Error seeding users', error);
       throw error;
     }
   }
@@ -105,15 +106,15 @@ export class DatabaseSeeder {
   // Seed leaderboard entries
   static async seedLeaderboard(userIds?: string[]): Promise<void> {
     try {
-      console.log('Seeding leaderboard entries...');
-      
+      logger.info('Seeding leaderboard entries...');
+
       // If no userIds provided, get existing users
       if (!userIds || userIds.length === 0) {
         const { data: users, error } = await supabase
           .from('users')
           .select('id, username')
           .limit(10);
-        
+
         if (error) throw error;
         userIds = users?.map(u => u.id) || [];
       }
@@ -123,7 +124,7 @@ export class DatabaseSeeder {
       }
 
       const mockEntries = generateMockLeaderboardEntries(userIds.length);
-      
+
       // Assign user IDs to mock entries
       const leaderboardEntries = mockEntries.map((entry, index) => ({
         ...entry,
@@ -132,16 +133,16 @@ export class DatabaseSeeder {
 
       const { error } = await supabase
         .from('leaderboard_entries')
-        .upsert(leaderboardEntries, { 
+        .upsert(leaderboardEntries, {
           onConflict: 'user_id,season',
-          ignoreDuplicates: false 
+          ignoreDuplicates: false
         });
 
       if (error) throw error;
-      
-      console.log(`✅ Seeded ${leaderboardEntries.length} leaderboard entries`);
+
+      logger.info(`Seeded ${leaderboardEntries.length} leaderboard entries`);
     } catch (error) {
-      console.error('❌ Error seeding leaderboard:', error);
+      logger.error('Error seeding leaderboard', error);
       throw error;
     }
   }
@@ -149,8 +150,8 @@ export class DatabaseSeeder {
   // Seed user achievements
   static async seedUserAchievements(): Promise<void> {
     try {
-      console.log('Seeding user achievements...');
-      
+      logger.info('Seeding user achievements...');
+
       // Get users and achievements
       const [usersResult, achievementsResult, leaderboardResult] = await Promise.all([
         supabase.from('users').select('id').limit(10),
@@ -176,10 +177,10 @@ export class DatabaseSeeder {
         // Each user gets 2-8 random achievements
         const numAchievements = Math.floor(Math.random() * 7) + 2;
         const shuffledAchievements = [...achievements].sort(() => Math.random() - 0.5);
-        
+
         for (let i = 0; i < Math.min(numAchievements, achievements.length); i++) {
           const achievement = shuffledAchievements[i];
-          
+
           // Higher chance for common achievements, lower for legendary
           const rarityChance = {
             common: 0.8,
@@ -187,7 +188,7 @@ export class DatabaseSeeder {
             epic: 0.3,
             legendary: 0.1
           };
-          
+
           if (Math.random() < rarityChance[achievement.rarity as keyof typeof rarityChance]) {
             userAchievements.push({
               user_id: user.id,
@@ -202,17 +203,17 @@ export class DatabaseSeeder {
       if (userAchievements.length > 0) {
         const { error } = await supabase
           .from('user_achievements')
-          .upsert(userAchievements, { 
+          .upsert(userAchievements, {
             onConflict: 'user_id,achievement_id,leaderboard_entry_id',
-            ignoreDuplicates: true 
+            ignoreDuplicates: true
           });
 
         if (error) throw error;
       }
-      
-      console.log(`✅ Seeded ${userAchievements.length} user achievements`);
+
+      logger.info(`Seeded ${userAchievements.length} user achievements`);
     } catch (error) {
-      console.error('❌ Error seeding user achievements:', error);
+      logger.error('Error seeding user achievements', error);
       throw error;
     }
   }
@@ -220,17 +221,17 @@ export class DatabaseSeeder {
   // Seed all data
   static async seedAll(): Promise<void> {
     try {
-      console.log('🌱 Starting database seeding...');
-      
+      logger.info('Starting database seeding...');
+
       // Seed in order due to dependencies
       await this.seedAchievements();
       const userIds = await this.seedUsers();
       await this.seedLeaderboard(userIds);
       await this.seedUserAchievements();
-      
-      console.log('🎉 Database seeding completed successfully!');
+
+      logger.info('Database seeding completed successfully!');
     } catch (error) {
-      console.error('💥 Database seeding failed:', error);
+      logger.error('Database seeding failed', error);
       throw error;
     }
   }
@@ -238,18 +239,18 @@ export class DatabaseSeeder {
   // Clear all seeded data (for testing)
   static async clearAll(): Promise<void> {
     try {
-      console.log('🧹 Clearing seeded data...');
-      
+      logger.info('Clearing seeded data...');
+
       await Promise.all([
         supabase.from('user_achievements').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
         supabase.from('leaderboard_entries').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
         supabase.from('achievements').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
         supabase.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000'),
       ]);
-      
-      console.log('✅ Cleared all seeded data');
+
+      logger.info('Cleared all seeded data');
     } catch (error) {
-      console.error('❌ Error clearing data:', error);
+      logger.error('Error clearing data', error);
       throw error;
     }
   }
@@ -283,7 +284,7 @@ export async function runSeeder() {
         break;
     }
   } catch (error) {
-    console.error('Seeding failed:', error);
+    logger.error('Seeding failed', error);
     process.exit(1);
   }
 }

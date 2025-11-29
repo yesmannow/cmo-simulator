@@ -4,6 +4,7 @@
  */
 
 import { analytics, EventCategory, EventAction } from './analytics';
+import { logger } from './logger';
 
 // ============================================================================
 // PERFORMANCE METRICS
@@ -16,19 +17,19 @@ export interface PerformanceMetrics {
   fid?: number; // First Input Delay
   cls?: number; // Cumulative Layout Shift
   ttfb?: number; // Time to First Byte
-  
+
   // Custom Metrics
   pageLoadTime?: number;
   apiResponseTime?: number;
   renderTime?: number;
   interactionTime?: number;
-  
+
   // Resource Metrics
   jsSize?: number;
   cssSize?: number;
   imageSize?: number;
   totalSize?: number;
-  
+
   // Navigation Timing
   domContentLoaded?: number;
   domInteractive?: number;
@@ -136,7 +137,7 @@ export class PerformanceMonitor {
       observer.observe({ type, buffered: true });
       this.observers.set(type, observer);
     } catch (error) {
-      console.warn(`Failed to observe ${type}:`, error);
+      logger.warn(`Failed to observe ${type}:`, { error });
     }
   }
 
@@ -165,9 +166,7 @@ export class PerformanceMonitor {
     );
 
     // Log in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Performance] ${metric}:`, value, rating);
-    }
+    logger.debug(`Performance metric: ${metric}`, { value, rating });
   }
 
   /**
@@ -192,7 +191,7 @@ export class PerformanceMonitor {
       setTimeout(() => {
         const perfData = window.performance.timing;
         const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-        
+
         this.recordMetric('pageLoadTime', pageLoadTime);
       }, 0);
     });

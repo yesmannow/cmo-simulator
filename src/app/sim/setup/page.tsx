@@ -14,11 +14,12 @@ import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
 import { DifficultyLevel, difficultyConfigs } from '@/lib/difficultySystem';
 import { SimulationState } from '@/lib/simulationEngine';
 import { createClient } from '@/lib/supabase/client';
-import { 
-  Building2, 
-  Clock, 
-  Briefcase, 
-  Target, 
+import { logger } from '@/lib/logger';
+import {
+  Building2,
+  Clock,
+  Briefcase,
+  Target,
   TrendingUp,
   Zap,
   Users,
@@ -35,7 +36,7 @@ interface SetupData {
   companyProfile: 'startup' | 'enterprise' | null;
   marketLandscape: 'disruptor' | 'crowded' | 'frontier' | null;
   difficulty: DifficultyLevel | null;
-  
+
   // Budget Allocation (must sum to 100)
   budgetAllocation: {
     brandAwareness: number;
@@ -432,7 +433,7 @@ export default function SetupPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        console.error('No authenticated user found');
+        logger.error('No authenticated user found');
         router.push('/login');
         return;
       }
@@ -467,8 +468,7 @@ export default function SetupPage() {
         .single();
 
       if (error) {
-        console.error('Error creating simulation:', error);
-        console.error('Error details:', {
+        logger.error('Error creating simulation', error, {
           message: error.message,
           details: error.details,
           hint: error.hint,
@@ -514,7 +514,7 @@ export default function SetupPage() {
       // Navigate to strategy session
       router.push('/sim/strategy');
     } catch (error) {
-      console.error('Error saving simulation:', error);
+      logger.error('Error saving simulation', error);
       alert('Failed to save simulation. Please try again.');
     }
   };
@@ -528,8 +528,8 @@ export default function SetupPage() {
       case 5: return data.marketLandscape !== null;
       case 6: return data.difficulty !== null;
       case 7: {
-        const total = data.budgetAllocation.brandAwareness + 
-                     data.budgetAllocation.leadGeneration + 
+        const total = data.budgetAllocation.brandAwareness +
+                     data.budgetAllocation.leadGeneration +
                      data.budgetAllocation.conversionOptimization;
         return total === 100;
       }
@@ -566,7 +566,7 @@ export default function SetupPage() {
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">Phase 0: Strategy Session</span>
           </motion.div>
-          
+
           <h1 className="text-4xl font-bold mb-2">Build Your Company</h1>
           <p className="text-muted-foreground">
             Define your strategic foundation for the next 12 months
@@ -660,7 +660,7 @@ export default function SetupPage() {
                     {TIME_HORIZONS.map((horizon) => {
                       const Icon = horizon.icon;
                       const isSelected = data.timeHorizon === horizon.id;
-                      
+
                       return (
                         <motion.div
                           key={horizon.id}
@@ -669,8 +669,8 @@ export default function SetupPage() {
                         >
                           <Card
                             className={`cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'border-2 border-primary shadow-lg' 
+                              isSelected
+                                ? 'border-2 border-primary shadow-lg'
                                 : 'border hover:border-primary/50'
                             }`}
                             onClick={() => setData({ ...data, timeHorizon: horizon.id })}
@@ -720,7 +720,7 @@ export default function SetupPage() {
                   <div className="grid md:grid-cols-3 gap-4">
                     {INDUSTRIES.map((industry) => {
                       const isSelected = data.industry === industry.id;
-                      
+
                       return (
                         <motion.div
                           key={industry.id}
@@ -729,8 +729,8 @@ export default function SetupPage() {
                         >
                           <Card
                             className={`cursor-pointer transition-all h-full ${
-                              isSelected 
-                                ? 'border-2 border-primary shadow-lg' 
+                              isSelected
+                                ? 'border-2 border-primary shadow-lg'
                                 : 'border hover:border-primary/50'
                             }`}
                             onClick={() => setData({ ...data, industry: industry.id })}
@@ -782,7 +782,7 @@ export default function SetupPage() {
                     {COMPANY_PROFILES.map((profile) => {
                       const Icon = profile.icon;
                       const isSelected = data.companyProfile === profile.id;
-                      
+
                       return (
                         <motion.div
                           key={profile.id}
@@ -791,8 +791,8 @@ export default function SetupPage() {
                         >
                           <Card
                             className={`cursor-pointer transition-all h-full ${
-                              isSelected 
-                                ? 'border-2 border-primary shadow-lg' 
+                              isSelected
+                                ? 'border-2 border-primary shadow-lg'
                                 : 'border hover:border-primary/50'
                             }`}
                             onClick={() => setData({ ...data, companyProfile: profile.id })}
@@ -807,7 +807,7 @@ export default function SetupPage() {
                                 <p className="text-sm text-muted-foreground mb-1">Team Size</p>
                                 <p className="font-semibold">{profile.teamSize}</p>
                               </div>
-                              
+
                               <div>
                                 <p className="text-sm text-muted-foreground mb-2">Advantages</p>
                                 <div className="space-y-1">
@@ -819,7 +819,7 @@ export default function SetupPage() {
                                   ))}
                                 </div>
                               </div>
-                              
+
                               <div>
                                 <p className="text-sm text-muted-foreground mb-2">Challenges</p>
                                 <div className="space-y-1">
@@ -857,7 +857,7 @@ export default function SetupPage() {
                   <div className="space-y-4">
                     {MARKET_LANDSCAPES.map((landscape) => {
                       const isSelected = data.marketLandscape === landscape.id;
-                      
+
                       return (
                         <motion.div
                           key={landscape.id}
@@ -866,8 +866,8 @@ export default function SetupPage() {
                         >
                           <Card
                             className={`cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'border-2 border-primary shadow-lg' 
+                              isSelected
+                                ? 'border-2 border-primary shadow-lg'
                                 : 'border hover:border-primary/50'
                             }`}
                             onClick={() => setData({ ...data, marketLandscape: landscape.id })}
@@ -1090,14 +1090,14 @@ export default function SetupPage() {
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Total Allocation</span>
                       <span className={`text-2xl font-bold ${
-                        data.budgetAllocation.brandAwareness + 
-                        data.budgetAllocation.leadGeneration + 
+                        data.budgetAllocation.brandAwareness +
+                        data.budgetAllocation.leadGeneration +
                         data.budgetAllocation.conversionOptimization === 100
                           ? 'text-green-500'
                           : 'text-red-500'
                       }`}>
-                        {data.budgetAllocation.brandAwareness + 
-                         data.budgetAllocation.leadGeneration + 
+                        {data.budgetAllocation.brandAwareness +
+                         data.budgetAllocation.leadGeneration +
                          data.budgetAllocation.conversionOptimization}%
                       </span>
                     </div>
@@ -1117,7 +1117,7 @@ export default function SetupPage() {
           >
             Back
           </Button>
-          
+
           <Button
             onClick={handleNext}
             disabled={!canProceed()}

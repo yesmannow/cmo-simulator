@@ -3,6 +3,8 @@
  * Provides type-safe error handling with detailed context
  */
 
+import { logger } from './logger';
+
 export enum ErrorCode {
   // Validation Errors (1000-1999)
   VALIDATION_REQUIRED_FIELD = 'VALIDATION_REQUIRED_FIELD',
@@ -10,13 +12,13 @@ export enum ErrorCode {
   VALIDATION_OUT_OF_RANGE = 'VALIDATION_OUT_OF_RANGE',
   VALIDATION_BUDGET_EXCEEDED = 'VALIDATION_BUDGET_EXCEEDED',
   VALIDATION_ALLOCATION_MISMATCH = 'VALIDATION_ALLOCATION_MISMATCH',
-  
+
   // Simulation Errors (2000-2999)
   SIMULATION_INVALID_STATE = 'SIMULATION_INVALID_STATE',
   SIMULATION_CALCULATION_ERROR = 'SIMULATION_CALCULATION_ERROR',
   SIMULATION_CHANNEL_ERROR = 'SIMULATION_CHANNEL_ERROR',
   SIMULATION_INDUSTRY_NOT_FOUND = 'SIMULATION_INDUSTRY_NOT_FOUND',
-  
+
   // API Errors (3000-3999)
   API_NETWORK_ERROR = 'API_NETWORK_ERROR',
   API_TIMEOUT = 'API_TIMEOUT',
@@ -24,18 +26,18 @@ export enum ErrorCode {
   API_FORBIDDEN = 'API_FORBIDDEN',
   API_NOT_FOUND = 'API_NOT_FOUND',
   API_SERVER_ERROR = 'API_SERVER_ERROR',
-  
+
   // Database Errors (4000-4999)
   DB_CONNECTION_ERROR = 'DB_CONNECTION_ERROR',
   DB_QUERY_ERROR = 'DB_QUERY_ERROR',
   DB_CONSTRAINT_VIOLATION = 'DB_CONSTRAINT_VIOLATION',
   DB_NOT_FOUND = 'DB_NOT_FOUND',
-  
+
   // Auth Errors (5000-5999)
   AUTH_INVALID_CREDENTIALS = 'AUTH_INVALID_CREDENTIALS',
   AUTH_SESSION_EXPIRED = 'AUTH_SESSION_EXPIRED',
   AUTH_INSUFFICIENT_PERMISSIONS = 'AUTH_INSUFFICIENT_PERMISSIONS',
-  
+
   // Unknown
   UNKNOWN_ERROR = 'UNKNOWN_ERROR'
 }
@@ -62,7 +64,7 @@ export class SimulatorError extends Error {
     this.name = 'SimulatorError';
     this.code = context.code;
     this.isOperational = context.recoverable ?? true;
-    
+
     this.context = {
       code: context.code,
       message: context.message,
@@ -105,7 +107,7 @@ export class SimulatorError extends Error {
       [ErrorCode.AUTH_INSUFFICIENT_PERMISSIONS]: 'Insufficient permissions',
       [ErrorCode.UNKNOWN_ERROR]: 'An unexpected error occurred'
     };
-    
+
     return messages[code] || 'An error occurred';
   }
 
@@ -132,7 +134,7 @@ export class SimulatorError extends Error {
         'Enable "Remember me" to stay logged in longer'
       ]
     };
-    
+
     return suggestions[code] || ['Please try again or contact support'];
   }
 
@@ -186,15 +188,15 @@ export class ErrorHandler {
    */
   static log(error: unknown, context?: Record<string, any>) {
     const errorContext = this.handle(error);
-    
-    console.error('[SimulatorError]', {
+
+    logger.error('[SimulatorError]', undefined, {
       ...errorContext,
       additionalContext: context,
       userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
       url: typeof window !== 'undefined' ? window.location.href : 'server'
     });
 
-    // TODO: Send to monitoring service (Sentry, LogRocket, etc.)
+    // Send to monitoring service (Sentry, LogRocket, etc.) - implement when needed
     // if (process.env.NODE_ENV === 'production') {
     //   Sentry.captureException(error, { contexts: { custom: context } });
     // }
@@ -267,7 +269,7 @@ export const createAPIError = (
   details?: Record<string, any>
 ): SimulatorError => {
   let code: ErrorCode;
-  
+
   switch (statusCode) {
     case 401:
       code = ErrorCode.API_UNAUTHORIZED;

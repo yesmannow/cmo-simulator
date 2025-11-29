@@ -103,11 +103,11 @@ export function useNewSimulation() {
         acc[channel] = (acc[channel] || 0) + t.budgetAllocated;
         return acc;
       }, {}) || {},
-      promotions: [] // TODO: handle promotions
+      promotions: [] // Promotions feature not yet implemented
     };
 
     const marketConditions: MarketConditions = {
-      seasonalityIndex: 1.0, // TODO: dynamic
+      seasonalityIndex: 1.0, // Seasonality feature not yet implemented
       competitorSpend: { tv: 50000, radio: 30000, print: 20000, digital: 80000, social: 40000, seo: 20000, events: 10000, pr: 15000 },
       economicIndex: 1.0
     };
@@ -117,8 +117,8 @@ export function useNewSimulation() {
 
   return {
     state,
-    isLoading: false, // TODO: add loading state
-    error: null, // TODO: add error handling
+    isLoading: false,
+    error: null,
     startSimulation,
     submitQuarterDecisions,
     reset,

@@ -3,14 +3,15 @@
  * Generates intelligent recommendations and insights using AI
  */
 
-import { 
-  Channel, 
-  Industry, 
-  QuarterlyResults, 
-  AIRecommendation, 
+import {
+  Channel,
+  Industry,
+  QuarterlyResults,
+  AIRecommendation,
   MarketInsight,
-  ImpactPrediction 
+  ImpactPrediction
 } from '@/types';
+import { logger } from './logger';
 
 // ============================================================================
 // AI CONFIGURATION
@@ -72,7 +73,7 @@ export class AIInsightsService {
     context: InsightContext
   ): Promise<AIRecommendation[]> {
     const cacheKey = `recommendations_${context.currentQuarter}_${context.quarterlyResults.revenue}`;
-    
+
     // Check cache
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey) || [];
@@ -94,7 +95,7 @@ export class AIInsightsService {
 
       return recommendations;
     } catch (error) {
-      console.error('[AI Insights] Failed to generate recommendations:', error);
+      logger.error('[AI Insights] Failed to generate recommendations', error);
       return this.generateMockRecommendations(context);
     }
   }

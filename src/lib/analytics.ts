@@ -4,6 +4,7 @@
  */
 
 import { UUID, Timestamp, Channel, Industry, DifficultyLevel } from '@/types';
+import { logger } from './logger';
 
 // ============================================================================
 // EVENT TYPES
@@ -25,36 +26,36 @@ export enum EventAction {
   LOGIN = 'login',
   LOGOUT = 'logout',
   PROFILE_UPDATE = 'profile_update',
-  
+
   // Simulation Events
   SIMULATION_START = 'simulation_start',
   SIMULATION_PAUSE = 'simulation_pause',
   SIMULATION_RESUME = 'simulation_resume',
   SIMULATION_COMPLETE = 'simulation_complete',
   SIMULATION_ABANDON = 'simulation_abandon',
-  
+
   // Decision Events
   CHANNEL_ALLOCATION = 'channel_allocation',
   BUDGET_ADJUSTMENT = 'budget_adjustment',
   CAMPAIGN_LAUNCH = 'campaign_launch',
   CRISIS_RESPONSE = 'crisis_response',
-  
+
   // Performance Events
   QUARTER_COMPLETE = 'quarter_complete',
   ACHIEVEMENT_UNLOCK = 'achievement_unlock',
   MILESTONE_REACH = 'milestone_reach',
-  
+
   // Engagement Events
   PAGE_VIEW = 'page_view',
   BUTTON_CLICK = 'button_click',
   TOOLTIP_VIEW = 'tooltip_view',
   TUTORIAL_START = 'tutorial_start',
   TUTORIAL_COMPLETE = 'tutorial_complete',
-  
+
   // Error Events
   ERROR_OCCURRED = 'error_occurred',
   ERROR_RECOVERED = 'error_recovered',
-  
+
   // Conversion Events
   UPGRADE_INITIATED = 'upgrade_initiated',
   UPGRADE_COMPLETED = 'upgrade_completed',
@@ -94,7 +95,7 @@ export class AnalyticsService {
   private constructor() {
     this.sessionId = this.generateSessionId();
     this.enabled = typeof window !== 'undefined' && process.env.NODE_ENV === 'production';
-    
+
     if (this.enabled) {
       this.startAutoFlush();
     }
@@ -146,9 +147,7 @@ export class AnalyticsService {
     this.queue.push(event);
 
     // Log in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Analytics]', event);
-    }
+    logger.debug('[Analytics] Event tracked', { event });
 
     // Flush if queue is large
     if (this.queue.length >= 10) {
@@ -297,7 +296,7 @@ export class AnalyticsService {
       // Also send to third-party analytics (PostHog, Mixpanel, etc.)
       this.sendToThirdParty(events);
     } catch (error) {
-      console.error('[Analytics] Failed to flush events:', error);
+      logger.error('[Analytics] Failed to flush events', error);
       // Re-add events to queue
       this.queue.unshift(...events);
     }
@@ -375,7 +374,7 @@ export class AnalyticsService {
    */
   private getDeviceType(): 'desktop' | 'mobile' | 'tablet' | undefined {
     if (typeof window === 'undefined') return undefined;
-    
+
     const width = window.innerWidth;
     if (width < 768) return 'mobile';
     if (width < 1024) return 'tablet';
@@ -387,7 +386,7 @@ export class AnalyticsService {
    */
   private getBrowser(): string | undefined {
     if (typeof window === 'undefined') return undefined;
-    
+
     const ua = navigator.userAgent;
     if (ua.includes('Chrome')) return 'Chrome';
     if (ua.includes('Firefox')) return 'Firefox';
@@ -401,7 +400,7 @@ export class AnalyticsService {
    */
   private getOS(): string | undefined {
     if (typeof window === 'undefined') return undefined;
-    
+
     const ua = navigator.userAgent;
     if (ua.includes('Win')) return 'Windows';
     if (ua.includes('Mac')) return 'macOS';

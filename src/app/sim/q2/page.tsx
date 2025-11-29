@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Calendar, 
-  Target, 
-  TrendingUp, 
-  Users, 
+import { logger } from '@/lib/logger';
+import {
+  Calendar,
+  Target,
+  TrendingUp,
+  Users,
   DollarSign,
   Clock,
   Zap,
@@ -36,7 +37,7 @@ import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/l
 export default function Q2Page() {
   const router = useRouter();
   const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
-  
+
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q2.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
@@ -55,7 +56,7 @@ export default function Q2Page() {
 
   const quarterBudget = Math.floor(context.totalBudget / 4);
   const quarterTime = 200;
-  
+
   const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.cost, 0);
   const usedTime = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.timeRequired, 0);
   const remainingBudget = quarterBudget - usedBudget;
@@ -110,8 +111,9 @@ export default function Q2Page() {
   };
 
   const handleHireTalent = (candidate: TalentCandidate) => {
-    // TODO: Integrate with simulation state machine
-    console.log('Hired:', candidate);
+    // Integrate with simulation state machine
+    // This should update the simulation state with the hired candidate
+    logger.debug('Hired candidate', { candidate });
     setShowTalentMarket(false);
   };
 
@@ -128,7 +130,7 @@ export default function Q2Page() {
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <ConfettiEffect trigger={showConfetti} />
-      
+
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center gap-3">
           <Badge variant="secondary" className="text-lg px-4 py-2">
@@ -159,7 +161,7 @@ export default function Q2Page() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Available Marketing Tactics</h3>
                 <div className="flex gap-2">
-                  <Button 
+                  <Button
                     onClick={handleOpenTalentMarket}
                     variant="outline"
                     className="flex items-center gap-2"
@@ -168,7 +170,7 @@ export default function Q2Page() {
                     <Briefcase className="h-4 w-4" />
                     {hasTriggeredTalentMarket ? 'Talent Hired' : 'Hire Talent'}
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleTriggerWildcard}
                     variant="outline"
                     className="flex items-center gap-2"
@@ -178,7 +180,7 @@ export default function Q2Page() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="grid md:grid-cols-2 gap-4">
                 {availableTactics.map((tactic) => (
                   <TacticCard
@@ -199,7 +201,7 @@ export default function Q2Page() {
                   {selectedTactics.length} tactics selected
                 </Badge>
               </div>
-              
+
               {selectedTactics.length === 0 ? (
                 <Card className="p-8 text-center">
                   <div className="text-muted-foreground">

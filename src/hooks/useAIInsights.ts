@@ -4,10 +4,11 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  aiInsights, 
-  InsightContext, 
-  OptimizationSuggestion 
+import { logger } from '@/lib/logger';
+import {
+  aiInsights,
+  InsightContext,
+  OptimizationSuggestion
 } from '@/lib/aiInsights';
 import { AIRecommendation, MarketInsight, Channel } from '@/types';
 
@@ -40,7 +41,7 @@ export function useAIRecommendations(context: InsightContext | null) {
   }, [fetchRecommendations]);
 
   const dismissRecommendation = useCallback((id: string) => {
-    setRecommendations(prev => 
+    setRecommendations(prev =>
       prev.map(rec => rec.id === id ? { ...rec, dismissed: true } : rec)
     );
   }, []);
@@ -186,12 +187,12 @@ export function usePrioritizedRecommendations(context: InsightContext | null) {
 export function useRecommendationTracking() {
   const trackView = useCallback((recommendationId: string) => {
     // Track that user viewed this recommendation
-    console.log('[AI Insights] Viewed recommendation:', recommendationId);
+    logger.debug('[AI Insights] Viewed recommendation', { recommendationId });
   }, []);
 
   const trackAction = useCallback((recommendationId: string, action: 'accepted' | 'dismissed' | 'modified') => {
     // Track user action on recommendation
-    console.log('[AI Insights] Action on recommendation:', recommendationId, action);
+    logger.debug('[AI Insights] Action on recommendation', { recommendationId, action });
   }, []);
 
   return {

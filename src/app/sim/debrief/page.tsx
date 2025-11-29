@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { EnhancedDebrief } from '@/components/simulation/EnhancedDebrief';
 import { useSimulation } from '@/hooks/useSimulation';
@@ -38,10 +39,10 @@ export default function DebriefPage() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        console.error('Failed to generate PDF');
+        logger.error('Failed to generate PDF');
       }
     } catch (error) {
-      console.error('Error exporting PDF:', error);
+      logger.error('Error exporting PDF', error);
     }
   };
 

@@ -5,6 +5,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 import {
   SimulationConfig,
   SimulationState,
@@ -38,7 +39,7 @@ export function useEnhancedSimulation() {
       try {
         setState(JSON.parse(stored));
       } catch (e) {
-        console.error('Failed to parse stored simulation state', e);
+        logger.error('Failed to parse stored simulation state', e);
       }
     }
   }, []);
@@ -113,15 +114,15 @@ export function useEnhancedSimulation() {
 
     try {
       const finalScore = finalizeSimulation(state);
-      
+
       // Save to database
       const simulationId = await saveSimulationToDatabase(state, finalScore);
 
       setIsLoading(false);
-      
+
       // Navigate to results
       router.push(`/sim/debrief/${simulationId}`);
-      
+
       return { finalScore, simulationId };
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to complete simulation');
@@ -151,7 +152,7 @@ export function useEnhancedSimulation() {
    */
   const getCurrentQuarterData = useCallback(() => {
     if (!state) return null;
-    
+
     const quarterIndex = ['Q1', 'Q2', 'Q3', 'Q4'].indexOf(state.currentQuarter as string);
     if (quarterIndex === -1) return null;
 
@@ -171,17 +172,17 @@ export function useEnhancedSimulation() {
     state,
     isLoading,
     error,
-    
+
     // Actions
     startSimulation,
     submitQuarterDecisions,
     completeSimulation,
     resetSimulation,
-    
+
     // Utilities
     getWildcardEvent,
     getCurrentQuarterData,
-    
+
     // Computed
     isSimulationActive: state !== null,
     isSimulationComplete: state?.currentQuarter === 'completed',
@@ -195,14 +196,14 @@ export function useEnhancedSimulation() {
  */
 async function saveQuarterToDatabase(state: SimulationState, decisions: QuarterlyDecisions) {
   const supabase = createClient();
-  
+
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
   // In production, save to quarterly_results, decision_points, tactics_used, etc.
   // For now, just log
-  console.log('Saving quarter to database:', { state, decisions });
+  logger.debug('Saving quarter to database', { state, decisions });
 }
 
 /**
@@ -210,7 +211,7 @@ async function saveQuarterToDatabase(state: SimulationState, decisions: Quarterl
  */
 async function saveSimulationToDatabase(state: SimulationState, finalScore: any): Promise<string> {
   const supabase = createClient();
-  
+
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -313,7 +314,7 @@ export function useSimulationDebrief(simulationId: string) {
   useEffect(() => {
     async function loadDebrief() {
       const supabase = createClient();
-      
+
       try {
         // Load simulation
         const { data: simulation, error: simError } = await supabase
@@ -348,7 +349,7 @@ export function useSimulationDebrief(simulationId: string) {
           quarters,
           decisions
         });
-        
+
         setIsLoading(false);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load debrief');

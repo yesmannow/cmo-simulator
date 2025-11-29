@@ -15,11 +15,21 @@ interface SimulationSlice {
   simulationId: string;
 }
 
+interface Promotion {
+  id: string;
+  name: string;
+  discount: number; // Percentage discount (0-100)
+  startDate: Date;
+  endDate: Date;
+  active: boolean;
+  targetChannel?: string; // Optional channel-specific promotion
+}
+
 interface InputSlice {
   channelBudgets: Record<string, number>; // Use string for simplicity
-  plannedPromotions: any[]; // TODO: define Promotion type
+  plannedPromotions: Promotion[];
   setBudget: (channel: string, value: number) => void;
-  addPromotion: (promo: any) => void;
+  addPromotion: (promo: Promotion) => void;
   clearInputs: () => void;
 }
 
@@ -46,14 +56,14 @@ export const vanillaStore = createStore<StoreState>()(
     advanceTick: (playerInputs, marketConditions) => {
       const { simulationState } = get();
       const newState = runSimulationTick(simulationState, playerInputs, marketConditions);
-      set({ 
+      set({
         simulationState: newState,
         currentQuarter: newState.tick === 0 ? 'Q1' : 'Q2' // Simple mapping, adjust as needed
       });
     },
     reset: () => {
-      set({ 
-        simulationState: initializeSimulationState(), 
+      set({
+        simulationState: initializeSimulationState(),
         isRunning: false,
         status: 'not_started',
         currentQuarter: 'setup'

@@ -133,7 +133,8 @@ export function runSimulationTick(
   const conversions = Math.floor(leads * baseConversionRate);
 
   // Get industry data for realistic revenue calculation
-  const industry = 'healthcare'; // TODO: Pass industry from config
+  // Industry should be passed from simulation config, default to healthcare
+  const industry = (config as any)?.industry || 'healthcare';
   const industryData = INDUSTRY_DATA[industry];
   const customerValue = industryData.avgCustomerValue;
 

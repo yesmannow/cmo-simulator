@@ -2,20 +2,21 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  BarChart, 
-  Bar, 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -23,12 +24,12 @@ import {
   Area,
   AreaChart
 } from 'recharts';
-import { 
-  Download, 
-  Trophy, 
-  TrendingUp, 
-  Target, 
-  Users, 
+import {
+  Download,
+  Trophy,
+  TrendingUp,
+  Target,
+  Users,
   DollarSign,
   Award,
   Star,
@@ -422,8 +423,8 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
             <AIInsightsPanel
               recommendations={recommendations}
               isLoading={isLoading}
-              onDismiss={(id: string) => console.log('Dismissed recommendation:', id)}
-              onAccept={(id: string) => console.log('Accepted recommendation:', id)}
+              onDismiss={(id: string) => logger.debug('Dismissed recommendation', { id })}
+              onAccept={(id: string) => logger.debug('Accepted recommendation', { id })}
             />
 
             {/* Fallback insights if AI fails */}
@@ -493,14 +494,14 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
           <Download className="h-4 w-4" />
           Export PDF Report
         </Button>
-        
+
         {onShare && (
           <Button onClick={onShare} variant="outline" size="lg" className="flex items-center gap-2">
             <Share2 className="h-4 w-4" />
             Share Results
           </Button>
         )}
-        
+
         <Button onClick={onRestart} variant="outline" size="lg" className="flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           Start New Campaign

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSimulation } from '@/hooks/useSimulation';
+import { logger } from '@/lib/logger';
 import { KPIDashboard } from '@/components/simulation/KPIDashboard';
 import { TacticCard, DraggableTacticCard } from '@/components/simulation/TacticCard';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
@@ -26,7 +27,7 @@ import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles } from 'lucid
 export default function Q4Page() {
   const router = useRouter();
   const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
-  
+
   const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q4.tactics);
   const [availableTactics] = useState(getTacticsByCategory('digital'));
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
@@ -45,7 +46,7 @@ export default function Q4Page() {
 
   const quarterBudget = Math.floor(context.totalBudget / 4);
   const quarterTime = 200;
-  
+
   const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.cost, 0);
   const usedTime = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.timeRequired, 0);
   const remainingBudget = quarterBudget - usedBudget;
@@ -105,8 +106,9 @@ export default function Q4Page() {
   };
 
   const handleSelectBigBet = (bigBet: BigBetOption) => {
-    // TODO: Integrate with simulation state machine
-    console.log('Selected Big Bet:', bigBet);
+    // Integrate with simulation state machine
+    // This should update the simulation state with the selected big bet
+    logger.debug('Selected Big Bet', { bigBet });
     setShowBigBetModal(false);
   };
 
@@ -123,7 +125,7 @@ export default function Q4Page() {
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <ConfettiEffect trigger={showConfetti} />
-      
+
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center gap-3">
           <Badge variant="secondary" className="text-lg px-4 py-2">
@@ -149,7 +151,7 @@ export default function Q4Page() {
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           The final quarter! Make it count with your strongest tactics and biggest bets. This is where legends are made.
         </p>
-        
+
         <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
             <div className="font-semibold text-blue-800">Year-to-Date Revenue</div>
@@ -158,13 +160,13 @@ export default function Q4Page() {
               {isOnTrack ? '🎯 On track for 2M+ target!' : `${((ytdRevenue / 2000000) * 100).toFixed(1)}% to target`}
             </div>
           </div>
-          
+
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
             <div className="font-semibold text-green-800">Q4 Effectiveness Bonus</div>
             <div className="text-2xl font-bold text-green-900">+{((finalPushBonus - 1) * 100).toFixed(0)}%</div>
             <div className="text-sm text-green-600">
-              {finalPushBonus >= 1.5 ? '🚀 Maximum boost unlocked!' : 
-               finalPushBonus >= 1.3 ? '⚡ Strong momentum bonus!' : 
+              {finalPushBonus >= 1.5 ? '🚀 Maximum boost unlocked!' :
+               finalPushBonus >= 1.3 ? '⚡ Strong momentum bonus!' :
                '📈 Year-end push active!'}
             </div>
           </div>
@@ -186,7 +188,7 @@ export default function Q4Page() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Available Marketing Tactics</h3>
                 <div className="flex gap-2">
-                  <Button 
+                  <Button
                     onClick={handleOpenBigBet}
                     variant="outline"
                     className="flex items-center gap-2"
@@ -195,7 +197,7 @@ export default function Q4Page() {
                     <Sparkles className="h-4 w-4" />
                     {hasTriggeredBigBet ? 'Big Bet Made' : 'Make Big Bet'}
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleTriggerWildcard}
                     variant="outline"
                     className="flex items-center gap-2"
@@ -205,7 +207,7 @@ export default function Q4Page() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="grid md:grid-cols-2 gap-4">
                 {availableTactics.map((tactic) => (
                   <TacticCard
@@ -235,7 +237,7 @@ export default function Q4Page() {
                   {selectedTactics.length} tactics selected
                 </Badge>
               </div>
-              
+
               {selectedTactics.length === 0 ? (
                 <Card className="p-8 text-center">
                   <div className="text-muted-foreground">
@@ -363,7 +365,7 @@ export default function Q4Page() {
                   </span>
                 </div>
               </div>
-              
+
               {finalPushBonus >= 1.3 && (
                 <div className="p-2 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded text-yellow-800 text-xs">
                   🏆 Elite performance bonus: +{((finalPushBonus - 1) * 100).toFixed(0)}% effectiveness

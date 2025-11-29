@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useNewSimulation } from '@/hooks/useNewSimulation';
+import { logger } from '@/lib/logger';
 
 export default function SimulationIndexPage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function SimulationIndexPage() {
     if (isLoading) return; // Still loading
 
     if (error) {
-      console.error('Simulation error:', error);
+      logger.error('Simulation error', error);
       // Could redirect to dashboard or show error
       router.push('/dashboard');
       return;

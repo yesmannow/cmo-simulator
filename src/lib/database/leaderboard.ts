@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import { SimulationContext } from '@/lib/simMachine';
 import { LeaderboardEntry, LeaderboardFilters, LeaderboardStats, Achievement, UserAchievement } from './types';
+import { logger } from '@/lib/logger';
 
 export class LeaderboardService {
   // Submit a simulation result to the leaderboard
@@ -38,7 +39,7 @@ export class LeaderboardService {
         target_audience: context.strategy.targetAudience,
         brand_positioning: context.strategy.brandPositioning,
         primary_channels: context.strategy.primaryChannels,
-        
+
         final_score: finalResults.score,
         grade: finalResults.grade,
         total_revenue: totalRevenue,
@@ -46,7 +47,7 @@ export class LeaderboardService {
         final_satisfaction: finalResults.finalKPIs.customerSatisfaction,
         final_awareness: finalResults.finalKPIs.brandAwareness,
         roi_percentage: roi,
-        
+
         total_budget: context.totalBudget,
         budget_utilized: totalBudgetSpent,
         quarters_completed: 4,
@@ -54,7 +55,7 @@ export class LeaderboardService {
         talent_hired: context.hiredTalent.length,
         big_bet_made: !!context.selectedBigBet,
         big_bet_success: context.bigBetOutcome?.success || false,
-        
+
         completion_time_minutes: context.completionTimeMinutes || null,
         season: this.getCurrentSeason(),
         simulation_hash: simulationHash,
@@ -63,9 +64,9 @@ export class LeaderboardService {
 
       const { data, error } = await supabase
         .from('leaderboard_entries')
-        .upsert(leaderboardEntry, { 
+        .upsert(leaderboardEntry, {
           onConflict: 'user_id,season',
-          ignoreDuplicates: false 
+          ignoreDuplicates: false
         })
         .select()
         .single();
@@ -77,7 +78,7 @@ export class LeaderboardService {
 
       return data;
     } catch (error) {
-      console.error('Error submitting score:', error);
+      logger.error('Error submitting score', error);
       return null;
     }
   }
@@ -121,7 +122,7 @@ export class LeaderboardService {
 
       return data || [];
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      logger.error('Error fetching leaderboard', error);
       return [];
     }
   }
@@ -130,7 +131,7 @@ export class LeaderboardService {
   static async getLeaderboardStats(season?: string): Promise<LeaderboardStats | null> {
     try {
       let query = supabase.from('leaderboard_entries').select('*');
-      
+
       if (season) {
         query = query.eq('season', season);
       }
@@ -184,7 +185,7 @@ export class LeaderboardService {
         current_season: this.getCurrentSeason(),
       };
     } catch (error) {
-      console.error('Error fetching leaderboard stats:', error);
+      logger.error('Error fetching leaderboard stats', error);
       return null;
     }
   }
@@ -214,7 +215,7 @@ export class LeaderboardService {
 
       return { rank, percentile };
     } catch (error) {
-      console.error('Error fetching user rank:', error);
+      logger.error('Error fetching user rank', error);
       return null;
     }
   }
@@ -232,7 +233,7 @@ export class LeaderboardService {
       const uniqueSeasons = [...new Set(data?.map(entry => entry.season) || [])];
       return uniqueSeasons;
     } catch (error) {
-      console.error('Error fetching seasons:', error);
+      logger.error('Error fetching seasons', error);
       return [this.getCurrentSeason()];
     }
   }
@@ -251,9 +252,9 @@ export class LeaderboardService {
               user_id: userId,
               achievement_id: achievement.id,
               leaderboard_entry_id: leaderboardEntryId,
-            }, { 
+            }, {
               onConflict: 'user_id,achievement_id,leaderboard_entry_id',
-              ignoreDuplicates: true 
+              ignoreDuplicates: true
             })
             .select()
             .single();
@@ -266,7 +267,7 @@ export class LeaderboardService {
 
       return awardedAchievements;
     } catch (error) {
-      console.error('Error checking achievements:', error);
+      logger.error('Error checking achievements', error);
       return [];
     }
   }
@@ -317,13 +318,13 @@ export class LeaderboardService {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1; // 0-based to 1-based
-    
+
     let quarter: string;
     if (month <= 3) quarter = 'Q1';
     else if (month <= 6) quarter = 'Q2';
     else if (month <= 9) quarter = 'Q3';
     else quarter = 'Q4';
-    
+
     return `${year}-${quarter}`;
   }
 
@@ -337,7 +338,7 @@ export class LeaderboardService {
 
       return !error;
     } catch (error) {
-      console.error('Error resetting season:', error);
+      logger.error('Error resetting season', error);
       return false;
     }
   }
