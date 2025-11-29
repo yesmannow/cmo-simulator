@@ -10,11 +10,11 @@ import {
   StreakBadge,
   LevelProgress,
   EnhancedLeaderboard,
+  AchievementBadge,
   type DailyChallenge,
   type StreakData,
   XP_REWARDS
 } from '@/components/gamification';
-import { AchievementBadge } from '@/components/gamification/AchievementBadge';
 import { ACHIEVEMENT_DEFINITIONS } from '@/lib/achievements/achievements';
 import { 
   Trophy, 

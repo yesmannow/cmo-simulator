@@ -92,8 +92,12 @@ const CHALLENGE_TEMPLATES: Omit<DailyChallenge, 'id' | 'progress' | 'completed' 
 // Generate daily challenges based on date
 function generateDailyChallenges(date: Date): DailyChallenge[] {
   const seed = date.toDateString();
-  const shuffled = [...CHALLENGE_TEMPLATES].sort(() => {
-    return seed.charCodeAt(seed.length % seed.length) - 0.5;
+  // Simple seeded shuffle based on date
+  const seedValue = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const shuffled = [...CHALLENGE_TEMPLATES].sort((a, b) => {
+    const hashA = (a.type.charCodeAt(0) + seedValue) % 100;
+    const hashB = (b.type.charCodeAt(0) + seedValue) % 100;
+    return hashA - hashB;
   });
   
   const tomorrow = new Date(date);

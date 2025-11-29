@@ -33,7 +33,7 @@ const LEVEL_TIERS = [
   { minLevel: 35, title: 'CMO', icon: '👑', color: 'text-red-500' },
   { minLevel: 40, title: 'Marketing Legend', icon: '💎', color: 'text-purple-500' },
   { minLevel: 45, title: 'Marketing God', icon: '🌟', color: 'text-amber-500' },
-  { minLevel: 50, title: 'Ultimate CMO', icon: '✨', color: 'text-gradient' },
+  { minLevel: 50, title: 'Ultimate CMO', icon: '✨', color: 'text-amber-600' },
 ];
 
 // XP rewards for different actions

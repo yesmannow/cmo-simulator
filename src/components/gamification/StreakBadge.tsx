@@ -246,7 +246,7 @@ export function StreakCelebration({ days, isVisible, onClose }: StreakCelebratio
             <h2 className="text-2xl font-bold mb-2">Streak Milestone!</h2>
             <p className="text-lg text-primary font-medium mb-1">{milestone.title}</p>
             <p className="text-muted-foreground mb-4">
-              You&apos;ve maintained a {days}-day streak!
+              You{"'"}ve maintained a {days}-day streak!
             </p>
             
             <div className="bg-primary/10 rounded-lg p-4 mb-4">

@@ -71,18 +71,25 @@ function generateMockLeaderboardData(count: number, filters: LeaderboardFilters)
   
   for (let i = 0; i < count; i++) {
     const baseScore = 8500 - (i * 150) + Math.floor(Math.random() * 100);
-    const industry = industries[Math.floor(Math.random() * industries.length)];
-    const timeHorizon = timeHorizons[Math.floor(Math.random() * timeHorizons.length)];
+    const industry = industries[i % industries.length];
+    const timeHorizon = timeHorizons[i % timeHorizons.length];
     
     // Apply filters
     if (filters.industry && filters.industry !== industry) continue;
     if (filters.timeHorizon && filters.timeHorizon !== timeHorizon) continue;
     
-    // Time period filtering (mock)
-    const daysAgo = Math.floor(Math.random() * 365);
-    if (filters.timePeriod === 'daily' && daysAgo > 1) continue;
-    if (filters.timePeriod === 'weekly' && daysAgo > 7) continue;
-    if (filters.timePeriod === 'monthly' && daysAgo > 30) continue;
+    // Time period filtering - ensure some entries exist for each period
+    // Distribute entries across time periods based on index
+    let daysAgo: number;
+    if (filters.timePeriod === 'daily') {
+      daysAgo = i < 10 ? 0 : Math.floor(Math.random() * 365);
+    } else if (filters.timePeriod === 'weekly') {
+      daysAgo = i < 15 ? Math.floor(Math.random() * 7) : Math.floor(Math.random() * 365);
+    } else if (filters.timePeriod === 'monthly') {
+      daysAgo = i < 25 ? Math.floor(Math.random() * 30) : Math.floor(Math.random() * 365);
+    } else {
+      daysAgo = Math.floor(Math.random() * 365);
+    }
     
     entries.push({
       rank: entries.length + 1,
