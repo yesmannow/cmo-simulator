@@ -7,7 +7,11 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint --no-error-on-unmatched-pattern .",
-    "test": "jest"
+    "test": "jest",
+    "typecheck": "tsc --noEmit",
+    "cli": "node scripts/dev-cli.js",
+    "clean": "rm -rf .next",
+    "setup": "npm install && npm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
