@@ -13,10 +13,34 @@ interface KPIDashboardProps {
 }
 
 export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false }: KPIDashboardProps) {
+  // Calculate total revenue from all completed quarters
+  // This ensures revenue is shown correctly even during a quarter
+  // Revenue should be the sum of all quarters that have been completed (have results)
+  const calculateTotalRevenue = () => {
+    let total = 0;
+    const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
+
+    // Sum revenue from all quarters that have results
+    quarters.forEach((q) => {
+      const quarterData = context.quarters[q];
+      // Check if quarter has results (revenue > 0 indicates it was completed)
+      // Also check if results object exists and has revenue property
+      if (quarterData?.results?.revenue && quarterData.results.revenue > 0) {
+        total += quarterData.results.revenue;
+      }
+    });
+
+    // Fallback to context.kpis.revenue if calculated total is 0
+    // This handles edge cases where quarters might not have results yet
+    return total > 0 ? total : context.kpis.revenue;
+  };
+
+  const totalRevenue = calculateTotalRevenue();
+
   const kpis = [
     {
       title: 'Revenue',
-      value: context.kpis.revenue,
+      value: totalRevenue,
       format: (val: number) => `$${val.toLocaleString()}`,
       icon: DollarSign,
       color: 'text-green-600',
@@ -76,7 +100,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
           const Icon = kpi.icon;
           const TrendIcon = getTrendIcon(kpi.value, kpi.target);
           const progress = Math.min((kpi.value / kpi.target) * 100, 100);
-          
+
           return (
             <Card key={kpi.title} className="relative overflow-hidden">
               <CardHeader className="pb-2">
@@ -137,8 +161,8 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
             </div>
           </div>
           <div className="mt-4">
-            <Progress 
-              value={((context.totalBudget - context.remainingBudget) / context.totalBudget) * 100} 
+            <Progress
+              value={((context.totalBudget - context.remainingBudget) / context.totalBudget) * 100}
               className="h-3"
             />
             <div className="flex justify-between text-xs text-muted-foreground mt-1">
@@ -162,7 +186,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                 const quarterData = context.quarters[q];
                 const isActive = quarter === q;
                 const hasResults = quarterData.results.revenue > 0;
-                
+
                 return (
                   <div key={q} className={`p-4 rounded-lg border-2 ${
                     isActive ? 'border-primary bg-primary/5' : 'border-muted'
@@ -172,7 +196,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                       {isActive && <Badge variant="default">Current</Badge>}
                       {hasResults && !isActive && <Badge variant="secondary">Complete</Badge>}
                     </div>
-                    
+
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Revenue:</span>
