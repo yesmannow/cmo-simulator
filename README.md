@@ -209,6 +209,25 @@ NEXT_PUBLIC_SUPABASE_URL=your_production_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_anon_key
 ```
 
+### Cloudflare Pages Deployment
+
+This project is configured for deployment to Cloudflare Pages using the OpenNext adapter.
+
+**Cloudflare Pages Build Settings:**
+- **Build command:** `npx opennextjs-cloudflare build`
+- **Build output directory:** `.open-next`
+- **Compatibility flags:** `nodejs_compat` (set in Pages project settings)
+
+**Steps:**
+1. Connect your GitHub repository to Cloudflare Pages
+2. Set the build command to: `npx opennextjs-cloudflare build`
+3. Set the build output directory to: `.open-next`
+4. Add your environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)
+5. In Functions > Compatibility flags, add `nodejs_compat` for both production and preview
+6. Deploy!
+
+For more information, see the [OpenNext Cloudflare documentation](https://opennext.js.org/cloudflare/get-started).
+
 ## 🎯 Roadmap
 
 ### Current Phase: Core Simulation ✅
