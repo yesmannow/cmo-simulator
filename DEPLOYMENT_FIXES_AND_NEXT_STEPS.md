@@ -15,7 +15,8 @@
   - `react-hooks/exhaustive-deps` → `warn`
 
 ### 3. Wrangler Configuration (`wrangler.toml`)
-- ✅ Added `pages_build_output_dir = ".open-next"` for Cloudflare Pages
+- ✅ **Removed:** `wrangler.toml` is not needed for Cloudflare Pages
+- ✅ All configuration is done through the Cloudflare Pages dashboard
 
 ### 4. Fixed Critical Errors
 - ✅ Fixed `textarea.tsx` empty interface → changed to type
@@ -182,7 +183,7 @@ npm run dev
 ### Modified Files
 - `next.config.ts` - Build configuration
 - `eslint.config.mjs` - Linting rules
-- `wrangler.toml` - Cloudflare Pages config
+- `wrangler.toml` - **Removed** (not needed for Cloudflare Pages)
 - `src/components/ui/textarea.tsx` - Fixed empty interface
 - `src/app/progress/page.tsx` - Removed unused imports
 - `src/components/gamification/AchievementDashboard.tsx` - Removed unused imports

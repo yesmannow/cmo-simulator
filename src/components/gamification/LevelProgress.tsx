@@ -5,14 +5,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Star, 
-  Trophy, 
+import {
+  Star,
+  Trophy,
   Zap,
   TrendingUp,
   Crown,
   Sparkles
 } from 'lucide-react';
+import { SparklesCore } from '@/components/ui/sparkles';
+import { Meteors } from '@/components/ui/meteors';
+import CountUp from 'react-countup';
 
 // Level configuration
 const LEVEL_CONFIG = {
@@ -78,14 +81,14 @@ export function getXPForLevel(level: number): number {
 export function getLevelFromXP(totalXP: number): number {
   let level = 1;
   let xpNeeded = 0;
-  
+
   while (level < LEVEL_CONFIG.maxLevel) {
     const xpForNextLevel = Math.floor(LEVEL_CONFIG.baseXP * Math.pow(LEVEL_CONFIG.xpMultiplier, level - 1));
     if (xpNeeded + xpForNextLevel > totalXP) break;
     xpNeeded += xpForNextLevel;
     level++;
   }
-  
+
   return level;
 }
 
@@ -103,7 +106,7 @@ export function calculateLevelData(totalXP: number): LevelData {
   const xpInCurrentLevel = totalXP - xpForCurrentLevel;
   const xpNeededForNextLevel = xpForNextLevel - xpForCurrentLevel;
   const tier = getLevelTier(level);
-  
+
   return {
     currentLevel: level,
     currentXP: xpInCurrentLevel,
@@ -129,33 +132,33 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
 
   useEffect(() => {
     const data = calculateLevelData(totalXP);
-    
+
     // Check for level up
     if (levelData && data.currentLevel > levelData.currentLevel) {
       setIsLevelingUp(true);
       setTimeout(() => setIsLevelingUp(false), 2000);
     }
-    
+
     setLevelData(data);
-    
+
     // Animate XP change
     if (showAnimation && animatedXP !== totalXP) {
       const diff = totalXP - animatedXP;
       const duration = Math.min(Math.abs(diff) * 5, 1000);
       const startTime = Date.now();
       const startXP = animatedXP;
-      
+
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3); // Ease out
         setAnimatedXP(Math.round(startXP + diff * eased));
-        
+
         if (progress < 1) {
           requestAnimationFrame(animate);
         }
       };
-      
+
       requestAnimationFrame(animate);
     }
   }, [totalXP, animatedXP, showAnimation, levelData]);
@@ -184,8 +187,27 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
   }
 
   return (
-    <Card className="w-full overflow-hidden">
-      <CardHeader className="pb-3">
+    <Card className="w-full overflow-hidden relative">
+      {/* Sparkles when leveling up */}
+      {isLevelingUp && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+          <SparklesCore
+            particleColor="#fbbf24"
+            particleDensity={80}
+            speed={4}
+            className="h-full w-full"
+          />
+        </div>
+      )}
+
+      {/* Meteors for major level ups (every 5 levels) */}
+      {isLevelingUp && levelData && levelData.currentLevel % 5 === 0 && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+          <Meteors number={20} />
+        </div>
+      )}
+
+      <CardHeader className="pb-3 relative z-20">
         <CardTitle className="flex items-center gap-2">
           <Star className="w-5 h-5 text-yellow-500" />
           Level Progress
@@ -194,14 +216,14 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
           Earn XP by completing simulations and challenges
         </CardDescription>
       </CardHeader>
-      
-      <CardContent className="space-y-4">
+
+      <CardContent className="space-y-4 relative z-20">
         {/* Level Display */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <motion.div
-              animate={isLevelingUp ? { 
-                scale: [1, 1.5, 1], 
+              animate={isLevelingUp ? {
+                scale: [1, 1.5, 1],
                 rotate: [0, 360],
                 transition: { duration: 1 }
               } : {}}
@@ -211,7 +233,9 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
             </motion.div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">Level {levelData.currentLevel}</span>
+                <span className="text-2xl font-bold">
+                  Level <CountUp end={levelData.currentLevel} duration={1} />
+                </span>
                 {isLevelingUp && (
                   <motion.span
                     initial={{ opacity: 0, y: 10 }}
@@ -228,15 +252,15 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
               </p>
             </div>
           </div>
-          
+
           <div className="text-right">
             <div className="text-lg font-bold text-primary">
-              {animatedXP.toLocaleString()} XP
+              <CountUp end={animatedXP} duration={1.5} separator="," /> XP
             </div>
             <p className="text-xs text-muted-foreground">Total Earned</p>
           </div>
         </div>
-        
+
         {/* XP Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
@@ -259,17 +283,17 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
             )}
           </div>
         </div>
-        
+
         {/* Level Tiers Preview */}
         <div className="pt-2 border-t">
           <p className="text-sm font-medium mb-2">Career Path</p>
           <div className="flex justify-between items-center">
             {LEVEL_TIERS.slice(0, 5).map((tier, index) => {
               const achieved = levelData.currentLevel >= tier.minLevel;
-              const isCurrent = LEVEL_TIERS[index + 1] 
+              const isCurrent = LEVEL_TIERS[index + 1]
                 ? levelData.currentLevel >= tier.minLevel && levelData.currentLevel < LEVEL_TIERS[index + 1].minLevel
                 : levelData.currentLevel >= tier.minLevel;
-              
+
               return (
                 <motion.div
                   key={tier.minLevel}
@@ -287,7 +311,7 @@ export function LevelProgress({ totalXP, compact = false, showAnimation = true }
             <span className="text-muted-foreground">...</span>
           </div>
         </div>
-        
+
         {/* XP Earnings Info */}
         <div className="pt-2 border-t">
           <p className="text-sm font-medium mb-2 flex items-center gap-1">
@@ -328,7 +352,7 @@ interface LevelUpCelebrationProps {
 export function LevelUpCelebration({ newLevel, isVisible, onClose }: LevelUpCelebrationProps) {
   const tier = getLevelTier(newLevel);
   const nextTier = LEVEL_TIERS.find(t => t.minLevel > newLevel);
-  
+
   return (
     <AnimatePresence>
       {isVisible && (
@@ -354,9 +378,9 @@ export function LevelUpCelebration({ newLevel, isVisible, onClose }: LevelUpCele
             >
               <Sparkles className="w-full h-full" />
             </motion.div>
-            
+
             <motion.div
-              animate={{ 
+              animate={{
                 scale: [1, 1.2, 1],
                 rotate: [0, 10, -10, 0]
               }}
@@ -365,7 +389,7 @@ export function LevelUpCelebration({ newLevel, isVisible, onClose }: LevelUpCele
             >
               {tier.icon}
             </motion.div>
-            
+
             <h2 className="text-2xl font-bold mb-2 relative z-10">Level Up!</h2>
             <motion.p
               initial={{ opacity: 0 }}
@@ -377,13 +401,13 @@ export function LevelUpCelebration({ newLevel, isVisible, onClose }: LevelUpCele
             <p className={`text-lg font-medium mb-4 ${tier.color} relative z-10`}>
               {tier.title}
             </p>
-            
+
             {nextTier && (
               <p className="text-sm text-muted-foreground mb-4 relative z-10">
                 Next: {nextTier.title} at Level {nextTier.minLevel}
               </p>
             )}
-            
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

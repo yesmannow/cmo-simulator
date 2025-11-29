@@ -3,8 +3,11 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Achievement } from '@/lib/database/types';
 import { RARITY_COLORS } from '@/lib/achievements/achievements';
+import { Meteors } from '@/components/ui/meteors';
+import { SparklesCore } from '@/components/ui/sparkles';
 
 interface AchievementBadgeProps {
   achievement: Achievement;
@@ -12,14 +15,18 @@ interface AchievementBadgeProps {
   earnedAt?: string;
   showAnimation?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  progress?: number; // 0-100 percentage
+  showProgress?: boolean;
 }
 
-export function AchievementBadge({ 
-  achievement, 
-  earned = false, 
-  earnedAt, 
+export function AchievementBadge({
+  achievement,
+  earned = false,
+  earnedAt,
   showAnimation = false,
-  size = 'md' 
+  size = 'md',
+  progress = 0,
+  showProgress = false
 }: AchievementBadgeProps) {
   const sizeClasses = {
     sm: 'w-16 h-16 text-2xl',
@@ -33,20 +40,41 @@ export function AchievementBadge({
     lg: 'p-6'
   };
 
+  const isEpicOrLegendary = earned && (achievement.rarity === 'epic' || achievement.rarity === 'legendary');
+
   return (
     <motion.div
       initial={showAnimation ? { scale: 0, rotate: -180 } : false}
       animate={showAnimation ? { scale: 1, rotate: 0 } : false}
-      transition={{ 
-        type: "spring", 
-        stiffness: 260, 
+      transition={{
+        type: "spring",
+        stiffness: 260,
         damping: 20,
         delay: showAnimation ? 0.2 : 0
       }}
       whileHover={{ scale: 1.05 }}
       className="relative"
     >
-      <Card className={`${earned ? 'border-2' : 'border border-dashed opacity-60'} ${earned ? RARITY_COLORS[achievement.rarity] : 'border-gray-300'} transition-all duration-300`}>
+      {/* Meteors for epic/legendary achievements */}
+      {isEpicOrLegendary && showAnimation && (
+        <div className="absolute inset-0 overflow-hidden rounded-lg pointer-events-none -z-10">
+          <Meteors number={achievement.rarity === 'legendary' ? 25 : 15} />
+        </div>
+      )}
+
+      {/* Sparkles for rare+ achievements */}
+      {earned && achievement.rarity !== 'common' && showAnimation && (
+        <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none opacity-20 -z-10">
+          <SparklesCore
+            particleColor={achievement.rarity === 'legendary' ? '#fbbf24' : achievement.rarity === 'epic' ? '#a855f7' : '#3b82f6'}
+            particleDensity={40}
+            speed={2}
+            className="h-full w-full"
+          />
+        </div>
+      )}
+
+      <Card className={`${earned ? 'border-2' : 'border border-dashed opacity-60'} ${earned ? RARITY_COLORS[achievement.rarity] : 'border-gray-300'} transition-all duration-300 relative z-0`}>
         <CardContent className={cardSizeClasses[size]}>
           <div className="text-center space-y-2">
             {/* Icon */}
@@ -62,8 +90,8 @@ export function AchievementBadge({
             </div>
 
             {/* Rarity Badge */}
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={`text-xs ${RARITY_COLORS[achievement.rarity]} capitalize`}
             >
               {achievement.rarity}
@@ -73,6 +101,24 @@ export function AchievementBadge({
             <div className="text-xs text-muted-foreground">
               {achievement.points} pts
             </div>
+
+            {/* Progress Bar */}
+            {showProgress && !earned && progress > 0 && (
+              <div className="space-y-1 w-full">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-medium text-primary">{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} className="h-1.5" />
+              </div>
+            )}
+
+            {/* Progress Percentage (compact) */}
+            {showProgress && !earned && progress === 0 && (
+              <div className="text-xs text-muted-foreground">
+                Not started
+              </div>
+            )}
 
             {/* Earned Date */}
             {earned && earnedAt && (
@@ -100,14 +146,14 @@ export function AchievementBadge({
             <motion.div
               key={i}
               initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-              animate={{ 
-                opacity: [0, 1, 0], 
+              animate={{
+                opacity: [0, 1, 0],
                 scale: [0, 1, 0],
                 x: [0, (Math.random() - 0.5) * 100],
                 y: [0, (Math.random() - 0.5) * 100]
               }}
-              transition={{ 
-                duration: 1.5, 
+              transition={{
+                duration: 1.5,
                 delay: 0.8 + i * 0.1,
                 ease: "easeOut"
               }}

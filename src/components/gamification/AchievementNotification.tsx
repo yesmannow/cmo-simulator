@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Star, Crown, Zap, X } from 'lucide-react';
 import { Achievement } from '@/lib/database/types';
 import { AchievementBadge } from './AchievementBadge';
+import { Meteors } from '@/components/ui/meteors';
+import { SparklesCore } from '@/components/ui/sparkles';
 
 interface AchievementNotificationProps {
   achievements: Achievement[];
@@ -146,49 +148,70 @@ function AchievementNotificationCard({
   const colors = getRarityColors(achievement.rarity);
   const Icon = getRarityIcon(achievement.rarity);
 
+  const isEpicOrLegendary = achievement.rarity === 'epic' || achievement.rarity === 'legendary';
+
   return (
     <motion.div
       layout
-      initial={{ 
-        opacity: 0, 
-        scale: 0.5, 
+      initial={{
+        opacity: 0,
+        scale: 0.5,
         y: 50,
         rotateX: -90
       }}
-      animate={{ 
-        opacity: isVisible ? 1 : 0, 
-        scale: isVisible ? 1 : 0.8, 
+      animate={{
+        opacity: isVisible ? 1 : 0,
+        scale: isVisible ? 1 : 0.8,
         y: isVisible ? 0 : 20,
         rotateX: 0
       }}
-      exit={{ 
-        opacity: 0, 
-        scale: 0.5, 
+      exit={{
+        opacity: 0,
+        scale: 0.5,
         y: -50,
         rotateX: 90
       }}
-      transition={{ 
-        type: "spring", 
-        stiffness: 300, 
+      transition={{
+        type: "spring",
+        stiffness: 300,
         damping: 30,
         delay: index * 0.1
       }}
-      className="pointer-events-auto"
+      className="pointer-events-auto relative"
     >
+      {/* Meteors for epic/legendary achievements */}
+      {isEpicOrLegendary && isVisible && (
+        <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+          <Meteors number={achievement.rarity === 'legendary' ? 30 : 20} />
+        </div>
+      )}
+
+      {/* Sparkles background for all achievements */}
+      {isVisible && (
+        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none opacity-30">
+          <SparklesCore
+            particleColor={achievement.rarity === 'legendary' ? '#fbbf24' : achievement.rarity === 'epic' ? '#a855f7' : '#3b82f6'}
+            particleDensity={60}
+            speed={3}
+            className="h-full w-full"
+          />
+        </div>
+      )}
+
       {/* Glow effect */}
       <div className={`absolute inset-0 rounded-xl bg-gradient-to-r ${colors.bg} opacity-20 blur-xl animate-pulse`} />
-      
+
       {/* Main card */}
-      <div className={`relative bg-card/95 backdrop-blur-sm border-2 ${colors.border} rounded-xl p-6 shadow-2xl ${colors.glow}`}>
+      <div className={`relative bg-card/95 backdrop-blur-sm border-2 ${colors.border} rounded-xl p-6 shadow-2xl ${colors.glow} z-10`}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <motion.div
-              animate={{ 
+              animate={{
                 rotate: [0, 360],
                 scale: [1, 1.2, 1]
               }}
-              transition={{ 
+              transition={{
                 rotate: { duration: 2, repeat: Infinity, ease: "linear" },
                 scale: { duration: 1, repeat: Infinity, repeatType: "reverse" }
               }}
@@ -201,7 +224,7 @@ function AchievementNotificationCard({
               <p className="text-sm text-muted-foreground capitalize">{achievement.rarity} Achievement</p>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             {showDismissAll && (
               <button
@@ -226,17 +249,17 @@ function AchievementNotificationCard({
 
         {/* Achievement details */}
         <div className="flex items-center gap-4">
-          <AchievementBadge 
-            achievement={achievement} 
+          <AchievementBadge
+            achievement={achievement}
             earned={true}
             size="lg"
             showAnimation={true}
           />
-          
+
           <div className="flex-1">
             <h4 className="font-semibold text-foreground mb-1">{achievement.name}</h4>
             <p className="text-sm text-muted-foreground mb-2">{achievement.description}</p>
-            
+
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Star className="w-3 h-3" />

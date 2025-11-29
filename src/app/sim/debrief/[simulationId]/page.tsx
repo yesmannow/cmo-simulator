@@ -7,12 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  DollarSign, 
-  Users, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  DollarSign,
+  Users,
   Zap,
   CheckCircle2,
   XCircle,
@@ -23,6 +23,11 @@ import {
   Calendar,
   Award
 } from 'lucide-react';
+import { Meteors } from '@/components/ui/meteors';
+import { GradientText } from '@/components/ui/gradient-text';
+import { BackgroundBeams } from '@/components/ui/background-beams';
+import { SparklesCore } from '@/components/ui/sparkles';
+import CountUp from 'react-countup';
 
 interface DecisionPoint {
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
@@ -45,7 +50,7 @@ interface SimulationDebrief {
   industry: string;
   timeHorizon: string;
   marketLandscape: string;
-  
+
   // Final Results
   finalScore: number;
   grade: string;
@@ -53,15 +58,15 @@ interface SimulationDebrief {
   totalProfit: number;
   finalMarketShare: number;
   roi: number;
-  
+
   // Timeline
   decisionPoints: DecisionPoint[];
-  
+
   // Analysis
   strengths: string[];
   weaknesses: string[];
   recommendations: string[];
-  
+
   // Comparison
   percentile: number;
   industryAverage: number;
@@ -235,30 +240,49 @@ export default function DebriefPage() {
     );
   }
 
-  const filteredDecisions = selectedQuarter === 'all' 
-    ? debrief.decisionPoints 
+  const filteredDecisions = selectedQuarter === 'all'
+    ? debrief.decisionPoints
     : debrief.decisionPoints.filter(d => d.quarter === selectedQuarter);
 
+  const isHighScore = debrief.grade === 'A+' || debrief.grade === 'A';
+  const isExcellentROI = debrief.roi >= 200;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-8">
-      <div className="max-w-7xl mx-auto px-4 space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-8 relative">
+      {/* Background Beams */}
+      <div className="absolute inset-0 -z-10 opacity-20">
+        <BackgroundBeams />
+      </div>
+
+      {/* Meteors for high scores */}
+      {isHighScore && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+          <Meteors number={isExcellentROI ? 30 : 20} />
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 space-y-8 relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => router.push('/dashboard')}
               className="mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
-            <h1 className="text-4xl font-bold mb-2">Campaign Debrief</h1>
+            <GradientText
+              text="Campaign Debrief"
+              className="text-4xl font-bold mb-2 block"
+              neon={isHighScore}
+            />
             <p className="text-muted-foreground">
               {debrief.companyName} • {debrief.industry} • {debrief.timeHorizon}
             </p>
           </div>
-          
+
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleShare}>
               <Share2 className="h-4 w-4 mr-2" />
@@ -273,14 +297,24 @@ export default function DebriefPage() {
 
         {/* Score Overview */}
         <div className="grid md:grid-cols-4 gap-4">
-          <Card className="border-2 border-primary">
-            <CardHeader className="pb-3">
+          <Card className="border-2 border-primary relative overflow-hidden">
+            {isHighScore && (
+              <div className="absolute inset-0 opacity-10 pointer-events-none">
+                <SparklesCore
+                  particleColor="#3b82f6"
+                  particleDensity={40}
+                  speed={2}
+                  className="h-full w-full"
+                />
+              </div>
+            )}
+            <CardHeader className="pb-3 relative z-10">
               <CardDescription>Strategy Score</CardDescription>
               <CardTitle className="text-4xl text-primary">
-                {debrief.finalScore.toLocaleString()}
+                <CountUp end={debrief.finalScore} duration={2} separator="," />
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <div className="flex items-center gap-2">
                 <Badge variant="default" className="text-lg px-3 py-1">
                   Grade {debrief.grade}
@@ -299,12 +333,12 @@ export default function DebriefPage() {
                 Total Revenue
               </CardDescription>
               <CardTitle className="text-3xl">
-                ${(debrief.totalRevenue / 1000000).toFixed(2)}M
+                $<CountUp end={debrief.totalRevenue / 1000000} duration={2} decimals={2} />M
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Profit: ${(debrief.totalProfit / 1000000).toFixed(2)}M
+                Profit: $<CountUp end={debrief.totalProfit / 1000000} duration={2} decimals={2} />M
               </p>
             </CardContent>
           </Card>
@@ -316,13 +350,15 @@ export default function DebriefPage() {
                 Market Share
               </CardDescription>
               <CardTitle className="text-3xl">
-                {debrief.finalMarketShare}%
+                <CountUp end={debrief.finalMarketShare} duration={2} decimals={1} />%
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-1 text-sm">
                 <TrendingUp className="h-4 w-4 text-green-500" />
-                <span className="text-green-500">+{(debrief.finalMarketShare - 5).toFixed(1)}%</span>
+                <span className="text-green-500">
+                  +<CountUp end={debrief.finalMarketShare - 5} duration={2} decimals={1} />%
+                </span>
                 <span className="text-muted-foreground">from start</span>
               </div>
             </CardContent>
@@ -335,12 +371,12 @@ export default function DebriefPage() {
                 ROI
               </CardDescription>
               <CardTitle className="text-3xl">
-                {debrief.roi}%
+                <CountUp end={debrief.roi} duration={2} />%
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Industry avg: {((debrief.industryAverage / debrief.finalScore) * debrief.roi).toFixed(0)}%
+                Industry avg: <CountUp end={((debrief.industryAverage / debrief.finalScore) * debrief.roi)} duration={2} decimals={0} />%
               </p>
             </CardContent>
           </Card>
@@ -366,7 +402,7 @@ export default function DebriefPage() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       variant={selectedQuarter === 'all' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setSelectedQuarter('all')}

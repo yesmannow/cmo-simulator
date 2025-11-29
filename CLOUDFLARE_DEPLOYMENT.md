@@ -15,7 +15,9 @@
   - `react-hooks/exhaustive-deps` → `warn`
 
 ### 3. Wrangler Config (`wrangler.toml`)
-- ✅ Added `pages_build_output_dir = ".open-next"` for Cloudflare Pages
+- ✅ **Removed:** `wrangler.toml` is not needed for Cloudflare Pages
+- ✅ All configuration is done through the Cloudflare Pages dashboard
+- ✅ The OpenNext Cloudflare adapter works without wrangler.toml
 
 ## 🚀 Cloudflare Pages Settings
 
@@ -25,7 +27,16 @@
 - **Root directory:** `/` (or leave empty)
 
 ### Environment Variables
-Set these in Cloudflare Pages dashboard:
+
+#### Required Variables (MUST be set)
+Set these in Cloudflare Pages dashboard under **Settings** → **Environment Variables**:
+
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous/public key
+
+**⚠️ Important:** These are required for the app to work. See `CLOUDFLARE_ENV_SETUP.md` for detailed setup instructions.
+
+#### Optional Build Variables
 - `NODE_VERSION`: `22.16.0` (or latest LTS)
 - `SKIP_ESLINT`: `true` (optional, to skip ESLint during build)
 - `CI`: `true` (automatically set by Cloudflare)
@@ -70,10 +81,19 @@ typescript: {
 }
 ```
 
-### Wrangler.toml Not Recognized
-Cloudflare Pages may not recognize `wrangler.toml` for Pages. The `pages_build_output_dir` property should help, but if not:
-- Remove `wrangler.toml` and configure via Cloudflare dashboard
-- Or use `wrangler.toml` only for Workers, not Pages
+### Build Fails with "Missing required environment variables"
+**Fixed:** The build process now skips environment variable validation during build time, as Cloudflare Pages injects variables at runtime.
+
+**Action Required:** You still need to set the environment variables in Cloudflare Pages dashboard:
+1. Go to **Settings** → **Environment Variables**
+2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. See `CLOUDFLARE_ENV_SETUP.md` for detailed instructions
+
+### Wrangler.toml Not Needed
+- ✅ **Removed:** `wrangler.toml` has been removed from the project
+- ✅ For Cloudflare Pages, all configuration is done through the dashboard
+- ✅ The OpenNext Cloudflare adapter works without wrangler.toml
+- ℹ️ If you see any wrangler-related warnings, they can be safely ignored
 
 ## ✅ Verification
 

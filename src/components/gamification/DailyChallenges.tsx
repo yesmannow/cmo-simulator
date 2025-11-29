@@ -6,18 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Target, 
-  Trophy, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Target,
+  Trophy,
+  Clock,
+  CheckCircle2,
+  XCircle,
   RefreshCw,
   Zap,
   TrendingUp,
   Users,
   DollarSign
 } from 'lucide-react';
+import { SparklesCore } from '@/components/ui/sparkles';
 
 // Daily Challenge Types
 export interface DailyChallenge {
@@ -99,11 +100,11 @@ function generateDailyChallenges(date: Date): DailyChallenge[] {
     const hashB = (b.type.charCodeAt(0) + seedValue) % 100;
     return hashA - hashB;
   });
-  
+
   const tomorrow = new Date(date);
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
-  
+
   return shuffled.slice(0, 3).map((template, index) => ({
     ...template,
     id: `${seed}-${index}`,
@@ -117,12 +118,12 @@ function generateDailyChallenges(date: Date): DailyChallenge[] {
 function getTimeRemaining(expiresAt: Date): string {
   const now = new Date();
   const diff = expiresAt.getTime() - now.getTime();
-  
+
   if (diff <= 0) return 'Expired';
-  
+
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
+
   if (hours > 0) {
     return `${hours}h ${minutes}m remaining`;
   }
@@ -135,7 +136,7 @@ interface DailyChallengesProps {
   challengeProgress?: Record<string, number>;
 }
 
-export function DailyChallenges({ 
+export function DailyChallenges({
   onChallengeComplete,
   completedChallengeIds = [],
   challengeProgress = {}
@@ -148,34 +149,34 @@ export function DailyChallenges({
   useEffect(() => {
     const today = new Date();
     const dailyChallenges = generateDailyChallenges(today);
-    
+
     // Apply saved progress and completion status
     const updatedChallenges = dailyChallenges.map(challenge => ({
       ...challenge,
       progress: challengeProgress[challenge.id] || 0,
       completed: completedChallengeIds.includes(challenge.id)
     }));
-    
+
     setChallenges(updatedChallenges);
   }, [completedChallengeIds, challengeProgress]);
 
   // Update timer
   useEffect(() => {
     if (challenges.length === 0) return;
-    
+
     const updateTimer = () => {
       setTimeRemaining(getTimeRemaining(challenges[0].expiresAt));
     };
-    
+
     updateTimer();
     const interval = setInterval(updateTimer, 60000); // Update every minute
-    
+
     return () => clearInterval(interval);
   }, [challenges]);
 
   // Handle challenge completion
   const handleCompleteChallenge = useCallback((challenge: DailyChallenge) => {
-    setChallenges(prev => prev.map(c => 
+    setChallenges(prev => prev.map(c =>
       c.id === challenge.id ? { ...c, completed: true, progress: c.requirement.target } : c
     ));
     onChallengeComplete?.(challenge);
@@ -223,8 +224,8 @@ export function DailyChallenges({
             <Badge variant="outline" className="bg-primary/10">
               {completedCount}/{challenges.length} Complete
             </Badge>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={handleRefresh}
               disabled={refreshing}
@@ -233,7 +234,7 @@ export function DailyChallenges({
             </Button>
           </div>
         </div>
-        
+
         {/* Overall Progress */}
         <div className="mt-3">
           <div className="flex justify-between text-sm mb-1">
@@ -243,7 +244,7 @@ export function DailyChallenges({
           <Progress value={(completedCount / Math.max(challenges.length, 1)) * 100} className="h-2" />
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-3">
         <AnimatePresence mode="popLayout">
           {challenges.map((challenge, index) => (
@@ -254,7 +255,7 @@ export function DailyChallenges({
               exit={{ opacity: 0, y: -20 }}
               transition={{ delay: index * 0.1 }}
             >
-              <ChallengeCard 
+              <ChallengeCard
                 challenge={challenge}
                 onComplete={() => handleCompleteChallenge(challenge)}
                 getDifficultyColor={getDifficultyColor}
@@ -262,7 +263,7 @@ export function DailyChallenges({
             </motion.div>
           ))}
         </AnimatePresence>
-        
+
         {challenges.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -283,26 +284,37 @@ interface ChallengeCardProps {
 
 function ChallengeCard({ challenge, onComplete, getDifficultyColor }: ChallengeCardProps) {
   const progressPercent = Math.min((challenge.progress / challenge.requirement.target) * 100, 100);
-  
+
   return (
     <motion.div
       whileHover={{ scale: challenge.completed ? 1 : 1.02 }}
-      className={`p-4 rounded-lg border ${
-        challenge.completed 
-          ? 'bg-green-50 border-green-200' 
+      className={`p-4 rounded-lg border relative overflow-hidden ${
+        challenge.completed
+          ? 'bg-green-50 border-green-200'
           : 'bg-card hover:bg-accent/50'
       } transition-colors`}
     >
-      <div className="flex items-start gap-3">
+      {/* Sparkles when completed */}
+      {challenge.completed && (
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <SparklesCore
+            particleColor="#10b981"
+            particleDensity={40}
+            speed={2}
+            className="h-full w-full"
+          />
+        </div>
+      )}
+      <div className="flex items-start gap-3 relative z-10">
         {/* Icon */}
         <div className={`p-2 rounded-lg ${
-          challenge.completed 
-            ? 'bg-green-200 text-green-700' 
+          challenge.completed
+            ? 'bg-green-200 text-green-700'
             : 'bg-primary/10 text-primary'
         }`}>
           {challenge.completed ? <CheckCircle2 className="w-5 h-5" /> : challenge.icon}
         </div>
-        
+
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -313,11 +325,11 @@ function ChallengeCard({ challenge, onComplete, getDifficultyColor }: ChallengeC
               {challenge.difficulty}
             </Badge>
           </div>
-          
+
           <p className="text-sm text-muted-foreground mb-2">
             {challenge.description}
           </p>
-          
+
           {/* Progress */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
@@ -336,7 +348,7 @@ function ChallengeCard({ challenge, onComplete, getDifficultyColor }: ChallengeC
             <Progress value={progressPercent} className="h-1.5" />
           </div>
         </div>
-        
+
         {/* Status/Action */}
         <div className="flex-shrink-0">
           {challenge.completed ? (
@@ -375,8 +387,8 @@ export function checkChallengeProgress(
       return simulationResult.marketShare;
     case 'speed_run':
       // Inverse: lower time = higher progress toward goal
-      return simulationResult.completed && simulationResult.completionTimeMinutes <= challenge.requirement.target 
-        ? challenge.requirement.target 
+      return simulationResult.completed && simulationResult.completionTimeMinutes <= challenge.requirement.target
+        ? challenge.requirement.target
         : 0;
     case 'perfect_quarter':
       return simulationResult.quartersWithAllTargets;

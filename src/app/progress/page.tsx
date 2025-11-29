@@ -24,6 +24,9 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
+import { BackgroundBeams } from '@/components/ui/background-beams';
+import { GradientText } from '@/components/ui/gradient-text';
+import CountUp from 'react-countup';
 
 // Mock user data
 const MOCK_USER_ID = 'current-user';
@@ -67,9 +70,14 @@ export default function ProgressPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-accent/20">
+    <div className="min-h-screen bg-gradient-to-br from-background to-accent/20 relative">
+      {/* Background Beams */}
+      <div className="absolute inset-0 -z-10 opacity-20">
+        <BackgroundBeams />
+      </div>
+
       {/* Header */}
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40 relative">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -82,7 +90,11 @@ export default function ProgressPage() {
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                   <Trophy className="w-6 h-6 text-yellow-500" />
-                  Your Progress
+                  <GradientText
+                    text="Your Progress"
+                    className="text-2xl"
+                    neon={false}
+                  />
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Track your achievements and compete with others
@@ -94,7 +106,7 @@ export default function ProgressPage() {
             <div className="flex items-center gap-4">
               <StreakBadge streak={streakData} compact />
               <Badge variant="outline" className="font-bold">
-                {totalXP.toLocaleString()} XP
+                <CountUp end={totalXP} duration={1.5} separator="," /> XP
               </Badge>
             </div>
           </div>

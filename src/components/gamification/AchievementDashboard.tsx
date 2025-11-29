@@ -24,6 +24,10 @@ import { LevelProgress, calculateLevelData, type LevelData } from './LevelProgre
 import { StreakBadge, type StreakData } from './StreakBadge';
 import { Achievement } from '@/types';
 import { ACHIEVEMENT_DEFINITIONS } from '@/lib/achievements/achievements';
+import { BackgroundBeams } from '@/components/ui/background-beams';
+import { GradientText } from '@/components/ui/gradient-text';
+import { SparklesCore } from '@/components/ui/sparkles';
+import CountUp from 'react-countup';
 
 // Animated counter component
 function AnimatedCounter({ value, duration = 1.5, decimals = 0 }: { value: number; duration?: number; decimals?: number }) {
@@ -65,8 +69,19 @@ function StatCard({ icon, label, value, change, suffix = '', animate = true }: S
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02, y: -2 }}
       transition={{ type: 'spring', stiffness: 100 }}
+      className="relative"
     >
-      <Card className="h-full">
+      {/* Subtle sparkles on hover */}
+      <div className="absolute inset-0 rounded-lg overflow-hidden opacity-0 hover:opacity-20 transition-opacity pointer-events-none">
+        <SparklesCore
+          particleColor="#3b82f6"
+          particleDensity={30}
+          speed={2}
+          className="h-full w-full"
+        />
+      </div>
+
+      <Card className="h-full relative z-10">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -77,7 +92,12 @@ function StatCard({ icon, label, value, change, suffix = '', animate = true }: S
                 <p className="text-sm text-muted-foreground">{label}</p>
                 <p className="text-2xl font-bold flex items-center gap-1">
                   {typeof value === 'number' && animate ? (
-                    <AnimatedCounter value={value} />
+                    <CountUp
+                      end={value}
+                      duration={2}
+                      separator=","
+                      className="tabular-nums"
+                    />
                   ) : (
                     value
                   )}
@@ -256,13 +276,35 @@ export function AchievementDashboard({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Background Beams */}
+      <div className="absolute inset-0 -z-10 opacity-30">
+        <BackgroundBeams />
+      </div>
+
+      {/* Header with Gradient Text */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-6"
+      >
+        <GradientText
+          text="Achievement Dashboard"
+          className="text-4xl font-bold mb-2"
+          neon={false}
+        />
+        <p className="text-muted-foreground">
+          Track your progress and unlock new achievements
+        </p>
+      </motion.div>
+
       {/* Header Stats */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10"
       >
         <StatCard
           icon={<Trophy className="w-5 h-5" />}
