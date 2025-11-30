@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "build:cloudflare": "npx opennextjs-cloudflare build",
+    "build:cloudflare": "npx opennextjs-cloudflare build && node scripts/fix-cloudflare-output.js",
     "start": "next start",
     "lint": "eslint --no-error-on-unmatched-pattern .",
     "test": "jest",

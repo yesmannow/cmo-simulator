@@ -1,6 +1,5 @@
-# Minimal wrangler.toml for Cloudflare Pages
-# This file prevents the interactive prompt during build
-# Actual configuration is done through Cloudflare Pages dashboard
+# Wrangler configuration for Cloudflare Pages
+# This file configures the build output for Cloudflare Pages
 
 name = "cmo-simulator"
 compatibility_date = "2024-01-01"
@@ -9,6 +8,7 @@ compatibility_date = "2024-01-01"
 # These enable Node.js APIs needed by Next.js and OpenNext
 compatibility_flags = ["nodejs_compat"]
 
-# Note: For Cloudflare Pages, most configuration is done through the dashboard
-# Compatibility flags can also be set in the dashboard under Settings → Functions → Compatibility flags
+# Specify the build output directory for Cloudflare Pages
+# This tells Cloudflare Pages where to find the built files
+pages_build_output_dir = ".open-next"
 

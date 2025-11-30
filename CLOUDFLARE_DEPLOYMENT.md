@@ -106,20 +106,40 @@ typescript: {
 2. **Verify build output directory**
    - Check that build output directory is set to `.open-next` (not `.next`)
    - The `.open-next` folder should contain `functions/` and static files
+   - **IMPORTANT:** Check build logs to verify `.open-next/functions/` directory exists
 
 3. **Check Functions configuration**
    - Go to Settings → Functions
    - Ensure compatibility flags are enabled (see above)
    - Check that functions are being deployed (should see function count in deployment logs)
+   - Look for "Functions detected" or similar message in build logs
 
 4. **Verify routing**
    - OpenNext should handle all routing automatically
    - If you see 404s, check the build logs to ensure functions were created
    - Try accessing `/sim/setup` directly (your app redirects there)
+   - Check if `_routes.json` is generated in `.open-next` directory
 
-5. **Redeploy after config changes**
+5. **Build Output Structure Check**
+   After build, `.open-next` should contain:
+   ```
+   .open-next/
+   ├── functions/
+   │   └── (various function files)
+   ├── _routes.json (auto-generated)
+   └── (static files)
+   ```
+   If `functions/` folder is missing, the build didn't work correctly.
+
+6. **Redeploy after config changes**
    - After removing `output: "standalone"`, commit and push changes
    - Trigger a new deployment in Cloudflare Pages
+
+7. **Check Build Logs for Errors**
+   - Look for "Functions detected: X" message
+   - Check for any errors about missing files
+   - Verify that the build completed successfully
+   - Check if there are any warnings about routing
 
 ## ✅ Verification
 
