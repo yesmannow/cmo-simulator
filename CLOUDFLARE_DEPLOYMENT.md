@@ -15,9 +15,9 @@
   - `react-hooks/exhaustive-deps` → `warn`
 
 ### 3. Wrangler Config (`wrangler.toml`)
-- ✅ **Removed:** `wrangler.toml` is not needed for Cloudflare Pages
-- ✅ All configuration is done through the Cloudflare Pages dashboard
-- ✅ The OpenNext Cloudflare adapter works without wrangler.toml
+- ✅ **Minimal file created:** A minimal `wrangler.toml` is needed to prevent interactive prompts during build
+- ✅ All actual configuration is done through the Cloudflare Pages dashboard
+- ✅ The file only contains basic metadata to satisfy the build tool
 
 ## 🚀 Cloudflare Pages Settings
 
@@ -89,11 +89,11 @@ typescript: {
 2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 3. See `CLOUDFLARE_ENV_SETUP.md` for detailed instructions
 
-### Wrangler.toml Not Needed
-- ✅ **Removed:** `wrangler.toml` has been removed from the project
-- ✅ For Cloudflare Pages, all configuration is done through the dashboard
-- ✅ The OpenNext Cloudflare adapter works without wrangler.toml
-- ℹ️ If you see any wrangler-related warnings, they can be safely ignored
+### Wrangler.toml Configuration
+- ✅ **Minimal file required:** A minimal `wrangler.toml` is included to prevent interactive build prompts
+- ✅ For Cloudflare Pages, all actual configuration is done through the dashboard
+- ✅ The file only contains basic metadata (name, compatibility_date)
+- ℹ️ The build tool requires this file to avoid asking for interactive input during CI/CD builds
 
 ## ✅ Verification
 
