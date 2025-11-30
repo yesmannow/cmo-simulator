@@ -11,8 +11,8 @@ const nextConfig: NextConfig = {
     // TODO: Fix type errors incrementally
     ignoreBuildErrors: true,
   },
-  // Cloudflare Pages compatibility
-  output: "standalone",
+  // Note: OpenNext Cloudflare handles output configuration
+  // Do not set output: "standalone" as it conflicts with OpenNext
 };
 
 export default nextConfig;

@@ -95,6 +95,32 @@ typescript: {
 - ✅ The file only contains basic metadata (name, compatibility_date)
 - ℹ️ The build tool requires this file to avoid asking for interactive input during CI/CD builds
 
+### Getting 404 Errors After Deployment
+**Common causes and fixes:**
+
+1. **Wrong output mode in next.config.ts**
+   - ❌ Remove `output: "standalone"` - this conflicts with OpenNext
+   - ✅ OpenNext Cloudflare handles output configuration automatically
+   - ✅ The config has been updated to remove this
+
+2. **Verify build output directory**
+   - Check that build output directory is set to `.open-next` (not `.next`)
+   - The `.open-next` folder should contain `functions/` and static files
+
+3. **Check Functions configuration**
+   - Go to Settings → Functions
+   - Ensure compatibility flags are enabled (see above)
+   - Check that functions are being deployed (should see function count in deployment logs)
+
+4. **Verify routing**
+   - OpenNext should handle all routing automatically
+   - If you see 404s, check the build logs to ensure functions were created
+   - Try accessing `/sim/setup` directly (your app redirects there)
+
+5. **Redeploy after config changes**
+   - After removing `output: "standalone"`, commit and push changes
+   - Trigger a new deployment in Cloudflare Pages
+
 ## ✅ Verification
 
 After deployment:
