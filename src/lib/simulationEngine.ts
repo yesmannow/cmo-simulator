@@ -22,10 +22,10 @@ import {
   type AdstockHistory
 } from './scoringEngine';
 
-// Import new advanced models
 import { calculateMarketShareBass, calculateMarketMaturity } from './models/marketShare';
 import { calculateAdvancedROI, getIndustryCLV } from './models/roi';
 import { simulateCompetitiveResponse } from './models/competitive';
+import { createScoreTracker, updateScoreTracker, type ScoreTracker } from './scoring/scoreTracker';
 
 import { generateWildcardEvent, WildcardEvent } from './advancedWildcards';
 import { SAMPLE_TACTICS } from './tactics';
@@ -144,6 +144,9 @@ export interface SimulationState {
 
   // NEW: Adstock history for advanced MMM modeling
   adstockHistory?: AdstockHistory;
+
+  // NEW: Real-time score tracking
+  scoreTracker?: ScoreTracker;
 }
 
 /**
@@ -183,7 +186,8 @@ export function initializeSimulation(config: SimulationConfig): SimulationState 
     quarterlyResults: [],
     seoInvestments: [],
     wildcardEvents: [],
-    decisions: []
+    decisions: [],
+    scoreTracker: undefined // Will be initialized on first quarter or during setup if needed
   };
 }
 
@@ -232,12 +236,8 @@ export function processQuarter(
     traditional: decisions.tactics
       .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'traditional')
       .reduce((sum, t) => sum + t.budgetAllocated, 0),
-    social: decisions.tactics
-      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'social')
-      .reduce((sum, t) => sum + t.budgetAllocated, 0),
-    pr: decisions.tactics
-      .filter(t => SAMPLE_TACTICS.find(st => st.id === t.tacticId)?.category === 'pr')
-      .reduce((sum, t) => sum + t.budgetAllocated, 0)
+    social: 0, // No direct social category in sample tactics, covered by digital/content
+    pr: 0 // No direct pr category in sample tactics, covered by partnerships
   };
 
   // Update adstock history with current quarter spends
@@ -408,7 +408,6 @@ export function processQuarter(
       referral: 0
     }
   };
-
   // Update state
   const newState: SimulationState = {
     ...state,
@@ -425,6 +424,11 @@ export function processQuarter(
     decisions: [...state.decisions, decisions],
     adstockHistory: updatedAdstockHistory
   };
+
+  // Update score tracker with new state
+  newState.scoreTracker = state.scoreTracker 
+    ? updateScoreTracker(state.scoreTracker, finalizeSimulation(newState).strategyScore)
+    : createScoreTracker(newState, [finalizeSimulation(newState).strategyScore]);
 
   return newState;
 }

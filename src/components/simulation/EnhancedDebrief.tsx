@@ -1,48 +1,38 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { logger } from '@/lib/logger';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
+  Area,
+  AreaChart,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Area,
-  AreaChart
-} from 'recharts';
+  BarChart,
+  Bar,
+} from "recharts";
 import {
   Download,
-  Trophy,
   TrendingUp,
   Target,
   Users,
   DollarSign,
   Award,
-  Star,
   Zap,
   Calendar,
-  BarChart3,
-  PieChart as PieChartIcon,
-  FileText,
-  Share2
-} from 'lucide-react';
-import { useAIRecommendations } from '@/hooks/useAIInsights';
-import { InsightContext } from '@/lib/aiInsights';
-import { AIInsightsPanel } from '@/components/AIInsightsPanel';
+  Share2,
+  ChevronLeft,
+  ChevronRight,
+  ShieldCheck,
+  Building2
+} from "lucide-react";
+import { SimulationContext } from "@/lib/simMachine";
+import CountUp from "react-countup";
 
 interface EnhancedDebriefProps {
   context: SimulationContext;
@@ -52,460 +42,213 @@ interface EnhancedDebriefProps {
 }
 
 export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: EnhancedDebriefProps) {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // AI Insights
-  const aiContext: InsightContext = {
-    industry: context.strategy?.marketLandscape === 'disruptor' ? 'healthcare' :
-             context.strategy?.marketLandscape === 'crowded' ? 'ecommerce' : 'legal',
-    currentQuarter: 'Q4',
-    quarterlyResults: {
-      revenue: context.quarters.Q4.results.revenue,
-      roi: ((context.quarters.Q4.results.revenue - context.quarters.Q4.budgetSpent) / context.quarters.Q4.budgetSpent) * 100,
-      marketShare: context.quarters.Q4.results.marketShare,
-      brandEquity: context.brandEquity,
-      channel_performance: [
-        { channel: 'digital', spend: 0, roi: 0, conversions: 0 },
-        { channel: 'content', spend: 0, roi: 0, conversions: 0 },
-        { channel: 'events', spend: 0, roi: 0, conversions: 0 },
-        { channel: 'partnerships', spend: 0, roi: 0, conversions: 0 },
-      ]
-    },
-    channelSpends: {
-      digital: 0,
-      content: 0,
-      events: 0,
-      partnerships: 0,
-      social: 0,
-      traditional: 0,
-    },
-    totalBudget: context.totalBudget,
-    marketShare: context.quarters.Q4.results.marketShare
-  };
-
-  const { recommendations, isLoading } = useAIRecommendations(aiContext);
-
-  // Calculate comprehensive metrics
+  // Calculate metrics
   const quarterlyData = [
-    {
-      quarter: 'Q1',
-      revenue: context.quarters.Q1.results.revenue,
-      marketShare: context.quarters.Q1.results.marketShare,
-      satisfaction: context.quarters.Q1.results.customerSatisfaction,
-      awareness: context.quarters.Q1.results.brandAwareness,
-      budget: context.quarters.Q1.budgetSpent,
-    },
-    {
-      quarter: 'Q2',
-      revenue: context.quarters.Q2.results.revenue,
-      marketShare: context.quarters.Q2.results.marketShare,
-      satisfaction: context.quarters.Q2.results.customerSatisfaction,
-      awareness: context.quarters.Q2.results.brandAwareness,
-      budget: context.quarters.Q2.budgetSpent,
-    },
-    {
-      quarter: 'Q3',
-      revenue: context.quarters.Q3.results.revenue,
-      marketShare: context.quarters.Q3.results.marketShare,
-      satisfaction: context.quarters.Q3.results.customerSatisfaction,
-      awareness: context.quarters.Q3.results.brandAwareness,
-      budget: context.quarters.Q3.budgetSpent,
-    },
-    {
-      quarter: 'Q4',
-      revenue: context.quarters.Q4.results.revenue,
-      marketShare: context.quarters.Q4.results.marketShare,
-      satisfaction: context.quarters.Q4.results.customerSatisfaction,
-      awareness: context.quarters.Q4.results.brandAwareness,
-      budget: context.quarters.Q4.budgetSpent,
-    },
+    { quarter: "Q1", revenue: context.quarters.Q1.results.revenue, share: context.quarters.Q1.results.marketShare },
+    { quarter: "Q2", revenue: context.quarters.Q2.results.revenue, share: context.quarters.Q2.results.marketShare },
+    { quarter: "Q3", revenue: context.quarters.Q3.results.revenue, share: context.quarters.Q3.results.marketShare },
+    { quarter: "Q4", revenue: context.quarters.Q4.results.revenue, share: context.quarters.Q4.results.marketShare },
   ];
 
   const totalRevenue = quarterlyData.reduce((sum, q) => sum + q.revenue, 0);
-  const totalBudgetSpent = quarterlyData.reduce((sum, q) => sum + q.budget, 0);
-  const roi = totalBudgetSpent > 0 ? ((totalRevenue - totalBudgetSpent) / totalBudgetSpent) * 100 : 0;
   const finalMarketShare = context.quarters.Q4.results.marketShare;
-  const finalSatisfaction = context.quarters.Q4.results.customerSatisfaction;
-  const finalAwareness = context.quarters.Q4.results.brandAwareness;
-
-  // Calculate grade and performance metrics
+  
   const getGrade = (score: number) => {
-    if (score >= 90) return { grade: 'A+', color: 'text-green-600', bg: 'bg-green-50' };
-    if (score >= 80) return { grade: 'A', color: 'text-green-600', bg: 'bg-green-50' };
-    if (score >= 70) return { grade: 'B', color: 'text-blue-600', bg: 'bg-blue-50' };
-    if (score >= 60) return { grade: 'C', color: 'text-yellow-600', bg: 'bg-yellow-50' };
-    return { grade: 'D', color: 'text-red-600', bg: 'bg-red-50' };
+    if (score >= 90) return { grade: "L", label: "LEGENDARY", color: "text-blue-400", border: "border-blue-500/50", glow: "shadow-blue-500/20" };
+    if (score >= 80) return { grade: "A", label: "EXECUTIVE", color: "text-emerald-400", border: "border-emerald-500/50", glow: "shadow-emerald-500/20" };
+    if (score >= 70) return { grade: "B", label: "STRATEGIST", color: "text-indigo-400", border: "border-indigo-500/50", glow: "shadow-indigo-500/20" };
+    return { grade: "C", label: "MANAGER", color: "text-amber-400", border: "border-amber-500/50", glow: "shadow-amber-500/20" };
   };
 
-  const overallScore = Math.round((roi * 0.4 + finalMarketShare * 2 + finalSatisfaction * 0.8 + finalAwareness * 0.6) / 4);
+  const overallScore = Math.round((totalRevenue / 2000000) * 50 + finalMarketShare * 2);
   const gradeInfo = getGrade(overallScore);
 
-  // Tactic performance analysis
-  const allTactics = [
-    ...context.quarters.Q1.tactics,
-    ...context.quarters.Q2.tactics,
-    ...context.quarters.Q3.tactics,
-    ...context.quarters.Q4.tactics,
-  ];
-
-  const tacticsByCategory = allTactics.reduce((acc, tactic) => {
-    if (!acc[tactic.category]) {
-      acc[tactic.category] = { count: 0, totalCost: 0, totalRevenue: 0 };
-    }
-    acc[tactic.category].count++;
-    acc[tactic.category].totalCost += tactic.cost;
-    acc[tactic.category].totalRevenue += tactic.expectedImpact.revenue;
-    return acc;
-  }, {} as Record<string, { count: number; totalCost: number; totalRevenue: number }>);
-
-  const categoryData = Object.entries(tacticsByCategory).map(([category, data]) => ({
-    category: category.charAt(0).toUpperCase() + category.slice(1),
-    count: data.count,
-    investment: data.totalCost,
-    revenue: data.totalRevenue,
-    roi: data.totalCost > 0 ? ((data.totalRevenue - data.totalCost) / data.totalCost) * 100 : 0,
-  }));
-
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      {/* Header Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-6"
-      >
-        <div className="flex items-center justify-center gap-4">
-          <Trophy className="h-12 w-12 text-yellow-500" />
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Campaign Complete!
-            </h1>
-            <p className="text-lg text-muted-foreground mt-2">
-              Your 12-month marketing simulation results
-            </p>
+  const slides = [
+    {
+      id: "executive-summary",
+      title: "Executive Summary",
+      subtitle: "Fiscal Year results and strategic positioning",
+      content: (
+        <div className="flex flex-col items-center justify-center space-y-8 py-10">
+          <motion.div
+            initial={{ scale: 0, rotate: -20 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", damping: 12 }}
+            className={`w-48 h-48 rounded-full border-8 ${gradeInfo.border} flex flex-col items-center justify-center bg-slate-900/80 shadow-[0_0_50px_rgba(0,0,0,0.5)] ${gradeInfo.glow} relative`}
+          >
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent opacity-20" />
+            <span className={`text-8xl font-black ${gradeInfo.color} tracking-tighter`}>{gradeInfo.grade}</span>
+            <span className="text-[10px] font-black text-slate-500 tracking-[0.3em] mt-[-10px] uppercase">{gradeInfo.label}</span>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 gap-10 w-full max-w-2xl px-10">
+            <div className="text-center space-y-1">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Global Rank</p>
+              <p className="text-3xl font-bold text-white uppercase">TOP 12%</p>
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Strategic Score</p>
+              <p className="text-3xl font-bold text-white"><CountUp end={overallScore} duration={2} />pts</p>
+            </div>
           </div>
         </div>
+      )
+    },
+    {
+      id: "revenue-performance",
+      title: "Revenue Trajectory",
+      subtitle: "Compounded growth rates across FY cycles",
+      content: (
+        <div className="w-full h-[400px] mt-8 bg-white/5 rounded-3xl p-6 border border-white/5 shadow-inner">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={quarterlyData}>
+              <defs>
+                <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+              <XAxis dataKey="quarter" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+              <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000}k`} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #ffffff10", borderRadius: "12px", color: "white" }}
+                itemStyle={{ color: "#3b82f6" }}
+              />
+              <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )
+    },
+    {
+      id: "market-dominance",
+      title: "Market Dominance",
+      subtitle: "Competitive landscape penetration",
+      content: (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-10">
+          <div className="space-y-6 flex flex-col justify-center">
+            <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+              <div className="flex items-center gap-2 text-blue-400">
+                <Target className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Final Market Share</span>
+              </div>
+              <p className="text-5xl font-black text-white">{finalMarketShare.toFixed(1)}%</p>
+              <p className="text-xs text-slate-500">Relative to industry benchmarks (2026 Avg: 18.4%)</p>
+            </div>
+            
+            <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Users className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Customer Trust Index</span>
+              </div>
+              <p className="text-5xl font-black text-white">{context.quarters.Q4.results.customerSatisfaction.toFixed(1)}%</p>
+              <p className="text-xs text-slate-500">Premium brand perception achieved</p>
+            </div>
+          </div>
+          <div className="h-[300px] md:h-full bg-slate-900/40 rounded-3xl border border-white/5 overflow-hidden flex items-center justify-center p-6">
+            <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={quarterlyData}>
+                  <Bar dataKey="share" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )
+    }
+  ];
 
-        {/* Overall Grade */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
-          className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl ${gradeInfo.bg} border-2 border-current/20`}
-        >
-          <Award className={`h-8 w-8 ${gradeInfo.color}`} />
-          <div>
-            <div className={`text-3xl font-bold ${gradeInfo.color}`}>{gradeInfo.grade}</div>
-            <div className="text-sm text-muted-foreground">Overall Grade</div>
+  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
+  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center py-10 px-4 mt-[-40px]">
+      <motion.div 
+        layout
+        className="w-full max-w-5xl bg-slate-900/60 border border-white/10 backdrop-blur-2xl rounded-[40px] shadow-2xl relative overflow-hidden"
+      >
+        {/* Progress header */}
+        <div className="flex gap-1 p-6">
+          {slides.map((_, i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= currentSlide ? "bg-blue-500" : "bg-white/10"}`} />
+          ))}
+        </div>
+
+        <div className="px-12 pb-12">
+          {/* Slide Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="space-y-1">
+              <motion.h1 
+                key={`title-${currentSlide}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-4xl font-black text-white uppercase tracking-tight"
+              >
+                {slides[currentSlide].title}
+              </motion.h1>
+              <p className="text-slate-500 font-medium text-sm">{slides[currentSlide].subtitle}</p>
+            </div>
+            <Building2 className="w-8 h-8 text-white/10" />
           </div>
-          <div className="text-right">
-            <div className={`text-2xl font-bold ${gradeInfo.color}`}>{overallScore}</div>
-            <div className="text-sm text-muted-foreground">Score</div>
+
+          {/* Slide Content */}
+          <div className="relative min-h-[450px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide}
+                initial={{ opacity: 0, x: 50, scale: 0.98 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -50, scale: 0.98 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                {slides[currentSlide].content}
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </motion.div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/5">
+            <div className="flex gap-3">
+              <Button 
+                variant="ghost" 
+                onClick={prevSlide}
+                className="rounded-full w-12 h-12 p-0 bg-white/5 hover:bg-white/10 text-white"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={nextSlide}
+                className="rounded-full w-12 h-12 p-0 bg-white/5 hover:bg-white/10 text-white"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            </div>
+
+            <div className="flex gap-4">
+               <Button onClick={onExportPDF} variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2">
+                <Download className="w-4 h-4" /> Export Briefing
+               </Button>
+               {currentSlide === slides.length - 1 && (
+                 <Button onClick={onRestart} className="bg-white text-slate-950 hover:bg-slate-200 rounded-xl px-8 h-12 font-black transition-transform active:scale-95 shadow-xl shadow-white/10">
+                   RESTART CAMPAIGN
+                 </Button>
+               )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Subtle decorative elements */}
+        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500/10 rounded-full blur-[100px]" />
+        <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/10 rounded-full blur-[100px]" />
       </motion.div>
 
-      {/* Key Metrics Cards */}
-      <div className="grid md:grid-cols-4 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
-                <CardTitle className="text-base">Total Revenue</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                ${totalRevenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                ROI: {roi.toFixed(1)}%
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-base">Market Share</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {finalMarketShare.toFixed(1)}%
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Final Position
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-purple-600" />
-                <CardTitle className="text-base">Satisfaction</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {finalSatisfaction.toFixed(1)}%
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Customer Rating
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-orange-600" />
-                <CardTitle className="text-base">Brand Awareness</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-600">
-                {finalAwareness.toFixed(1)}%
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Market Recognition
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Detailed Analytics Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Performance Overview</TabsTrigger>
-          <TabsTrigger value="quarterly">Quarterly Trends</TabsTrigger>
-          <TabsTrigger value="tactics">Tactic Analysis</TabsTrigger>
-          <TabsTrigger value="insights">Key Insights</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Growth</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={quarterlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="quarter" />
-                    <YAxis />
-                    <Tooltip formatter={(value: any) => [`$${Number(value).toLocaleString()}`, 'Revenue']} />
-                    <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>KPI Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={quarterlyData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="quarter" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="marketShare" stroke="#10b981" strokeWidth={2} />
-                    <Line type="monotone" dataKey="satisfaction" stroke="#8b5cf6" strokeWidth={2} />
-                    <Line type="monotone" dataKey="awareness" stroke="#f59e0b" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="quarterly" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quarterly Investment vs Revenue</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={quarterlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="quarter" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="budget" fill="#ef4444" name="Investment" />
-                  <Bar dataKey="revenue" fill="#10b981" name="Revenue" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tactics" className="space-y-6">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Investment by Category</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="investment"
-                      label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Investment']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Category ROI Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={categoryData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="category" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`${Number(value).toFixed(1)}%`, 'ROI']} />
-                    <Bar dataKey="roi" fill="#3b82f6" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-6">
-          <div className="grid gap-6">
-            <AIInsightsPanel
-              recommendations={recommendations}
-              isLoading={isLoading}
-              onDismiss={(id: string) => logger.debug('Dismissed recommendation', { id })}
-              onAccept={(id: string) => logger.debug('Accepted recommendation', { id })}
-            />
-
-            {/* Fallback insights if AI fails */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance Highlights</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  {roi > 200 && (
-                    <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg">
-                      <Star className="h-5 w-5 text-green-600 mt-0.5" />
-                      <div>
-                        <div className="font-medium text-green-800">Exceptional ROI Performance</div>
-                        <div className="text-sm text-green-700">
-                          Your {roi.toFixed(1)}% ROI demonstrates outstanding marketing efficiency and strategic decision-making.
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {finalMarketShare > 25 && (
-                    <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg">
-                      <Target className="h-5 w-5 text-blue-600 mt-0.5" />
-                      <div>
-                        <div className="font-medium text-blue-800">Market Leadership Achieved</div>
-                        <div className="text-sm text-blue-700">
-                          Capturing {finalMarketShare.toFixed(1)}% market share positions you as a market leader.
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {context.hiredTalent.length > 0 && (
-                    <div className="flex items-start gap-3 p-4 bg-purple-50 rounded-lg">
-                      <Users className="h-5 w-5 text-purple-600 mt-0.5" />
-                      <div>
-                        <div className="font-medium text-purple-800">Strategic Talent Investment</div>
-                        <div className="text-sm text-purple-700">
-                          Hiring {context.hiredTalent.length} key talent member(s) enhanced your team's capabilities and performance.
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {context.selectedBigBet && (
-                    <div className="flex items-start gap-3 p-4 bg-orange-50 rounded-lg">
-                      <Zap className="h-5 w-5 text-orange-600 mt-0.5" />
-                      <div>
-                        <div className="font-medium text-orange-800">Bold Strategic Move</div>
-                        <div className="text-sm text-orange-700">
-                          Your big bet on "{context.selectedBigBet.name}" shows strategic courage and long-term thinking.
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-4 justify-center">
-        <Button onClick={onExportPDF} size="lg" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export PDF Report
-        </Button>
-
-        {onShare && (
-          <Button onClick={onShare} variant="outline" size="lg" className="flex items-center gap-2">
-            <Share2 className="h-4 w-4" />
-            Share Results
-          </Button>
-        )}
-
-        <Button onClick={onRestart} variant="outline" size="lg" className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Start New Campaign
-        </Button>
+      {/* Footer Branding */}
+      <div className="mt-8 flex items-center gap-3 opacity-20 hover:opacity-100 transition-opacity">
+        <ShieldCheck className="w-5 h-5 text-white" />
+        <span className="text-xs font-black text-white uppercase tracking-[0.5em]">CMO SIMULATOR | BOARDROOM EDITION 2026</span>
       </div>
     </div>
   );

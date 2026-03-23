@@ -18,6 +18,7 @@ export interface ScoreTracker {
   rank: string;
   milestones: Milestone[];
   trend: 'improving' | 'declining' | 'stable';
+  historicalScores: number[];
 }
 
 export interface Milestone {
@@ -73,7 +74,8 @@ export function createScoreTracker(
     percentile,
     rank,
     milestones,
-    trend: trend > 100 ? 'improving' : trend < -100 ? 'declining' : 'stable'
+    trend: trend > 100 ? 'improving' : trend < -100 ? 'declining' : 'stable',
+    historicalScores
   };
 }
 
@@ -275,7 +277,7 @@ export function updateScoreTracker(
   tracker: ScoreTracker,
   newScore: number
 ): ScoreTracker {
-  const updatedScores = [...(tracker as any).historicalScores || [], newScore];
+  const updatedScores = [...tracker.historicalScores, newScore];
   const newVelocity = calculateVelocity(updatedScores.slice(-2));
   const newTrend = calculateTrend(updatedScores);
 
@@ -284,7 +286,8 @@ export function updateScoreTracker(
     currentScore: newScore,
     scoreVelocity: newVelocity,
     trend: newTrend > 100 ? 'improving' : newTrend < -100 ? 'declining' : 'stable',
-    projectedScore: tracker.currentScore + (newTrend * 2) // Project 2 quarters ahead
+    projectedScore: tracker.currentScore + (newTrend * 2), // Project 2 quarters ahead
+    historicalScores: updatedScores
   };
 }
 

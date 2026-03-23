@@ -1,5 +1,6 @@
 import { createMachine, assign } from 'xstate';
 import { TalentCandidate, BigBetOption, calculateTalentImpact, calculateBigBetOutcome } from './talentMarket';
+import { ScoreTracker } from './scoring/scoreTracker';
 
 // Types for simulation context and events
 export type MarketLandscape = 'stable' | 'emerging' | 'disrupted' | 'hyper-competitive';
@@ -56,6 +57,9 @@ export interface SimulationContext {
 
   // Simulation results
   finalResults?: SimulationResults;
+
+  // NEW: Real-time score tracking
+  scoreTracker?: ScoreTracker;
 }
 
 export interface QuarterData {

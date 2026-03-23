@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import React from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   DollarSign,
   Clock,
@@ -16,12 +17,12 @@ import {
   GripVertical,
   X,
   Plus,
-  AlertTriangle,
-  Info
-} from 'lucide-react';
-import { Tactic } from '@/lib/simMachine';
-import { RiskRewardIndicator } from '@/components/education/RiskRewardIndicator';
-import { DefinitionTooltip } from '@/components/ui/DefinitionTooltip';
+  Sparkles
+} from "lucide-react";
+import { Tactic } from "@/lib/simMachine";
+import { TacticDeepDive } from "@/components/education/TacticDeepDive";
+import { getTacticEducation } from "@/lib/education/tacticKnowledge";
+import { motion } from "framer-motion";
 
 interface TacticCardProps {
   tactic: Tactic;
@@ -31,24 +32,6 @@ interface TacticCardProps {
   isDraggable?: boolean;
   showAddButton?: boolean;
   showRemoveButton?: boolean;
-}
-
-// Map tactic to risk/reward analysis ID
-function getRiskRewardIdForTactic(tacticId: string, category: Tactic['category']): string {
-  // Map common tactic patterns to risk/reward IDs
-  if (tacticId.includes('google') || tacticId.includes('sem') || tacticId.includes('paid')) {
-    return 'google-ads';
-  }
-  if (category === 'content' || tacticId.includes('content') || tacticId.includes('blog') || tacticId.includes('seo')) {
-    return 'content-marketing';
-  }
-  if (category === 'events' || tacticId.includes('event') || tacticId.includes('trade')) {
-    return 'events';
-  }
-  if (category === 'digital') {
-    return 'google-ads'; // Default for digital
-  }
-  return 'content-marketing'; // Default fallback
 }
 
 export function TacticCard({
@@ -76,181 +59,157 @@ export function TacticCard({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 1,
   };
 
-  const getCategoryIcon = (category: Tactic['category']) => {
-    switch (category) {
-      case 'digital': return '💻';
-      case 'traditional': return '📺';
-      case 'content': return '📝';
-      case 'events': return '🎪';
-      case 'partnerships': return '🤝';
-      default: return '📊';
-    }
-  };
+  const edu = getTacticEducation(tactic.id);
 
-  const getCategoryColor = (category: Tactic['category']) => {
+  const getCategoryTheme = (category: Tactic["category"]) => {
     switch (category) {
-      case 'digital': return 'bg-blue-100 text-blue-800';
-      case 'traditional': return 'bg-gray-100 text-gray-800';
-      case 'content': return 'bg-green-100 text-green-800';
-      case 'events': return 'bg-purple-100 text-purple-800';
-      case 'partnerships': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "digital": return "from-blue-400 to-indigo-500 border-blue-500/20";
+      case "traditional": return "from-slate-400 to-slate-600 border-slate-500/20";
+      case "content": return "from-emerald-400 to-teal-500 border-emerald-500/20";
+      case "events": return "from-purple-400 to-violet-500 border-purple-500/20";
+      case "partnerships": return "from-amber-400 to-orange-500 border-amber-500/20";
+      default: return "from-slate-400 to-slate-500 border-slate-500/20";
     }
   };
 
   return (
-    <Card
+    <motion.div
       ref={setNodeRef}
       style={style}
-      className={`relative transition-all duration-200 ${
-        isSelected ? 'ring-2 ring-primary shadow-lg' : ''
-      } ${isDragging ? 'shadow-2xl' : 'hover:shadow-md'}`}
+      layoutId={tactic.id}
+      className={`relative group ${isDragging ? "shadow-2xl" : ""}`}
     >
-      {isDraggable && (
-        <div
-          {...attributes}
-          {...listeners}
-          className="absolute top-2 left-2 cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </div>
-      )}
-
-      {showRemoveButton && onRemove && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 right-2 h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
-          onClick={onRemove}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
-
-      <CardHeader className={`pb-3 ${isDraggable ? 'pl-8' : ''}`}>
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg leading-tight">{tactic.name}</CardTitle>
-            <Badge className={getCategoryColor(tactic.category)}>
-              {getCategoryIcon(tactic.category)} {tactic.category}
-            </Badge>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4">
-        {/* Cost and Time */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-green-600" />
-            <div>
-              <div className="text-sm font-medium">${tactic.cost.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">Cost</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-blue-600" />
-            <div>
-              <div className="text-sm font-medium">{tactic.timeRequired}h</div>
-              <div className="text-xs text-muted-foreground">Time</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Expected Impact */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground">Expected Impact</h4>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-3 w-3 text-green-600" />
-                <span className="text-xs">Revenue</span>
-              </div>
-              <span className="text-xs font-medium">
-                +${tactic.expectedImpact.revenue.toLocaleString()}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="h-3 w-3 text-blue-600" />
-                <span className="text-xs">Market Share</span>
-              </div>
-              <span className="text-xs font-medium">
-                +{tactic.expectedImpact.marketShare}%
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Heart className="h-3 w-3 text-pink-600" />
-                <span className="text-xs">Satisfaction</span>
-              </div>
-              <span className="text-xs font-medium">
-                +{tactic.expectedImpact.customerSatisfaction}%
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-3 w-3 text-purple-600" />
-                <span className="text-xs">Awareness</span>
-              </div>
-              <span className="text-xs font-medium">
-                +{tactic.expectedImpact.brandAwareness}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ROI Indicator */}
-        <div className="pt-2 border-t">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <DefinitionTooltip termId="roi" variant="simple" showIcon={true}>
-                ROI Potential
-              </DefinitionTooltip>
-            </span>
-            <span className="text-xs font-medium">
-              {((tactic.expectedImpact.revenue / tactic.cost) * 100).toFixed(0)}%
-            </span>
-          </div>
-          <Progress
-            value={Math.min(((tactic.expectedImpact.revenue / tactic.cost) * 100) / 3, 100)}
-            className="h-2"
-          />
-        </div>
-
-        {/* Risk & Reward Analysis */}
-        <div className="pt-2 border-t">
-          <RiskRewardIndicator
-            decisionId={getRiskRewardIdForTactic(tactic.id, tactic.category)}
-            variant="detailed"
-            showDetails={false}
-            className="w-full"
-          />
-        </div>
-
-        {/* Action Button */}
-        {showAddButton && onAdd && (
-          <Button
-            onClick={onAdd}
-            className="w-full mt-4"
-            variant={isSelected ? "default" : "outline"}
+      <Card className={`bg-slate-900/40 border-white/5 backdrop-blur-xl transition-all duration-300 ${
+        isSelected ? "ring-2 ring-blue-500/50 shadow-[0_0_20px_rgba(59,130,246,0.2)]" : "hover:border-white/10"
+      }`}>
+        <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${getCategoryTheme(tactic.category)}`} />
+        
+        {isDraggable && (
+          <div
+            {...attributes}
+            {...listeners}
+            className="absolute top-3 left-3 cursor-grab active:cursor-grabbing p-1.5 rounded-lg bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            {isSelected ? 'Added to Plan' : 'Add to Plan'}
+            <GripVertical className="h-3.5 w-3.5 text-slate-400" />
+          </div>
+        )}
+
+        {showRemoveButton && onRemove && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 h-7 w-7 p-0 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400"
+            onClick={onRemove}
+          >
+            <X className="h-3.5 w-3.5" />
           </Button>
         )}
-      </CardContent>
-    </Card>
+
+        <CardHeader className={`pb-3 pt-6 ${isDraggable ? "pl-10" : ""}`}>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Badge className={`bg-white/5 border-white/10 text-xs font-bold uppercase tracking-widest text-slate-400`}>
+                {tactic.category}
+              </Badge>
+              <TacticDeepDive 
+                tacticName={tactic.name}
+                category={tactic.category}
+                description={edu.description}
+                strategyTip={edu.strategyTip}
+                marketImpact={edu.marketImpact}
+              />
+            </div>
+            <CardTitle className="text-base text-white font-bold leading-tight group-hover:text-blue-400 transition-colors">
+              {tactic.name}
+            </CardTitle>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-5">
+          {/* Cost and Time */}
+          <div className="grid grid-cols-2 gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <DollarSign className="h-3 w-3 text-emerald-400" />
+                Budget
+              </div>
+              <div className="text-sm font-bold text-white">${tactic.cost.toLocaleString()}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                <Clock className="h-3 w-3 text-blue-400" />
+                Resource
+              </div>
+              <div className="text-sm font-bold text-white">{tactic.timeRequired}h</div>
+            </div>
+          </div>
+
+          {/* Core Impacts */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              <span>PROJECTED PAYLOAD</span>
+              <Sparkles className="w-3 h-3 text-yellow-500/50" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+              <ImpactRow icon={<TrendingUp className="h-3 w-3 text-emerald-400" />} label="Revenue" value={`+$${tactic.expectedImpact.revenue.toLocaleString()}`} />
+              <ImpactRow icon={<Target className="h-3 w-3 text-blue-400" />} label="Share" value={`+${tactic.expectedImpact.marketShare}%`} />
+              <ImpactRow icon={<Heart className="h-3 w-3 text-rose-400" />} label="Loyalty" value={`+${tactic.expectedImpact.customerSatisfaction}%`} />
+              <ImpactRow icon={<Users className="h-3 w-3 text-indigo-400" />} label="Reach" value={`+${tactic.expectedImpact.brandAwareness}%`} />
+            </div>
+          </div>
+
+          {/* ROI Metric */}
+          <div className="pt-4 border-t border-white/5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efficiency Rating</span>
+              <span className="text-xs font-bold text-white">
+                {((tactic.expectedImpact.revenue / tactic.cost) * 100).toFixed(0)}%
+              </span>
+            </div>
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(((tactic.expectedImpact.revenue / tactic.cost) * 100) / 3, 100)}%` }}
+                className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+              />
+            </div>
+          </div>
+
+          {showAddButton && onAdd && (
+            <Button
+              onClick={onAdd}
+              className={`w-full font-bold h-10 rounded-xl transition-all ${
+                isSelected 
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" 
+                  : "bg-white/5 border border-white/10 hover:bg-white/10 active:scale-95 text-white"
+              }`}
+            >
+              <Plus className={`h-4 w-4 mr-2 ${isSelected ? "rotate-45" : ""} transition-transform`} />
+              {isSelected ? "Active in Plan" : "Add to Strategy"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
-// Draggable wrapper for use in sortable contexts
+function ImpactRow({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 overflow-hidden">
+        {icon}
+        <span className="text-[11px] text-slate-400 font-medium truncate">{label}</span>
+      </div>
+      <span className="text-xs font-bold text-white whitespace-nowrap">{value}</span>
+    </div>
+  );
+}
+
 export function DraggableTacticCard(props: TacticCardProps) {
   return <TacticCard {...props} isDraggable={true} />;
 }

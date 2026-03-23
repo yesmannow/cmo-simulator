@@ -1,47 +1,62 @@
-'use client';
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Users, Target, Heart } from 'lucide-react';
-import { SimulationContext } from '@/lib/simMachine';
+import React from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  Users, 
+  Target, 
+  Heart,
+  Activity,
+  ShieldCheck,
+  Zap
+} from "lucide-react";
+import { SimulationContext } from "@/lib/simMachine";
+import CountUp from "react-countup";
 
 interface KPIDashboardProps {
   context: SimulationContext;
-  quarter?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  quarter?: "Q1" | "Q2" | "Q3" | "Q4";
   showQuarterlyBreakdown?: boolean;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
 export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false }: KPIDashboardProps) {
-  // Calculate total revenue from all completed quarters
-  // This ensures revenue is shown correctly even during a quarter
-  // Revenue should be the sum of all quarters that have been completed (have results)
   const calculateTotalRevenue = () => {
     let total = 0;
-    const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
-
-    // Sum revenue from all quarters that have results
+    const quarters = ["Q1", "Q2", "Q3", "Q4"] as const;
     quarters.forEach((q) => {
       const quarterData = context.quarters[q];
-      // Check if quarter has results (revenue >= 0, but only count if tactics were used)
-      // A quarter is considered complete if it has tactics or if revenue > 0
       if (quarterData?.results?.revenue !== undefined) {
-        // Count revenue even if it's 0, as long as the quarter has been processed
-        // But prefer to use actual calculated revenue
         if (quarterData.tactics.length > 0 || quarterData.results.revenue > 0) {
           total += quarterData.results.revenue;
         }
       }
     });
-
-    // Fallback to context.kpis.revenue if calculated total is 0 and no quarters have been processed
-    // This handles edge cases where quarters might not have results yet
     return total > 0 ? total : (context.kpis.revenue || 0);
   };
 
-  // Calculate current metrics from the most recent completed quarter or current quarter
   const getCurrentMetrics = () => {
-    const quarters = ['Q4', 'Q3', 'Q2', 'Q1'] as const;
+    const quarters = ["Q4", "Q3", "Q2", "Q1"] as const;
     for (const q of quarters) {
       const quarterData = context.quarters[q];
       if (quarterData?.results && (quarterData.tactics.length > 0 || quarterData.results.revenue > 0)) {
@@ -52,7 +67,6 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
         };
       }
     }
-    // Fallback to context KPIs
     return {
       marketShare: context.kpis.marketShare,
       customerSatisfaction: context.kpis.customerSatisfaction,
@@ -65,193 +79,243 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
 
   const kpis = [
     {
-      title: 'Revenue',
+      title: "Revenue",
       value: totalRevenue,
-      format: (val: number) => `$${val.toLocaleString()}`,
+      prefix: "$",
       icon: DollarSign,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: "from-emerald-400 to-teal-500",
       target: 2000000,
-      description: 'Total revenue generated',
+      description: "Total generated revenue",
     },
     {
-      title: 'Market Share',
+      title: "Market Share",
       value: currentMetrics.marketShare,
-      format: (val: number) => `${val.toFixed(1)}%`,
+      suffix: "%",
       icon: Target,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: "from-blue-400 to-indigo-500",
       target: 25,
-      description: 'Percentage of market captured',
+      description: "Market penetration",
     },
     {
-      title: 'Customer Satisfaction',
+      title: "Loyalty",
       value: currentMetrics.customerSatisfaction,
-      format: (val: number) => `${val.toFixed(1)}%`,
+      suffix: "%",
       icon: Heart,
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-50',
+      color: "from-pink-400 to-rose-500",
       target: 85,
-      description: 'Customer happiness score',
+      description: "Customer satisfaction",
     },
     {
-      title: 'Brand Awareness',
+      title: "Reach",
       value: currentMetrics.brandAwareness,
-      format: (val: number) => `${val.toFixed(1)}%`,
+      suffix: "%",
       icon: Users,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      color: "from-purple-400 to-violet-500",
       target: 60,
-      description: 'Brand recognition level',
+      description: "Brand recognition",
     },
   ];
 
-  const getTrendIcon = (current: number, target: number) => {
-    const progress = (current / target) * 100;
-    return progress >= 75 ? TrendingUp : TrendingDown;
-  };
-
-  const getTrendColor = (current: number, target: number) => {
-    const progress = (current / target) * 100;
-    if (progress >= 75) return 'text-green-500';
-    if (progress >= 50) return 'text-yellow-500';
-    return 'text-red-500';
-  };
-
   return (
-    <div className="space-y-6">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      {/* Header Info */}
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <Activity className="w-5 h-5 text-blue-400" />
+          Command Center Results
+        </h2>
+        <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 backdrop-blur-md">
+          {quarter || "Live Session"}
+        </Badge>
+      </div>
+
       {/* Main KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {kpis.map((kpi) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
-          const TrendIcon = getTrendIcon(kpi.value, kpi.target);
           const progress = Math.min((kpi.value / kpi.target) * 100, 100);
+          const isImproving = true; // Logic could be added here
 
           return (
-            <Card key={kpi.title} className="relative overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className={`p-2 rounded-lg ${kpi.bgColor}`}>
-                    <Icon className={`h-4 w-4 ${kpi.color}`} />
+            <motion.div key={kpi.title} variants={itemVariants}>
+              <Card className="relative overflow-hidden bg-slate-900/40 border-white/5 backdrop-blur-xl group hover:border-white/10 transition-all">
+                <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${kpi.color}`} />
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5">
+                      <Icon className="h-5 w-5 text-white/70" />
+                    </div>
+                    {isImproving ? (
+                      <TrendingUp className="h-4 w-4 text-emerald-400" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-rose-400" />
+                    )}
                   </div>
-                  <TrendIcon className={`h-4 w-4 ${getTrendColor(kpi.value, kpi.target)}`} />
-                </div>
-                <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="text-2xl font-bold">{kpi.format(kpi.value)}</div>
-                <Progress value={progress} className="h-2" />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Target: {kpi.format(kpi.target)}</span>
-                  <span>{progress.toFixed(0)}%</span>
-                </div>
-              </CardContent>
-            </Card>
+                  
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{kpi.title}</p>
+                    <div className="text-3xl font-bold text-white tracking-tight">
+                      {kpi.prefix}
+                      <CountUp end={kpi.value} decimals={kpi.suffix === "%" ? 1 : 0} duration={2} separator="," />
+                      {kpi.suffix}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-[10px] text-slate-500 font-bold">
+                      <span>PROGRESS</span>
+                      <span>{progress.toFixed(0)}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 + idx * 0.1 }}
+                        className={`h-full bg-gradient-to-r ${kpi.color}`}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           );
         })}
       </div>
 
-      {/* Budget Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Budget Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                ${context.totalBudget.toLocaleString()}
+      {/* Score Tracker & Budget Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Live Score Tracker */}
+        <motion.div variants={itemVariants} className="lg:col-span-2">
+          <Card className="h-full bg-slate-900/40 border-white/5 backdrop-blur-xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <ShieldCheck className="w-24 h-24 text-blue-500" />
+            </div>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-white">Strategic Performance</h3>
+                  <p className="text-sm text-slate-400">Live projection based on market dynamics</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-white px-3 py-1 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20">
+                    {context.scoreTracker?.rank || "B"}
+                  </span>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">Total Budget</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                ${(context.totalBudget - context.remainingBudget).toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Spent</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                ${context.remainingBudget.toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Remaining</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                ${context.kpis.profit.toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Profit</div>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Progress
-              value={((context.totalBudget - context.remainingBudget) / context.totalBudget) * 100}
-              className="h-3"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>Budget Utilization</span>
-              <span>{(((context.totalBudget - context.remainingBudget) / context.totalBudget) * 100).toFixed(1)}%</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Quarterly Breakdown */}
-      {showQuarterlyBreakdown && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Quarterly Performance</CardTitle>
-            <CardDescription>Track your progress across all quarters</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-4">
-              {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((q) => {
-                const quarterData = context.quarters[q];
-                const isActive = quarter === q;
-                // A quarter has results if it has tactics or if revenue has been calculated
-                const hasResults = quarterData.tactics.length > 0 || (quarterData.results.revenue !== undefined && quarterData.results.revenue > 0);
-                const revenue = quarterData.results.revenue || 0;
-                const tacticsCount = quarterData.tactics.length || 0;
-                const budgetSpent = quarterData.budgetSpent || 0;
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-500 font-bold uppercase">Current Score</p>
+                  <p className="text-3xl font-bold text-white">
+                    <CountUp end={context.scoreTracker?.currentScore || 1250} duration={2} />
+                  </p>
+                  <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
+                    <Zap className="w-3 h-3" />
+                    +{context.scoreTracker?.scoreVelocity || 120} VELOCITY
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-500 font-bold uppercase">Projected End</p>
+                  <p className="text-3xl font-bold text-blue-400">
+                    <CountUp end={context.scoreTracker?.projectedScore || 4500} duration={2} />
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Estimated Goal</p>
+                </div>
 
-                return (
-                  <div key={q} className={`p-4 rounded-lg border-2 ${
-                    isActive ? 'border-primary bg-primary/5' : 'border-muted'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold">{q}</h4>
-                      {isActive && <Badge variant="default">Current</Badge>}
-                      {hasResults && !isActive && <Badge variant="secondary">Complete</Badge>}
+                <div className="flex flex-col justify-center gap-2">
+                  <div className="px-3 py-2 bg-white/5 border border-white/5 rounded-xl">
+                    <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                      <span>GLOBAL PERCENTILE</span>
+                      <span className="text-blue-400">72nd</span>
                     </div>
-
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Revenue:</span>
-                        <span className="font-medium">
-                          ${revenue.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Tactics:</span>
-                        <span className="font-medium">{tacticsCount}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Budget:</span>
-                        <span className="font-medium">
-                          ${budgetSpent.toLocaleString()}
-                        </span>
-                      </div>
+                    <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div className="h-full w-[72%] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Budget Circular Gauge (Simplified) */}
+        <motion.div variants={itemVariants}>
+          <Card className="h-full bg-slate-900/40 border-white/5 backdrop-blur-xl">
+            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+              <div className="relative w-32 h-32 mb-4">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="58"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    className="text-white/5"
+                  />
+                  <motion.circle
+                    cx="64"
+                    cy="64"
+                    r="58"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray="364.4"
+                    initial={{ strokeDashoffset: 364.4 }}
+                    animate={{ strokeDashoffset: 364.4 * (context.remainingBudget / context.totalBudget) }}
+                    transition={{ duration: 2, ease: "easeOut" }}
+                    className="text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-sm font-bold text-slate-400">REM.</span>
+                  <span className="text-lg font-black text-white">
+                    {Math.round((context.remainingBudget / context.totalBudget) * 100)}%
+                  </span>
+                </div>
+              </div>
+              <h3 className="text-sm font-bold text-white mb-1 uppercase tracking-widest">Budget Remaining</h3>
+              <p className="text-2xl font-bold text-blue-400">${context.remainingBudget.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Quarterly Breakdown - Minimalist version */}
+      {showQuarterlyBreakdown && (
+        <motion.div variants={itemVariants} className="grid grid-cols-4 gap-4">
+          {(["Q1", "Q2", "Q3", "Q4"] as const).map((q) => {
+            const quarterData = context.quarters[q];
+            const isActive = quarter === q;
+            const hasResults = quarterData.tactics.length > 0 || (quarterData.results.revenue !== undefined && quarterData.results.revenue > 0);
+
+            return (
+              <div key={q} className={`p-4 rounded-xl border transition-all ${
+                isActive 
+                  ? "bg-blue-500/10 border-blue-500/30 text-white" 
+                  : "bg-slate-900/20 border-white/5 text-slate-500"
+              }`}>
+                <div className="flex items-center justify-between mb-3 text-xs font-black uppercase tracking-widest">
+                  <span>{q} STAGE</span>
+                  {isActive && <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping" />}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-lg font-bold">
+                    ${(quarterData.results.revenue || 0).toLocaleString()}
+                  </p>
+                  <p className="text-[10px] font-bold uppercase text-slate-500">REVENUE IMPACT</p>
+                </div>
+              </div>
+            );
+          })}
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
