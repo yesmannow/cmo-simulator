@@ -1,6 +1,6 @@
 import { createMachine, assign } from 'xstate';
 import { TalentCandidate, BigBetOption, calculateTalentImpact, calculateBigBetOutcome } from './talentMarket';
-import { ScoreTracker } from './scoring/scoreTracker';
+
 import { runSimulationTick, initializeSimulationState } from '../engine';
 import { SimulationState, Channel, PlayerInput, MarketConditions } from '../types/engine';
 import type { TimeHorizon, MarketLandscape } from '@/types';
@@ -58,8 +58,6 @@ export interface SimulationContext {
   // Simulation results
   finalResults?: SimulationResults;
 
-  // NEW: Real-time score tracking
-  scoreTracker?: ScoreTracker;
 
   // NEW: Advanced Simulation Engine State
   engineState: SimulationState;

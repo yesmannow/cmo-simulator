@@ -22,6 +22,17 @@ export interface SimulationState {
   marketConditions: MarketConditions;
   adstock: Record<Channel, number>;
   results: SimulationOutput;
+  stressMeters?: {
+    ceo: number; // 0-100
+    cfo: number; // 0-100
+    cmo: number; // 0-100
+  };
+  brandPosition?: {
+    x: number; // e.g. Price
+    y: number; // e.g. Performance
+  };
+  trustMultiplier?: number;
+  flowState?: number;
 }
 
 export interface SimulationOutput {

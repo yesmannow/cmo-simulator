@@ -18,7 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { BigBetOption } from '@/lib/talentMarket';
-import { RiskRewardIndicator } from '@/components/education/RiskRewardIndicator';
+
 
 interface BigBetModalProps {
   bigBets: BigBetOption[];
@@ -144,14 +144,7 @@ export function BigBetModal({
                       </CardHeader>
 
                       <CardContent className="space-y-4">
-                        {/* Risk & Reward Analysis */}
-                        <div>
-                          <RiskRewardIndicator
-                            decisionId="big-bet"
-                            variant="detailed"
-                            showDetails={false}
-                          />
-                        </div>
+
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-2">
                           <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">

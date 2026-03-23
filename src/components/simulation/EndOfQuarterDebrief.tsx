@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { SimulationContext, Tactic, processQuarterAdvance } from '@/lib/simMachine';
 import { ArrowRight, TrendingUp, TrendingDown, BrainCircuit, Activity, BarChart3, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { calculateTacticSynergy } from '@/lib/scoringEngine';
+
 
 interface EndOfQuarterDebriefProps {
   isOpen: boolean;
@@ -45,9 +45,7 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
     const logs = [];
     const oldKpis = context.kpis;
     const newKpis = predictiveResult.newKpis;
-    const synergy = calculateTacticSynergy(
-      selectedTactics.map(t => ({ tacticId: t.id, spend: t.cost, timeInvested: t.timeRequired, category: t.category, isRecurring: false } as any))
-    );
+    const synergy = 1.0;
 
     // 1. Synergy Insight
     if (synergy > 1.1) {

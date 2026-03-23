@@ -193,11 +193,48 @@ export function runSimulationTick(
     channelRoi[channel] = validateCalculationResult(roi, `ROI for ${channel}`, -Infinity, Infinity);
   }
 
-  // Base sales (organic, not from marketing spend)
-  const baseSales = industryData.baseMarketSize * 0.01 * marketConditions.seasonalityIndex; // 1% of market as baseline
+  // Base sales modified by perceptual utility and trust multiplier
+  const idealPoint = { x: clamp(50 + (previousState.tick * 2), 0, 100), y: clamp(50 + (previousState.tick * 2), 0, 100) }; // Simplistic drift
+  const currentBrandPos = previousState.brandPosition || { x: 50, y: 50 };
+  const distance = Math.sqrt(Math.pow(currentBrandPos.x - idealPoint.x, 2) + Math.pow(currentBrandPos.y - idealPoint.y, 2));
+  const maxDistance = Math.sqrt(100**2 + 100**2);
+  const perceptualUtility = clamp(1 - (distance / maxDistance), 0, 1);
+  
+  const trustMultiplier = previousState.trustMultiplier ?? 1.0;
+  const baseSales = industryData.baseMarketSize * 0.01 * marketConditions.seasonalityIndex * perceptualUtility * trustMultiplier;
 
   // Total sales
   const totalSales = baseSales + finalRevenue;
+
+  // Calculate Executive Stress Meters (0 = Game Over/Fired, 100 = Perfect)
+  const previousStress = previousState.stressMeters || { ceo: 75, cfo: 75, cmo: 75 };
+  
+  // CEO cares about total sales growth
+  const salesGrowth = safeDivide(totalSales, Math.max(previousState.results.totalSales, 1), 1);
+  let newCeoStress = previousStress.ceo;
+  if (salesGrowth > 1.05) newCeoStress += 5;
+  else if (salesGrowth < 1.0) newCeoStress -= 5;
+
+  // CFO cares about overall ROI and Profitability
+  const totalSpend = Object.values(playerInputs.channelBudgets).reduce((a, b) => a + b, 0);
+  const overallRoi = totalSpend > 0 ? safeDivide(finalRevenue, totalSpend, 0) : 0;
+  let newCfoStress = previousStress.cfo;
+  if (overallRoi > 1.2) newCfoStress += 5;
+  else if (overallRoi < 0.8) newCfoStress -= 5;
+
+  // CMO cares about team flow state / burnout (Proxy using spend volatility currently)
+  let newCmoStress = previousStress.cmo;
+  if (totalSpend > 500000) newCmoStress -= 5;
+  else newCmoStress += 2;
+
+  const stressMeters = {
+    ceo: clamp(newCeoStress, 0, 100),
+    cfo: clamp(newCfoStress, 0, 100),
+    cmo: clamp(newCmoStress, 0, 100),
+  };
+
+  // Flow State
+  const newFlowState = clamp((previousState.flowState || 50) + (totalSpend > 500000 ? -5 : 2), 0, 100);
 
   // New results
   const results = {
@@ -213,7 +250,11 @@ export function runSimulationTick(
     tick: previousState.tick + 1,
     marketConditions,
     adstock: newAdstock,
-    results
+    results,
+    stressMeters,
+    brandPosition: currentBrandPos,
+    trustMultiplier,
+    flowState: newFlowState
   };
 }
 
@@ -235,6 +276,17 @@ export function initializeSimulationState(): SimulationState {
     tick: 0,
     marketConditions: initialMarketConditions,
     adstock: initialAdstock,
+    stressMeters: {
+      ceo: 75,
+      cfo: 75,
+      cmo: 75
+    },
+    brandPosition: {
+      x: 50,
+      y: 50
+    },
+    trustMultiplier: 1.0,
+    flowState: 50,
     results: {
       totalSales: 100000,
       baseSales: 100000,

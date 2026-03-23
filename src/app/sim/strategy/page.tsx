@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useSimulation } from '@/hooks/useSimulation';
 import { ArrowRight, Target, Users, Megaphone, DollarSign } from 'lucide-react';
-import { TutorialOnboardingPopup } from '@/components/onboarding/TutorialOnboardingPopup';
+
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/button';
@@ -44,7 +44,7 @@ const POSITIONING_OPTIONS = [
 export default function StrategySessionPage() {
   const router = useRouter();
   const { context, setStrategy, completeStrategySession, startSimulation } = useSimulation();
-  const [showTutorialPopup, setShowTutorialPopup] = useState(false);
+
 
   const [formData, setFormData] = useState({
     targetAudience: context.strategy.targetAudience || '',
@@ -54,16 +54,6 @@ export default function StrategySessionPage() {
     customPositioning: '',
   });
 
-  // Show tutorial popup on first visit
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hasSeenTutorial = localStorage.getItem('cmo-sim-tutorial-offered');
-      if (!hasSeenTutorial) {
-        setShowTutorialPopup(true);
-        localStorage.setItem('cmo-sim-tutorial-offered', 'true');
-      }
-    }
-  }, []);
 
   const handleChannelToggle = (channelId: string) => {
     const updatedChannels = formData.primaryChannels.includes(channelId)
@@ -112,15 +102,7 @@ export default function StrategySessionPage() {
       subtitle="Define your strategic foundation for the next 12 months. Your choices here will influence the tactics available and their effectiveness throughout the simulation."
       quarter="Strategy Session"
     >
-      <TutorialOnboardingPopup
-        isOpen={showTutorialPopup}
-        onStartTutorial={() => {
-          setShowTutorialPopup(false);
-          // Tutorial will handle its own display
-        }}
-        onSkip={() => setShowTutorialPopup(false)}
-        onClose={() => setShowTutorialPopup(false)}
-      />
+
 
       <div className="max-w-5xl mx-auto space-y-10 pb-20">
         {/* Budget Overview */}

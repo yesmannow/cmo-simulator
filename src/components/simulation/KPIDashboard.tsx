@@ -203,7 +203,7 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                 </div>
                 <div className="text-right">
                   <span className="text-3xl font-black text-white px-3 py-1 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20">
-                    {context.scoreTracker?.rank || "B"}
+                    B
                   </span>
                 </div>
               </div>
@@ -212,18 +212,18 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
                 <div className="space-y-1">
                   <p className="text-xs text-slate-500 font-bold uppercase">Current Score</p>
                   <p className="text-3xl font-bold text-white">
-                    <CountUp end={context.scoreTracker?.currentScore || 1250} duration={2} />
+                    <CountUp end={1250} duration={2} />
                   </p>
                   <div className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
                     <Zap className="w-3 h-3" />
-                    +{context.scoreTracker?.scoreVelocity || 120} VELOCITY
+                    +120 VELOCITY
                   </div>
                 </div>
                 
                 <div className="space-y-1">
                   <p className="text-xs text-slate-500 font-bold uppercase">Projected End</p>
                   <p className="text-3xl font-bold text-blue-400">
-                    <CountUp end={context.scoreTracker?.projectedScore || 4500} duration={2} />
+                    <CountUp end={4500} duration={2} />
                   </p>
                   <p className="text-[10px] text-slate-500 font-bold uppercase">Estimated Goal</p>
                 </div>

@@ -20,7 +20,7 @@ import {
   Crown,
 } from 'lucide-react';
 import type { EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
-import { RiskRewardIndicator } from '@/components/education/RiskRewardIndicator';
+
 
 interface WildcardModalProps {
   wildcard: EnhancedWildcardEvent | null;
@@ -156,13 +156,7 @@ export function WildcardModal({ wildcard, isOpen, onClose, onChoose }: WildcardM
                 <CardContent>
                   <p className="text-muted-foreground mb-4">{choice.description}</p>
 
-                  {/* Risk & Reward Analysis */}
-                  <div className="mb-4">
-                    <RiskRewardIndicator
-                      decisionId={wildcard.type === 'crisis' ? 'crisis-event' : 'opportunity-event'}
-                      variant="compact"
-                    />
-                  </div>
+
 
                   {/* Impact Preview */}
                   <div className="grid grid-cols-2 md:grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 text-sm">

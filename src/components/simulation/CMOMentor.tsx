@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { BrainCircuit, MessageSquare, Info, AlertOctagon, TrendingUp, Zap, RadioReceiver } from 'lucide-react';
 import { Tactic, SimulationContext, processQuarterAdvance } from '@/lib/simMachine';
-import { calculateTacticSynergy } from '@/lib/scoringEngine';
+
 import { cn } from '@/lib/utils';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
@@ -26,7 +26,7 @@ export function CMOMentor({ selectedTactics, remainingBudget, currentQuarter, co
     }, currentQuarter as 'Q1' | 'Q2' | 'Q3' | 'Q4');
   }, [context, currentQuarter, selectedTactics]);
 
-  const synergy = useMemo(() => calculateTacticSynergy(selectedTactics as any), [selectedTactics]);
+  const synergy = useMemo(() => 1.0, [selectedTactics]);
   
   const advice = useMemo(() => {
     if (selectedTactics.length === 0) {
