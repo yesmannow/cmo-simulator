@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSimulation } from '@/hooks/useSimulation';
-import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { SAMPLE_TACTICS, EnrichedTactic } from '@/lib/tactics';
+import { TacticCard } from '@/components/simulation/matrix/TacticCard';
 import { Tactic } from '@/lib/simMachine';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -15,10 +16,13 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Megaphone, ArrowRight, Zap, Trophy } from 'lucide-react';
 import { CMOMentor } from '@/components/simulation/CMOMentor';
+import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
+import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 export default function Q4Page() {
   const router = useRouter();
@@ -28,6 +32,7 @@ export default function Q4Page() {
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showDebrief, setShowDebrief] = useState(false);
 
   const quarterBudget = Math.floor((context?.totalBudget || 500000) / 4);
   const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + (tactic.cost || 0), 0);
@@ -72,8 +77,7 @@ export default function Q4Page() {
   };
 
   const handleCompleteQuarter = () => {
-    if (completeQuarter) completeQuarter('Q4');
-    router.push('/sim/debrief');
+    setShowDebrief(true);
   };
 
   const canComplete = selectedTactics.length > 0 && remainingBudget >= 0;
@@ -85,6 +89,8 @@ export default function Q4Page() {
       quarter="Quarter 4"
     >
       <div className="space-y-10 max-w-7xl mx-auto pb-20">
+        <ExecutivePressure currentQuarter="Q4" context={context} />
+        
         <EnhancedKPIDashboard 
           context={context} 
           quarter="Q4"
@@ -95,9 +101,12 @@ export default function Q4Page() {
           <div className="lg:col-span-1 space-y-6">
             <GlassCard className="border-primary/40 bg-primary/10 shadow-[0_0_50px_rgba(59,130,246,0.3)]">
               <div className="p-8 space-y-8">
-                <div className="flex items-center gap-3 border-b border-primary/20 pb-4">
-                  <Trophy className="h-8 w-8 text-amber-400" />
-                  <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">Board Review</h3>
+                <div className="flex items-center justify-between border-b border-primary/20 pb-4">
+                  <div className="flex items-center gap-3">
+                    <Trophy className="h-8 w-8 text-amber-400" />
+                    <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">Board Review</h3>
+                  </div>
+                  <InfoTooltip iconOnly position="left" content="Real-time monitoring of your final budget burn rate and tactical depth." />
                 </div>
                 
                 <div className="space-y-6">
@@ -178,49 +187,16 @@ export default function Q4Page() {
 
               <TabsContent value="available" className="mt-0">
                 <div className="grid md:grid-cols-2 gap-8">
-                  {SAMPLE_TACTICS.slice(12, 18).map((tactic: Tactic) => {
-                    const isSelected = selectedTactics.some(st => st.id === tactic.id);
+                  {SAMPLE_TACTICS.slice(12, 18).map((tactic: unknown) => {
+                    const t = tactic as Tactic;
+                    const isSelected = selectedTactics.some((st: Tactic) => st.id === t.id);
                     return (
-                      <GlassCard 
-                        key={tactic.id} 
-                        className={cn(
-                          "group transition-all duration-700",
-                          isSelected ? "border-primary/80 bg-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.3)]" : "hover:shadow-[0_0_20px_rgba(59,130,246,0.1)]"
-                        )}
-                      >
-                        <div className="p-10 space-y-8">
-                          <div className="flex justify-between items-start border-b border-white/5 pb-6">
-                            <div className="space-y-2">
-                              <h4 className="text-3xl font-black text-white tracking-tighter leading-none">{tactic.name}</h4>
-                              <p className="text-xs font-black uppercase tracking-[0.4em] text-primary/60">{tactic.category}</p>
-                            </div>
-                            {isSelected && <Badge className="bg-primary text-white font-black px-4 py-1 animate-pulse">DEPLOYED</Badge>}
-                          </div>
-                          
-                          {(tactic as any).strategicRationale && (
-                             <p className="text-lg text-blue-100/60 leading-relaxed font-medium italic opacity-80 group-hover:opacity-100 transition-opacity border-l-2 border-primary/30 pl-3">
-                               {(tactic as any).strategicRationale}
-                             </p>
-                           )}
-
-                          <div className="flex justify-between items-center pt-8 border-t border-white/5">
-                            <div className="space-y-1">
-                              <p className="text-xs text-blue-100/20 uppercase font-black italic tracking-[0.2em]">Final Call</p>
-                              <p className="text-4xl font-black text-white tabular-nums tracking-tighter italic">${tactic.cost.toLocaleString()}</p>
-                            </div>
-                            <Button
-                              onClick={() => handleAddTactic(tactic)}
-                              disabled={isSelected}
-                              className={cn(
-                                "rounded-2xl px-12 h-16 font-black uppercase tracking-widest transition-all duration-500",
-                                isSelected ? "bg-white/5 text-white/10" : "bg-primary text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:scale-110"
-                              )}
-                            >
-                              {isSelected ? 'LOCKED' : 'DEPLOY'}
-                            </Button>
-                          </div>
-                        </div>
-                      </GlassCard>
+                      <TacticCard 
+                        key={t.id}
+                        tactic={t as EnrichedTactic}
+                        isSelected={isSelected}
+                        onAdd={() => handleAddTactic(t)}
+                      />
                     );
                   })}
                 </div>
@@ -284,6 +260,17 @@ export default function Q4Page() {
         )}
       </AnimatePresence>
       <ConfettiEffect trigger={showConfetti} />
+      <EndOfQuarterDebrief
+        isOpen={showDebrief}
+        context={context}
+        quarter="Q4"
+        selectedTactics={selectedTactics}
+        onConfirm={() => {
+          setShowDebrief(false);
+          if (completeQuarter) completeQuarter('Q4');
+          router.push('/sim/debrief');
+        }}
+      />
     </ImmersiveLayout>
   );
 }

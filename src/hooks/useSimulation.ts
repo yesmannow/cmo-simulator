@@ -1,10 +1,10 @@
-import { useActor } from '@xstate/react';
-import { simulationMachine, type SimulationContext, type Tactic } from '@/lib/simMachine';
+import { useSimulationContext } from '@/components/simulation/SimulationProvider';
+import { type SimulationContext, type Tactic } from '@/lib/simMachine';
 import type { EnhancedWildcardEvent, EnhancedWildcardImpactResult } from '@/lib/enhancedWildcards';
 
-// Hook to manage simulation state
+// Hook to manage simulation state globally across routes
 export function useSimulation() {
-  const [state, send] = useActor(simulationMachine);
+  const { state, send } = useSimulationContext();
 
   return {
     // Current state information
@@ -81,6 +81,9 @@ export function useSimulation() {
     
     saveSimulation: () =>
       send({ type: 'SAVE_SIMULATION' }),
+      
+    makeBigBet: (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4', bigBet: import('@/lib/talentMarket').BigBetOption, outcome: import('@/lib/simMachine').BigBetOutcome) =>
+      send({ type: 'MAKE_BIG_BET', quarter, bigBet, outcome }),
     
     restartSimulation: () =>
       send({ type: 'RESTART_SIMULATION' }),

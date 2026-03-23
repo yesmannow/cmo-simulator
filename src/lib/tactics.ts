@@ -209,6 +209,104 @@ export const SAMPLE_TACTICS: EnrichedTactic[] = [
     marketingPrinciple: "Availability Heuristic: Customers are more likely to buy the brands that are most easily accessible at the moment of need.",
     synergyTags: ['distribution', 'visibility', 'sales-enablement']
   },
+  
+  // Advanced Tactics for Late Game (Q3/Q4)
+  {
+    id: 'digital-4',
+    name: 'Programmatic Display Advertising',
+    category: 'digital',
+    cost: 150000,
+    timeRequired: 20,
+    expectedImpact: {
+      revenue: 120000,
+      marketShare: 4,
+      customerSatisfaction: 0,
+      brandAwareness: 25,
+    },
+    strategicRationale: "Automated media buying at scale to drastically increase impressions across the entire digital ecosystem.",
+    marketingPrinciple: "Mere Exposure Effect: The more frequently a consumer sees a brand, the more they develop a preference for it, even without direct interaction.",
+    synergyTags: ['scale', 'awareness-driver', 'low-intent']
+  },
+  {
+    id: 'content-4',
+    name: 'Industry Research Benchmark Report',
+    category: 'content',
+    cost: 120000,
+    timeRequired: 90,
+    expectedImpact: {
+      revenue: 150000,
+      marketShare: 5,
+      customerSatisfaction: 8,
+      brandAwareness: 20,
+    },
+    strategicRationale: "Publishing definitive industry data forces competitors to cite you and positions the brand as the ultimate category authority.",
+    marketingPrinciple: "Authority Bias: Customers and competitors alike will defer to the brand that controls the definitive data of the category.",
+    synergyTags: ['authority', 'pr-driver', 'b2b-essential']
+  },
+  {
+    id: 'traditional-3',
+    name: 'National Radio & Audio Campaign',
+    category: 'traditional',
+    cost: 85000,
+    timeRequired: 30,
+    expectedImpact: {
+      revenue: 110000,
+      marketShare: 3,
+      customerSatisfaction: 1,
+      brandAwareness: 18,
+    },
+    strategicRationale: "Mass reach during captive moments (commutes) with high frequency and geographical targeting capabilities.",
+    marketingPrinciple: "Sonic Branding: Audio cues and repeated jingles create incredibly sticky memory structures that bypass conscious filtering.",
+    synergyTags: ['frequency', 'mass-market', 'sonic-identity']
+  },
+  {
+    id: 'events-3',
+    name: 'C-Suite Executive Dinners',
+    category: 'events',
+    cost: 50000,
+    timeRequired: 40,
+    expectedImpact: {
+      revenue: 250000,
+      marketShare: 6,
+      customerSatisfaction: 12,
+      brandAwareness: 5,
+    },
+    strategicRationale: "Hyper-targeted, high-touch interactions with ultimate decision-makers to close enterprise-tier deals.",
+    marketingPrinciple: "The VIP Effect: High-value prospects respond significantly better to exclusive, peer-to-peer environments than standard sales pitches.",
+    synergyTags: ['enterprise', 'high-touch', 'deal-acceleration']
+  },
+  {
+    id: 'partnerships-3',
+    name: 'Performance Affiliate Network',
+    category: 'partnerships',
+    cost: 40000,
+    timeRequired: 60,
+    expectedImpact: {
+      revenue: 180000,
+      marketShare: 5,
+      customerSatisfaction: -2,
+      brandAwareness: 15,
+    },
+    strategicRationale: "Levers third-party marketers to sell on your behalf with minimal upfront risk, paying only for successful conversions.",
+    marketingPrinciple: "Performance Arbitrage: Shifting customer acquisition risk entirely to third-party networks, though sacrificing some brand control.",
+    synergyTags: ['performance', 'low-risk', 'network-effects']
+  },
+  {
+    id: 'digital-5',
+    name: 'Advanced Retargeting Ecosystem',
+    category: 'digital',
+    cost: 110000,
+    timeRequired: 45,
+    expectedImpact: {
+      revenue: 280000,
+      marketShare: 7,
+      customerSatisfaction: -1,
+      brandAwareness: 10,
+    },
+    strategicRationale: "Aggressively recapturing highly-qualified traffic that bounced from initial touchpoints across all channels.",
+    marketingPrinciple: "The Law of Recency: Customers are geometrically more likely to convert the closer they are in time to their last interaction with the brand.",
+    synergyTags: ['bottom-funnel', 'efficiency', 'conversion-focus']
+  }
 ];
 
 // Sample wildcard events for the simulation

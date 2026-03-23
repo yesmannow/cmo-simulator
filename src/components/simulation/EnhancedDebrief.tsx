@@ -29,7 +29,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  Building2
+  Building2,
+  Lightbulb,
+  Crosshair,
+  Compass,
+  AlertTriangle,
+  Megaphone
 } from "lucide-react";
 import { SimulationContext } from "@/lib/simMachine";
 import CountUp from "react-countup";
@@ -64,6 +69,63 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
 
   const overallScore = Math.round((totalRevenue / 2000000) * 50 + finalMarketShare * 2);
   const gradeInfo = getGrade(overallScore);
+
+  // Phase 3 Calculations
+  // 1. Archetype Assignment
+  const getArchetype = () => {
+    // Collect all tactics used
+    const allTactics = [
+      ...(context.quarters.Q1.tactics || []),
+      ...(context.quarters.Q2.tactics || []),
+      ...(context.quarters.Q3.tactics || []),
+      ...(context.quarters.Q4.tactics || []),
+    ];
+    
+    let digitalSpend = 0;
+    let traditionalSpend = 0;
+    let eventsSpend = 0;
+    let brandSpend = 0;
+
+    allTactics.forEach(t => {
+      if (t.category === 'digital') digitalSpend += t.cost;
+      if (t.category === 'traditional') traditionalSpend += t.cost;
+      if (t.category === 'events') eventsSpend += t.cost;
+      if (t.category === 'content' || t.name.toLowerCase().includes('brand')) brandSpend += t.cost;
+    });
+
+    const maxSpend = Math.max(digitalSpend, traditionalSpend, eventsSpend, brandSpend);
+    if (maxSpend === 0) return { name: "Budget Hoarder", icon: AlertTriangle, desc: "You barely spent your budget. Marketing requires fuel.", advice: "Don't be afraid to deploy capital. A defensive posture rarely wins market share." };
+    if (maxSpend === digitalSpend) return { name: "Performance Maximalist", icon: Zap, desc: "You heavily favored direct-response digital channels for immediate ROI.", advice: "Watch for performance plateau. Digital CAC rises rapidly when brand awareness is neglected." };
+    if (maxSpend === traditionalSpend) return { name: "Broadcast Traditionalist", icon: Megaphone, desc: "You relied on established, high-reach television and out-of-home campaigns.", advice: "While reach is great, traditional media is hard to attribute. Ensure you have lower-funnel capture mechanics in place." };
+    if (maxSpend === eventsSpend) return { name: "Experiential Operator", icon: Award, desc: "You leaned into physical experiences and high-touch event marketing.", advice: "Events create incredible loyalty but scale poorly. Blend digital amplification with your event strategy next time." };
+    return { name: "Brand Builder", icon: ShieldCheck, desc: "You focused on long-term equity, content, and category narrative.", advice: "Brand takes time to compound. Make sure you don't run out of immediate cash flow while waiting for the brand halo effect." };
+  };
+
+  const archetype = getArchetype();
+
+  // 2. Turning Points
+  const getTurningPoint = () => {
+    let bestDelta = 0;
+    let bestQ = "Q1";
+    let priorRev = 0; // Baseline before simulation
+
+    quarterlyData.forEach((q) => {
+      const delta = q.revenue - priorRev;
+      if (delta > bestDelta) {
+        bestDelta = delta;
+        bestQ = q.quarter;
+      }
+      priorRev = q.revenue;
+    });
+
+    return {
+      quarter: bestQ,
+      insight: `Your largest revenue surge ($${(bestDelta/1000).toFixed(0)}k jump) occurred in ${bestQ}.`,
+      lesson: `Actions prior to ${bestQ} created compounding momentum, or your ${bestQ} deployments were highly resonant.`
+    };
+  };
+
+  const turningPoint = getTurningPoint();
 
   const slides = [
     {
@@ -112,7 +174,14 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
               <XAxis dataKey="quarter" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000}k`} />
+              <YAxis 
+                stroke="#64748b" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false} 
+                tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`}
+                domain={[0, (dataMax: number) => Math.max(dataMax, 500000)]}
+              />
               <Tooltip 
                 contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #ffffff10", borderRadius: "12px", color: "white" }}
                 itemStyle={{ color: "#3b82f6" }}
@@ -155,6 +224,99 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
                 </BarChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      )
+    },
+    {
+      id: "strategic-archetype",
+      title: "CMO Strategic Archetype",
+      subtitle: "What your decisions say about your leadership style",
+      content: (
+        <div className="flex flex-col items-center justify-center space-y-8 py-4">
+          <div className="p-8 bg-slate-900/50 rounded-[30px] border border-blue-500/30 flex flex-col items-center w-full shadow-[0_0_50px_rgba(59,130,246,0.1)]">
+            <archetype.icon className="w-20 h-20 text-blue-400 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+            <h3 className="text-4xl font-black text-white uppercase tracking-widest text-center">{archetype.name}</h3>
+            <p className="text-blue-200/60 mt-4 text-center max-w-lg text-lg italic leading-relaxed">
+              "{archetype.desc}"
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-6 w-full mt-4">
+            <div className="p-6 bg-white/5 border border-white/5 rounded-2xl flex items-start gap-4">
+              <Crosshair className="w-8 h-8 text-emerald-400 shrink-0" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Strengths</p>
+                <p className="text-sm text-slate-300">Aligned heavily with your primary budget allocations. Created strong narrative consistency in your chosen channels.</p>
+              </div>
+            </div>
+            <div className="p-6 bg-white/5 border border-white/5 rounded-2xl flex items-start gap-4">
+              <AlertTriangle className="w-8 h-8 text-amber-400 shrink-0" />
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Blindspots</p>
+                <p className="text-sm text-slate-300">Lack of diversification may expose the brand to channel saturation or competitor flanking.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: "turning-points",
+      title: "Campaign Turning Point",
+      subtitle: "The moment momentum shifted",
+      content: (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-10 h-full">
+          <div className="h-full bg-slate-900/40 rounded-3xl border border-white/5 overflow-hidden flex items-center justify-center p-6 relative">
+             {/* Simple timeline visualization */}
+             <div className="absolute inset-y-10 left-12 w-1 bg-white/10 rounded-full" />
+             <div className="flex flex-col justify-between w-full h-full pl-8">
+               {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+                 <div key={q} className="relative flex items-center gap-6">
+                   <div className={`w-8 h-8 rounded-full border-4 ${q === turningPoint.quarter ? 'bg-emerald-500 border-emerald-900 shadow-[0_0_20px_rgba(16,185,129,0.5)]' : 'bg-slate-800 border-slate-900'} z-10 -ml-[19px] shrink-0`} />
+                   <div>
+                     <p className={`font-black uppercase tracking-widest ${q === turningPoint.quarter ? 'text-emerald-400 text-xl' : 'text-slate-500'}`}>{q}</p>
+                     {q === turningPoint.quarter && (
+                       <p className="text-xs text-emerald-500/60 font-bold uppercase tracking-widest mt-1">Maximum Inflection</p>
+                     )}
+                   </div>
+                 </div>
+               ))}
+             </div>
+          </div>
+          <div className="space-y-6 flex flex-col justify-center">
+             <div className="p-8 bg-emerald-500/10 rounded-[30px] border border-emerald-500/20">
+               <TrendingUp className="w-10 h-10 text-emerald-400 mb-6" />
+               <h3 className="text-2xl font-bold text-white mb-2">Momentum Spike in {turningPoint.quarter}</h3>
+               <p className="text-emerald-100/70 leading-relaxed mb-6">{turningPoint.insight}</p>
+               <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5 border-l-emerald-500 border-l-4">
+                 <p className="text-sm text-slate-300 italic">"{turningPoint.lesson}"</p>
+               </div>
+             </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      id: "alternative-path",
+      title: "Alternative Path Coaching",
+      subtitle: "If you rerun this scenario, try this",
+      content: (
+        <div className="flex flex-col items-center justify-center space-y-8 py-10 h-full">
+           <div className="p-10 w-full max-w-2xl bg-gradient-to-br from-indigo-500/10 to-transparent rounded-[30px] border border-indigo-500/30 text-center relative overflow-hidden">
+             <Compass className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-80" />
+             <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-4">Strategic Recommendation</h3>
+             
+             <p className="text-lg text-indigo-100/80 leading-relaxed max-w-xl mx-auto">
+               "{archetype.advice}"
+             </p>
+             
+             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
+           </div>
+           
+           <div className="flex gap-4 items-center">
+             <Lightbulb className="w-5 h-5 text-amber-400" />
+             <p className="text-sm font-black uppercase text-amber-400 tracking-widest">Replay the simulator to test a different archetype.</p>
+           </div>
         </div>
       )
     }
@@ -241,8 +403,8 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
         </div>
         
         {/* Subtle decorative elements */}
-        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500/10 rounded-full blur-[100px]" />
-        <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/10 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none z-[-1]" />
+        <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none z-[-1]" />
       </motion.div>
 
       {/* Footer Branding */}

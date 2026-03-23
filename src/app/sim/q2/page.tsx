@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSimulation } from '@/hooks/useSimulation';
-import { SAMPLE_TACTICS, getTacticsByCategory } from '@/lib/tactics';
+import { SAMPLE_TACTICS, EnrichedTactic } from '@/lib/tactics';
+import { TacticCard } from '@/components/simulation/matrix/TacticCard';
 import { Tactic } from '@/lib/simMachine';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -15,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Megaphone, ArrowRight, Zap, Users, Briefcase } from 'lucide-react';
 import { CMOMentor } from '@/components/simulation/CMOMentor';
+import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
+import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { TalentMarketModal } from '@/components/simulation/TalentMarketModal';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
@@ -22,12 +25,14 @@ import { getRandomTalentPool } from '@/lib/talentMarket';
 import { TalentCandidate } from '@/lib/talentMarket';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 export default function Q2Page() {
   const router = useRouter();
   const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
 
   const [selectedTactics, setSelectedTactics] = useState<Tactic[]>(context.quarters.Q2.tactics || []);
+  const [showDebrief, setShowDebrief] = useState(false);
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -85,8 +90,7 @@ export default function Q2Page() {
   };
 
   const handleCompleteQuarter = () => {
-    if (completeQuarter) completeQuarter('Q2');
-    router.push('/sim/q3');
+    setShowDebrief(true);
   };
 
   const canComplete = selectedTactics.length > 0 && remainingBudget >= 0;
@@ -98,6 +102,8 @@ export default function Q2Page() {
       quarter="Quarter 2"
     >
       <div className="space-y-10 max-w-7xl mx-auto pb-20">
+        <ExecutivePressure currentQuarter="Q2" context={context} />
+        
         <EnhancedKPIDashboard 
           context={context} 
           quarter="Q2"
@@ -109,9 +115,12 @@ export default function Q2Page() {
           <div className="lg:col-span-1 space-y-6">
             <GlassCard className="border-primary/20 bg-primary/5">
               <div className="p-6 space-y-6">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-primary" />
-                  Strategic Actions
+                <h3 className="text-lg font-bold text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-primary" />
+                    Strategic Actions
+                  </div>
+                  <InfoTooltip iconOnly position="left" content="Key decisions, AI advice, and special options available this quarter." />
                 </h3>
                 
                 <CMOMentor 
@@ -151,7 +160,10 @@ export default function Q2Page() {
 
             <GlassCard className="border-primary/30">
               <div className="p-6 space-y-6">
-                <h3 className="text-lg font-bold text-white">Resource Allocation</h3>
+                <h3 className="text-lg font-bold text-white flex items-center justify-between">
+                  Resource Allocation
+                  <InfoTooltip iconOnly position="left" content="Monitor your budget burn rate to ensure you don't over-extend." />
+                </h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
@@ -197,50 +209,16 @@ export default function Q2Page() {
 
               <TabsContent value="available" className="space-y-6 mt-0">
                 <div className="grid md:grid-cols-2 gap-4">
-                  {SAMPLE_TACTICS.slice(4, 10).map((tactic: Tactic) => {
-                    const isSelected = selectedTactics.some(st => st.id === tactic.id);
+                  {SAMPLE_TACTICS.slice(4, 10).map((tactic: unknown) => {
+                    const t = tactic as Tactic;
+                    const isSelected = selectedTactics.some((st: Tactic) => st.id === t.id);
                     return (
-                      <GlassCard 
-                        key={tactic.id} 
-                        className={cn(
-                          "transition-all duration-300",
-                          isSelected ? "border-primary/50 bg-primary/10" : ""
-                        )}
-                      >
-                        <div className="p-6 space-y-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="text-lg font-bold text-white">{tactic.name}</h4>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">{tactic.category}</p>
-                            </div>
-                            {isSelected && <Badge className="bg-primary text-white border-none">Active</Badge>}
-                          </div>
-                          
-                          {(tactic as any).strategicRationale && (
-                            <p className="text-sm text-blue-100/60 mt-3 leading-relaxed border-l-2 border-primary/30 pl-3 italic">
-                              {(tactic as any).strategicRationale}
-                            </p>
-                          )}
-
-                          <div className="flex justify-between items-end pt-4">
-                            <div className="space-y-1">
-                              <p className="text-[10px] text-blue-100/30 uppercase font-bold">Cost</p>
-                              <p className="text-xl font-black text-white">${tactic.cost.toLocaleString()}</p>
-                            </div>
-                            <Button
-                              onClick={() => handleAddTactic(tactic)}
-                              disabled={isSelected}
-                              size="sm"
-                              className={cn(
-                                "rounded-full px-6",
-                                isSelected ? "bg-white/10 text-white/20" : "bg-primary text-white"
-                              )}
-                            >
-                              {isSelected ? 'Deployed' : 'Deploy'}
-                            </Button>
-                          </div>
-                        </div>
-                      </GlassCard>
+                      <TacticCard 
+                        key={t.id}
+                        tactic={t as EnrichedTactic}
+                        isSelected={isSelected}
+                        onAdd={() => handleAddTactic(t)}
+                      />
                     );
                   })}
                 </div>
@@ -308,6 +286,17 @@ export default function Q2Page() {
         )}
       </AnimatePresence>
       <ConfettiEffect trigger={showConfetti} />
+      <EndOfQuarterDebrief
+        isOpen={showDebrief}
+        context={context}
+        quarter="Q2"
+        selectedTactics={selectedTactics}
+        onConfirm={() => {
+          setShowDebrief(false);
+          if (completeQuarter) completeQuarter('Q2');
+          router.push('/sim/q3');
+        }}
+      />
     </ImmersiveLayout>
   );
 }

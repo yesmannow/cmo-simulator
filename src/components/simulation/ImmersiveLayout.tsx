@@ -18,13 +18,7 @@ export function ImmersiveLayout({
   quarter
 }: ImmersiveLayoutProps) {
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#020617] text-white">
-      {/* Persistent Background Visuals */}
-      <div className="fixed inset-0 z-0">
-        <HeroVisual />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#020617]/50 to-[#020617]" />
-      </div>
-
+    <div className="relative w-full text-white">
       <div className="relative z-10 container mx-auto px-4 py-12">
         {/* Cinematic Header */}
         <motion.header 

@@ -1,6 +1,7 @@
 // Enhanced Wildcard System with Dynamic Events and Morale/Brand Equity Impact
 
-import { WildcardEvent, WildcardChoice, type SimulationContext, type MarketLandscape, type TimeHorizon } from './simMachine';
+import { WildcardEvent, WildcardChoice, type SimulationContext } from './simMachine';
+import type { MarketLandscape, TimeHorizon } from '@/types';
 
 export interface EnhancedWildcardEvent extends WildcardEvent {
   triggerConditions?: {
@@ -467,16 +468,15 @@ const RARITY_WEIGHTS: Record<EnhancedWildcardEvent['rarity'], number> = {
 
 const LANDSCAPE_MODIFIERS: Record<MarketLandscape | 'balanced', Partial<Record<EnhancedWildcardEvent['type'], number>>> = {
   balanced: { crisis: 1, opportunity: 1, market_shift: 1, competitor_action: 1 },
-  stable: { crisis: 0.75, opportunity: 1.2, market_shift: 0.85, competitor_action: 1 },
-  emerging: { crisis: 1, opportunity: 1.35, market_shift: 1.15, competitor_action: 0.9 },
-  disrupted: { crisis: 1.4, opportunity: 0.95, market_shift: 1.3, competitor_action: 1.1 },
-  'hyper-competitive': { crisis: 0.9, opportunity: 1.05, market_shift: 1.1, competitor_action: 1.45 },
+  frontier: { crisis: 0.75, opportunity: 1.2, market_shift: 0.85, competitor_action: 1 },
+  disruptor: { crisis: 1, opportunity: 1.35, market_shift: 1.15, competitor_action: 0.9 },
+  crowded: { crisis: 1.4, opportunity: 0.95, market_shift: 1.3, competitor_action: 1.1 },
 };
 
 const HORIZON_MODIFIERS: Record<TimeHorizon | 'balanced', Partial<Record<EnhancedWildcardEvent['type'], number>>> = {
-  'short-term': { crisis: 1.05, opportunity: 1.25, market_shift: 0.9, competitor_action: 1.2 },
-  'mid-term': { crisis: 1, opportunity: 1, market_shift: 1, competitor_action: 1 },
-  'long-term': { crisis: 1.2, opportunity: 0.95, market_shift: 1.4, competitor_action: 0.95 },
+  '1-year': { crisis: 1.05, opportunity: 1.25, market_shift: 0.9, competitor_action: 1.2 },
+  '3-year': { crisis: 1, opportunity: 1, market_shift: 1, competitor_action: 1 },
+  '5-year': { crisis: 1.2, opportunity: 0.95, market_shift: 1.4, competitor_action: 0.95 },
   balanced: { crisis: 1, opportunity: 1, market_shift: 1, competitor_action: 1 },
 };
 

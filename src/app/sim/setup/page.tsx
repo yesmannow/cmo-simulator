@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { LogoGenerator } from '@/components/LogoGenerator';
 import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
 import { DifficultyLevel, difficultyConfigs } from '@/lib/difficultySystem';
-import { SimulationState } from '@/lib/simulationEngine';
+import { SimulationContext } from '@/lib/simMachine';
 import { Industry, TimeHorizon, CompanyProfile, MarketLandscape } from '@/types';
 import { logger } from '@/lib/logger';
 import {
@@ -25,18 +25,14 @@ import {
   Users,
   Rocket,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  DollarSign,
+  AlertTriangle
 } from 'lucide-react';
 
 interface SetupData {
-  // Phase 0 Variables
+  scenarioId: string | null;
   companyName: string;
-  timeHorizon: TimeHorizon | null;
-  industry: Industry | null;
-  companyProfile: CompanyProfile | null;
-  marketLandscape: MarketLandscape | null;
-  difficulty: DifficultyLevel | null;
-
   // Budget Allocation (must sum to 100)
   budgetAllocation: {
     brandAwareness: number;
@@ -44,6 +40,72 @@ interface SetupData {
     conversionOptimization: number;
   };
 }
+
+export const SCENARIOS = [
+  {
+    id: 'turnaround',
+    name: 'The Turnaround',
+    description: 'A legacy brand steadily losing market share. Your job is to stop the bleeding and revitalize the brand before cash runs out.',
+    icon: Target,
+    color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
+    timeHorizon: '1-year' as TimeHorizon,
+    industry: 'retail' as Industry,
+    companyProfile: 'enterprise' as CompanyProfile,
+    marketLandscape: 'disruptor' as MarketLandscape,
+    difficulty: 'Hard',
+    budget: 1500000,
+    startingKPIs: {
+      revenue: 5000000,
+      profit: 0,
+      marketShare: 15,
+      brandAwareness: 60,
+      customerSatisfaction: 35
+    },
+    executiveMandate: 'Immediate stabilization and return to profitability.'
+  },
+  {
+    id: 'hyper-growth',
+    name: 'Hyper-Growth SaaS',
+    description: 'A heavily funded Series B startup. The board demands aggressive acquisition at all costs to hit unicorn valuation.',
+    icon: Rocket,
+    color: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+    timeHorizon: '3-year' as TimeHorizon,
+    industry: 'saas' as Industry,
+    companyProfile: 'startup' as CompanyProfile,
+    marketLandscape: 'crowded' as MarketLandscape,
+    difficulty: 'Very Hard',
+    budget: 3500000,
+    startingKPIs: {
+      revenue: 1200000,
+      profit: 0,
+      marketShare: 2,
+      brandAwareness: 10,
+      customerSatisfaction: 85
+    },
+    executiveMandate: 'Triple-digit YoY growth. Unit economics secondary.'
+  },
+  {
+    id: 'challenger',
+    name: 'The Challenger Brand',
+    description: 'A lean startup trying to disrupt a massive incumbent. You must be resourceful, loud, and strategic to survive.',
+    icon: Zap,
+    color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+    timeHorizon: '5-year' as TimeHorizon,
+    industry: 'fintech' as Industry,
+    companyProfile: 'startup' as CompanyProfile,
+    marketLandscape: 'disruptor' as MarketLandscape,
+    difficulty: 'Medium',
+    budget: 500000,
+    startingKPIs: {
+      revenue: 250000,
+      profit: 0,
+      marketShare: 1,
+      brandAwareness: 5,
+      customerSatisfaction: 90
+    },
+    executiveMandate: 'Build an obsessed cult-following over 5 years.'
+  }
+];
 
 const TIME_HORIZONS = [
   {
@@ -349,12 +411,8 @@ export default function SetupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<SetupData>({
+    scenarioId: null,
     companyName: '',
-    timeHorizon: null,
-    industry: null,
-    companyProfile: null,
-    marketLandscape: null,
-    difficulty: null,
     budgetAllocation: {
       brandAwareness: 33,
       leadGeneration: 34,
@@ -370,7 +428,7 @@ export default function SetupPage() {
   const [companyNameError, setCompanyNameError] = useState<string | null>(null);
   const [budgetError, setBudgetError] = useState<string | null>(null);
 
-  const totalSteps = 7;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
   const handleNext = () => {
@@ -388,48 +446,31 @@ export default function SetupPage() {
 
   const saveAndContinue = async () => {
     try {
-      // Calculate total budget based on difficulty and time horizon
-      const budget = data.difficulty && data.timeHorizon
-        ? difficultyConfigs[data.difficulty as DifficultyLevel]?.initialBudget || 500000
-        : data.timeHorizon
-        ? TIME_HORIZONS.find(h => h.id === data.timeHorizon)?.budget || 500000
-        : 500000;
+      const scenario = SCENARIOS.find(s => s.id === data.scenarioId);
+      if (!scenario) throw new Error("Scenario missing");
 
-      // Initialize simulation state locally without database
-      const initialState: SimulationState = {
-        config: {
-          companyName: data.companyName,
-          timeHorizon: data.timeHorizon || '1-year',
-          industry: data.industry || 'healthcare',
-          companyProfile: data.companyProfile || 'startup',
-          marketLandscape: data.marketLandscape || 'crowded',
-          totalBudget: budget,
+      // Initialize unified simulation context
+      const initialState: Partial<SimulationContext> = {
+        scenarioId: scenario.id,
+        strategy: {
+          targetAudience: '',
+          brandPositioning: '',
+          primaryChannels: [],
           budgetAllocation: data.budgetAllocation,
-          difficulty: data.difficulty || 'intermediate',
+          marketLandscape: scenario.marketLandscape,
+          timeHorizon: scenario.timeHorizon,
         },
-        currentQuarter: 'strategy',
-        status: 'in_progress',
-        simulationId: 'sim-' + Date.now(),
-        totalBudget: budget,
-        budgetRemaining: budget,
-        totalRevenue: 0,
-        totalProfit: 0,
-        brandEquity: 50.0,
-        teamMorale: 75.0,
-        currentMarketShare: 5.0,
-        competitorSpend: 0,
-        marketSaturation: 0.3,
-        quarterlyResults: [],
-        seoInvestments: [],
-        wildcardEvents: [],
-        decisions: [],
+        kpis: scenario.startingKPIs,
+        totalBudget: scenario.budget,
+        remainingBudget: scenario.budget,
+        // The engine state will be initialized by the default machine context spread
       };
 
-      // Save to localStorage
-      localStorage.setItem('cmo-sim-state', JSON.stringify(initialState));
+      // Save to localStorage v2 so SimulationProvider mounts it into XState context
+      localStorage.setItem('cmo-sim-state-v2', JSON.stringify(initialState));
 
-      // Track completion
-      trackStart(initialState.config);
+      // Track completion (using any valid shape expected by analytic event)
+      trackStart(initialState as any);
 
       // Navigate to strategy session
       router.push('/sim/strategy');
@@ -442,18 +483,15 @@ export default function SetupPage() {
 
   const canProceed = () => {
     switch (step) {
-      case 1: return data.companyName.trim().length >= 2;
-      case 2: return data.timeHorizon !== null;
-      case 3: return data.industry !== null;
-      case 4: return data.companyProfile !== null;
-      case 5: return data.marketLandscape !== null;
-      case 6: return data.difficulty !== null;
-      case 7: {
+      case 1: return data.scenarioId !== null;
+      case 2: return data.companyName.trim().length >= 2;
+      case 3: {
         const total = data.budgetAllocation.brandAwareness +
                      data.budgetAllocation.leadGeneration +
                      data.budgetAllocation.conversionOptimization;
         return total === 100;
       }
+      case 4: return true; // Review step
       default: return false;
     }
   };
@@ -468,11 +506,8 @@ export default function SetupPage() {
     });
   };
 
-  const selectedBudget = data.difficulty && data.timeHorizon
-    ? difficultyConfigs[data.difficulty as DifficultyLevel]?.initialBudget || 0
-    : data.timeHorizon
-    ? TIME_HORIZONS.find(h => h.id === data.timeHorizon)?.budget || 0
-    : 0;
+  const selectedScenario = SCENARIOS.find(s => s.id === data.scenarioId);
+  const selectedBudget = selectedScenario?.budget || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-8">
@@ -512,27 +547,89 @@ export default function SetupPage() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Step 1: Company Name */}
+            {/* Step 1: Scenario Selection */}
             {step === 1 && (
-              <Card className="border-2">
+              <div className="space-y-6">
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl font-black text-white mb-2">Select Your Scenario</h2>
+                  <p className="text-blue-100/60 font-medium">Your starting conditions, constraints, and board expectations.</p>
+                </div>
+                
+                <div className="grid lg:grid-cols-3 gap-6">
+                  {SCENARIOS.map((scenario) => {
+                    const Icon = scenario.icon;
+                    const isSelected = data.scenarioId === scenario.id;
+
+                    return (
+                      <motion.div
+                        key={scenario.id}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setData({ ...data, scenarioId: scenario.id })}
+                      >
+                        <Card
+                          className={`cursor-pointer transition-all h-full bg-slate-900/50 backdrop-blur-xl border ${
+                            isSelected
+                              ? `border-primary shadow-[0_0_30px_rgba(59,130,246,0.3)] bg-primary/10`
+                              : 'border-white/10 hover:border-white/30 hover:bg-white/5'
+                          }`}
+                        >
+                          <CardHeader className="pb-4">
+                            <div className={`p-4 rounded-2xl w-fit mb-4 ${scenario.color}`}>
+                              <Icon className="h-8 w-8" />
+                            </div>
+                            <CardTitle className="text-2xl font-black text-white">{scenario.name}</CardTitle>
+                            <Badge className="w-fit mt-2 bg-white/10 text-white/70 tracking-widest uppercase font-bold text-[10px]">{scenario.difficulty}</Badge>
+                          </CardHeader>
+                          <CardContent className="space-y-6">
+                            <p className="text-sm text-blue-100/70 leading-relaxed min-h-[80px]">
+                              {scenario.description}
+                            </p>
+                            
+                            <div className="grid grid-cols-2 gap-4 pb-4 border-b border-white/10">
+                              <div>
+                                <p className="text-[10px] uppercase tracking-widest font-black text-blue-100/40 mb-1">Starting Budget</p>
+                                <p className="text-xl font-black text-white">${(scenario.budget / 1000000).toFixed(1)}M</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] uppercase tracking-widest font-black text-blue-100/40 mb-1">Horizon</p>
+                                <p className="text-xl font-black text-white">{scenario.timeHorizon}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
+                              <p className="text-[10px] uppercase tracking-widest font-black text-amber-500/70 mb-2">Board Mandate</p>
+                              <p className="text-sm font-medium text-amber-100/80 italic">"{scenario.executiveMandate}"</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {/* Step 2: Company Name */}
+            {step === 2 && (
+              <Card className="border border-white/10 bg-slate-900/50 backdrop-blur-xl">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-6 w-6 text-primary" />
+                  <CardTitle className="flex items-center gap-3 text-2xl font-black text-white">
+                    <Building2 className="h-8 w-8 text-primary" />
                     Name Your Company
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-blue-100/60 text-lg">
                     Every great venture needs an identity. What will you call your company?
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="company-name">Company Name</Label>
+                    <Label htmlFor="company-name" className="text-blue-100/40 font-black tracking-widest uppercase text-xs">OFFICIAL CORPORATE ENTITY</Label>
                     <Input
                       id="company-name"
                       placeholder="e.g., Apex Health, Innovate Legal, Urban Outfitters Co."
                       value={data.companyName}
                       onChange={(e: any) => setData({ ...data, companyName: e.target.value })}
-                      className="text-lg h-12"
+                      className="text-2xl font-bold h-16 bg-white/5 border-white/10 text-white placeholder:text-white/20"
                       autoFocus
                     />
                   </div>
@@ -540,21 +637,19 @@ export default function SetupPage() {
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg"
+                      className="p-8 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl border border-primary/20 mt-8"
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-center flex-1">
-                          <div className="text-3xl font-bold text-primary mb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-left flex-1 space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">APPROVED IDENTITY</p>
+                          <div className="text-4xl font-black text-white tracking-tight">
                             {data.companyName}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Don't worry about perfection - focus on progress
-                          </p>
                         </div>
-                        <div className="ml-6">
+                        <div className="ml-6 shrink-0">
                           <LogoGenerator
                             companyName={data.companyName}
-                            industry={data.industry || 'healthcare'}
+                            industry={selectedScenario?.industry || 'saas'}
                           />
                         </div>
                       </div>
@@ -564,463 +659,164 @@ export default function SetupPage() {
               </Card>
             )}
 
-            {/* Step 2: Time Horizon */}
-            {step === 2 && (
-              <Card className="border-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-6 w-6 text-primary" />
-                    Choose Your Time Horizon
-                  </CardTitle>
-                  <CardDescription>
-                    This determines your budget, strategy focus, and risk tolerance
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {TIME_HORIZONS.map((horizon) => {
-                      const Icon = horizon.icon;
-                      const isSelected = data.timeHorizon === horizon.id;
-
-                      return (
-                        <motion.div
-                          key={horizon.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Card
-                            className={`cursor-pointer transition-all ${
-                              isSelected
-                                ? 'border-2 border-primary shadow-lg'
-                                : 'border hover:border-primary/50'
-                            }`}
-                            onClick={() => setData({ ...data, timeHorizon: horizon.id })}
-                          >
-                            <CardHeader>
-                              <Icon className={`h-8 w-8 mb-2 ${horizon.color}`} />
-                              <CardTitle className="text-lg">{horizon.name}</CardTitle>
-                              <CardDescription className="text-xs">
-                                {horizon.description}
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              <div className="text-2xl font-bold text-primary">
-                                ${(horizon.budget / 1000000).toFixed(1)}M
-                              </div>
-                              <div className="space-y-1">
-                                {horizon.characteristics.map((char) => (
-                                  <div key={char} className="flex items-center gap-2 text-xs">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                    <span>{char}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 3: Industry */}
+            {/* Step 3: Budget Allocation */}
             {step === 3 && (
-              <Card className="border-2">
+              <Card className="border border-white/10 bg-slate-900/50 backdrop-blur-xl">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="h-6 w-6 text-primary" />
-                    Select Your Industry
+                  <CardTitle className="flex items-center gap-3 text-2xl font-black text-white">
+                    <DollarSign className="h-8 w-8 text-emerald-400" />
+                    Initial Budget Philosophy
                   </CardTitle>
-                  <CardDescription>
-                    Each industry has unique challenges and opportunities
+                  <CardDescription className="text-blue-100/60 text-lg">
+                    How will you distribute your <span className="text-emerald-400 font-bold">${selectedScenario ? (selectedScenario.budget / 1000000).toFixed(1) : 0}M</span> starting budget across the funnel?
                   </CardDescription>
+                  {budgetError && (
+                    <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-400 font-bold">
+                      <AlertTriangle className="h-5 w-5" />
+                      {budgetError}
+                    </div>
+                  )}
                 </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {INDUSTRIES.map((industry) => {
-                      const isSelected = data.industry === industry.id;
-
-                      return (
-                        <motion.div
-                          key={industry.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Card
-                            className={`cursor-pointer transition-all h-full ${
-                              isSelected
-                                ? 'border-2 border-primary shadow-lg'
-                                : 'border hover:border-primary/50'
-                            }`}
-                            onClick={() => setData({ ...data, industry: industry.id })}
-                          >
-                            <CardHeader>
-                              <div className="text-4xl mb-2">{industry.icon}</div>
-                              <CardTitle className="text-lg">{industry.name}</CardTitle>
-                              <CardDescription className="text-xs">
-                                {industry.description}
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                              <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Avg. Customer Value</span>
-                                <span className="font-semibold">${industry.avgCustomerValue.toLocaleString()}</span>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Sales Cycle</span>
-                                <Badge variant="outline" className="text-xs">{industry.salesCycle}</Badge>
-                              </div>
-                              <div className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">Competition</span>
-                                <Badge variant="outline" className="text-xs">{industry.competitionLevel}</Badge>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 4: Company Profile */}
-            {step === 4 && (
-              <Card className="border-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-6 w-6 text-primary" />
-                    Define Your Company Profile
-                  </CardTitle>
-                  <CardDescription>
-                    Your company size determines available resources and constraints
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {COMPANY_PROFILES.map((profile) => {
-                      const Icon = profile.icon;
-                      const isSelected = data.companyProfile === profile.id;
-
-                      return (
-                        <motion.div
-                          key={profile.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Card
-                            className={`cursor-pointer transition-all h-full ${
-                              isSelected
-                                ? 'border-2 border-primary shadow-lg'
-                                : 'border hover:border-primary/50'
-                            }`}
-                            onClick={() => setData({ ...data, companyProfile: profile.id })}
-                          >
-                            <CardHeader>
-                              <Icon className="h-10 w-10 mb-2 text-primary" />
-                              <CardTitle>{profile.name}</CardTitle>
-                              <CardDescription>{profile.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Team Size</p>
-                                <p className="font-semibold">{profile.teamSize}</p>
-                              </div>
-
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-2">Advantages</p>
-                                <div className="space-y-1">
-                                  {profile.advantages.map((adv) => (
-                                    <div key={adv} className="flex items-center gap-2 text-sm">
-                                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                                      <span>{adv}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-2">Challenges</p>
-                                <div className="space-y-1">
-                                  {profile.challenges.map((chal) => (
-                                    <div key={chal} className="flex items-center gap-2 text-sm">
-                                      <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                                      <span>{chal}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 5: Market Landscape */}
-            {step === 5 && (
-              <Card className="border-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-6 w-6 text-primary" />
-                    Analyze the Competitive Landscape
-                  </CardTitle>
-                  <CardDescription>
-                    Choose your battlefield - each scenario presents unique challenges
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {MARKET_LANDSCAPES.map((landscape) => {
-                      const isSelected = data.marketLandscape === landscape.id;
-
-                      return (
-                        <motion.div
-                          key={landscape.id}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                        >
-                          <Card
-                            className={`cursor-pointer transition-all ${
-                              isSelected
-                                ? 'border-2 border-primary shadow-lg'
-                                : 'border hover:border-primary/50'
-                            }`}
-                            onClick={() => setData({ ...data, marketLandscape: landscape.id })}
-                          >
-                            <CardHeader>
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="text-3xl">{landscape.icon}</div>
-                                  <div>
-                                    <CardTitle className="text-lg">{landscape.name}</CardTitle>
-                                    <CardDescription>{landscape.description}</CardDescription>
-                                  </div>
-                                </div>
-                                <Badge variant={
-                                  landscape.difficulty === 'Medium' ? 'default' :
-                                  landscape.difficulty === 'Hard' ? 'secondary' : 'destructive'
-                                }>
-                                  {landscape.difficulty}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <p className="text-muted-foreground mb-1">Competitor Profile</p>
-                                  <p className="font-medium">{landscape.competitorProfile}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground mb-1">Opportunity Level</p>
-                                  <p className="font-medium">{landscape.opportunity}</p>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 6: Difficulty Level */}
-            {step === 6 && (
-              <Card className="border-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-6 w-6 text-primary" />
-                    Choose Your Challenge Level
-                  </CardTitle>
-                  <CardDescription>
-                    Select the difficulty that matches your experience and learning goals
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {(Object.keys(difficultyConfigs) as DifficultyLevel[]).map((level) => {
-                      const config = difficultyConfigs[level];
-                      const isSelected = data.difficulty === level;
-
-                      return (
-                        <motion.div
-                          key={level}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <Card
-                            className={`cursor-pointer transition-all h-full ${
-                              isSelected
-                                ? 'border-2 border-primary shadow-lg'
-                                : 'border hover:border-primary/50'
-                            }`}
-                            onClick={() => setData({ ...data, difficulty: level })}
-                          >
-                            <CardHeader>
-                              <CardTitle className="text-lg">{config.displayName}</CardTitle>
-                              <CardDescription className="text-xs">
-                                {config.description}
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="text-2xl font-bold text-primary">
-                                ${(config.initialBudget / 1000000).toFixed(1)}M
-                              </div>
-
-                              <div className="space-y-2">
-                                <div className="text-xs text-muted-foreground">Learning Focus</div>
-                                <div className="space-y-1">
-                                  {config.learningObjectives.slice(0, 2).map((obj) => (
-                                    <div key={obj} className="flex items-center gap-2 text-xs">
-                                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                      <span>{obj}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <div className="text-xs text-muted-foreground">Recommended For</div>
-                                <div className="space-y-1">
-                                  {config.recommendedFor.slice(0, 2).map((rec) => (
-                                    <Badge key={rec} variant="outline" className="text-xs">
-                                      {rec}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <div className="text-xs text-muted-foreground">AI Commentary</div>
-                                <div className="text-xs">
-                                  <span className="capitalize">{config.commentaryStyle.formality}</span> •
-                                  <span className="capitalize">{config.commentaryStyle.detailLevel}</span> •
-                                  <span className="capitalize">{config.commentaryStyle.encouragementLevel}</span>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 7: Budget Allocation */}
-            {step === 7 && (
-              <Card className="border-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-6 w-6 text-primary" />
-                    Set Annual Budget Allocation
-                  </CardTitle>
-                  <CardDescription>
-                    Allocate your ${(selectedBudget / 1000000).toFixed(1)}M budget across three strategic buckets (must total 100%)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Brand Awareness */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <Label className="text-base">Brand Awareness (Top of Funnel)</Label>
-                        <p className="text-xs text-muted-foreground">Content, SEO, Social Presence</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          {data.budgetAllocation.brandAwareness}%
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          ${((selectedBudget * data.budgetAllocation.brandAwareness) / 100).toLocaleString()}
-                        </div>
+                <CardContent className="space-y-8">
+                  {/* Total allocated indicator */}
+                  <div className="flex justify-between items-end mb-6">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-primary/60 mb-1">TOTAL ALLOCATED</p>
+                      <div className="text-5xl font-black text-white tracking-tighter">
+                        {data.budgetAllocation.brandAwareness + data.budgetAllocation.leadGeneration + data.budgetAllocation.conversionOptimization}%
                       </div>
                     </div>
+                    {data.budgetAllocation.brandAwareness + data.budgetAllocation.leadGeneration + data.budgetAllocation.conversionOptimization !== 100 && (
+                      <p className="text-rose-400 font-bold text-sm bg-rose-500/10 px-4 py-2 rounded-full border border-rose-500/20">
+                        Must equal exactly 100%
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Brand Awareness Slider */}
+                  <div className="space-y-4 p-6 bg-white/5 border border-white/10 rounded-2xl">
+                    <div className="flex justify-between">
+                      <Label className="text-lg font-bold text-white flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-purple-500" />
+                        Brand Formation
+                      </Label>
+                      <span className="text-xl font-black text-purple-400">{data.budgetAllocation.brandAwareness}%</span>
+                    </div>
+                    <p className="text-sm text-blue-100/40">Long-term equity, mental availability, and market positioning.</p>
                     <input
                       type="range"
                       min="0"
                       max="100"
                       value={data.budgetAllocation.brandAwareness}
                       onChange={(e) => updateBudgetAllocation('brandAwareness', parseInt(e.target.value))}
-                      className="w-full"
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
                     />
                   </div>
 
-                  {/* Lead Generation */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <Label className="text-base">Lead Generation (Mid-Funnel)</Label>
-                        <p className="text-xs text-muted-foreground">Google Ads, Social Ads, Webinars</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          {data.budgetAllocation.leadGeneration}%
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          ${((selectedBudget * data.budgetAllocation.leadGeneration) / 100).toLocaleString()}
-                        </div>
-                      </div>
+                  {/* Lead Generation Slider */}
+                  <div className="space-y-4 p-6 bg-white/5 border border-white/10 rounded-2xl">
+                    <div className="flex justify-between">
+                      <Label className="text-lg font-bold text-white flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        Demand Generation
+                      </Label>
+                      <span className="text-xl font-black text-blue-400">{data.budgetAllocation.leadGeneration}%</span>
                     </div>
+                    <p className="text-sm text-blue-100/40">Capturing intent, building pipeline, and driving traffic.</p>
                     <input
                       type="range"
                       min="0"
                       max="100"
                       value={data.budgetAllocation.leadGeneration}
                       onChange={(e) => updateBudgetAllocation('leadGeneration', parseInt(e.target.value))}
-                      className="w-full"
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                     />
                   </div>
 
-                  {/* Conversion Optimization */}
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <Label className="text-base">Conversion Optimization (Bottom of Funnel)</Label>
-                        <p className="text-xs text-muted-foreground">A/B Testing, Website, CRO</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          {data.budgetAllocation.conversionOptimization}%
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          ${((selectedBudget * data.budgetAllocation.conversionOptimization) / 100).toLocaleString()}
-                        </div>
-                      </div>
+                  {/* Conversion Slider */}
+                  <div className="space-y-4 p-6 bg-white/5 border border-white/10 rounded-2xl">
+                    <div className="flex justify-between">
+                      <Label className="text-lg font-bold text-white flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                        Performance / Conversion
+                      </Label>
+                      <span className="text-xl font-black text-emerald-400">{data.budgetAllocation.conversionOptimization}%</span>
                     </div>
+                    <p className="text-sm text-blue-100/40">Sales enablement, retargeting, and bottom-of-funnel closing.</p>
                     <input
                       type="range"
                       min="0"
                       max="100"
                       value={data.budgetAllocation.conversionOptimization}
                       onChange={(e) => updateBudgetAllocation('conversionOptimization', parseInt(e.target.value))}
-                      className="w-full"
+                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                     />
                   </div>
+                </CardContent>
+              </Card>
+            )}
 
-                  {/* Total */}
-                  <div className="pt-4 border-t">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold">Total Allocation</span>
-                      <span className={`text-2xl font-bold ${
-                        data.budgetAllocation.brandAwareness +
-                        data.budgetAllocation.leadGeneration +
-                        data.budgetAllocation.conversionOptimization === 100
-                          ? 'text-green-500'
-                          : 'text-red-500'
-                      }`}>
-                        {data.budgetAllocation.brandAwareness +
-                         data.budgetAllocation.leadGeneration +
-                         data.budgetAllocation.conversionOptimization}%
-                      </span>
+            {/* Step 4: Final Review */}
+            {step === 4 && selectedScenario && (
+              <Card className="border border-white/10 bg-slate-900/50 backdrop-blur-xl">
+                <CardHeader className="text-center pb-8">
+                  <LogoGenerator companyName={data.companyName} industry={selectedScenario.industry} />
+                  <CardTitle className="text-3xl font-black text-white mt-6">Executive Briefing</CardTitle>
+                  <CardDescription className="text-blue-100/60 text-lg">
+                    Review your parameters before commencing simulation.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {/* Scenario Block */}
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] uppercase tracking-widest font-black text-blue-100/40">Campaign Context</h4>
+                      <div className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 h-full">
+                        <div className={`p-3 rounded-xl ${selectedScenario.color}`}>
+                           <selectedScenario.icon className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h5 className="font-black text-xl text-white tracking-tight">{selectedScenario.name}</h5>
+                          <p className="text-sm text-blue-100/50 mt-2">{selectedScenario.description}</p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <Badge className="bg-white/10 text-white hover:bg-white/20">{selectedScenario.timeHorizon}</Badge>
+                            <Badge className="bg-white/10 text-white hover:bg-white/20">{selectedScenario.difficulty}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Financials Block */}
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] uppercase tracking-widest font-black text-blue-100/40">Financial Philosophy</h4>
+                      <div className="p-6 bg-white/5 border border-white/10 rounded-2xl h-full flex flex-col justify-center">
+                        <div className="flex justify-between items-baseline mb-6 border-b border-white/10 pb-4">
+                          <span className="text-sm font-bold text-blue-100/60">Annual Budget</span>
+                          <span className="text-3xl font-black text-emerald-400">${(selectedScenario.budget / 1000000).toFixed(1)}M</span>
+                        </div>
+                        <div className="space-y-3">
+                           <div className="flex justify-between text-sm">
+                             <span className="font-bold text-purple-400">Brand</span>
+                             <span className="text-white font-black">{data.budgetAllocation.brandAwareness}%</span>
+                           </div>
+                           <div className="flex justify-between text-sm">
+                             <span className="font-bold text-blue-400">Demand</span>
+                             <span className="text-white font-black">{data.budgetAllocation.leadGeneration}%</span>
+                           </div>
+                           <div className="flex justify-between text-sm">
+                             <span className="font-bold text-emerald-400">Conversion</span>
+                             <span className="text-white font-black">{data.budgetAllocation.conversionOptimization}%</span>
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-amber-500/10 border border-amber-500/20 p-6 rounded-2xl flex gap-4 items-start">
+                    <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
+                    <div>
+                      <h4 className="font-black tracking-widest uppercase text-xs text-amber-500 mb-2">CEO Mandate</h4>
+                      <p className="text-amber-100/80 italic font-medium">"{selectedScenario.executiveMandate}"</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1030,30 +826,30 @@ export default function SetupPage() {
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="flex justify-between mt-8">
+        <div className="mt-8 flex justify-between items-center">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={handleBack}
-            disabled={step === 1}
+            className={`text-white hover:bg-white/10 ${step === 1 ? 'opacity-0 pointer-events-none' : ''}`}
           >
-            Back
+            Go Back
           </Button>
 
           <Button
             onClick={handleNext}
             disabled={!canProceed()}
-            size="lg"
+            className="bg-primary text-white hover:bg-primary/90 px-8 py-6 rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all hover:scale-105"
           >
             {step === totalSteps ? (
-              <>
-                Start Simulation
-                <Sparkles className="ml-2 h-4 w-4" />
-              </>
+              <span className="flex items-center gap-2">
+                Commence Operations
+                <Rocket className="h-5 w-5" />
+              </span>
             ) : (
-              <>
+              <span className="flex items-center gap-2">
                 Continue
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
+                <ArrowRight className="h-5 w-5" />
+              </span>
             )}
           </Button>
         </div>

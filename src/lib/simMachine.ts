@@ -3,15 +3,14 @@ import { TalentCandidate, BigBetOption, calculateTalentImpact, calculateBigBetOu
 import { ScoreTracker } from './scoring/scoreTracker';
 import { runSimulationTick, initializeSimulationState } from '../engine';
 import { SimulationState, Channel, PlayerInput, MarketConditions } from '../types/engine';
+import type { TimeHorizon, MarketLandscape } from '@/types';
 
 // Types for simulation context and events
-export type MarketLandscape = 'stable' | 'emerging' | 'disrupted' | 'hyper-competitive';
-export type TimeHorizon = 'short-term' | 'mid-term' | 'long-term';
-
 export interface SimulationContext {
   // Simulation metadata
   simulationId?: string;
   startedAt?: Date;
+  scenarioId?: string;
 
   // Strategic decisions
   strategy: {
@@ -170,6 +169,7 @@ export interface SimulationResults {
 
 // Event types
 export type SimulationEvent =
+  | { type: 'HYDRATE_CONTEXT'; context: Partial<SimulationContext> }
   | { type: 'START_SIMULATION' }
   | { type: 'SET_STRATEGY'; strategy: Partial<SimulationContext['strategy']> }
   | { type: 'COMPLETE_STRATEGY_SESSION' }
@@ -195,6 +195,7 @@ export type SimulationEvent =
         brandEquity?: number;
       };
     }
+  | { type: 'MAKE_BIG_BET'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'; bigBet: BigBetOption; outcome: BigBetOutcome }
   | { type: 'COMPLETE_QUARTER'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' }
   | { type: 'CALCULATE_RESULTS' }
   | { type: 'COMPLETE_DEBRIEF' }
@@ -282,6 +283,11 @@ export const simulationMachine = createMachine({
   states: {
     idle: {
       on: {
+        HYDRATE_CONTEXT: {
+          actions: assign(({ event }: any) => ({
+            ...event.context
+          })),
+        },
         START_SIMULATION: {
           target: 'strategySession',
           actions: assign({
@@ -642,6 +648,28 @@ export const simulationMachine = createMachine({
               Math.max(0, Math.min(100, context.brandEquity + (event.impact.brandEquity || 0))),
           }),
         },
+        MAKE_BIG_BET: {
+          guard: ({ event }) => event.quarter === 'Q3',
+          actions: assign({
+            selectedBigBet: ({ event }) => event.bigBet,
+            bigBetOutcome: ({ event }) => event.outcome,
+            remainingBudget: ({ context, event }) => context.remainingBudget - event.bigBet.cost,
+            kpis: ({ context, event }) => ({
+              ...context.kpis,
+              revenue: context.kpis.revenue + event.outcome.actualImpact.revenue,
+              marketShare: Math.max(0, Math.min(100, context.kpis.marketShare + event.outcome.actualImpact.marketShare)),
+              brandAwareness: Math.max(0, Math.min(100, context.kpis.brandAwareness + event.outcome.actualImpact.brandAwareness)),
+              customerSatisfaction: Math.max(0, Math.min(100, context.kpis.customerSatisfaction + event.outcome.actualImpact.customerSatisfaction))
+            }),
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q3: {
+                ...context.quarters.Q3,
+                bigBetMade: event.bigBet
+              }
+            })
+          })
+        },
         COMPLETE_QUARTER: {
           target: 'Q4',
           guard: ({ event }) => event.quarter === 'Q3',
@@ -756,6 +784,28 @@ export const simulationMachine = createMachine({
               Math.max(0, Math.min(100, context.brandEquity + (event.impact.brandEquity || 0))),
           }),
         },
+        MAKE_BIG_BET: {
+          guard: ({ event }) => event.quarter === 'Q4',
+          actions: assign({
+            selectedBigBet: ({ event }) => event.bigBet,
+            bigBetOutcome: ({ event }) => event.outcome,
+            remainingBudget: ({ context, event }) => context.remainingBudget - event.bigBet.cost,
+            kpis: ({ context, event }) => ({
+              ...context.kpis,
+              revenue: context.kpis.revenue + event.outcome.actualImpact.revenue,
+              marketShare: Math.max(0, Math.min(100, context.kpis.marketShare + event.outcome.actualImpact.marketShare)),
+              brandAwareness: Math.max(0, Math.min(100, context.kpis.brandAwareness + event.outcome.actualImpact.brandAwareness)),
+              customerSatisfaction: Math.max(0, Math.min(100, context.kpis.customerSatisfaction + event.outcome.actualImpact.customerSatisfaction))
+            }),
+            quarters: ({ context, event }) => ({
+              ...context.quarters,
+              Q4: {
+                ...context.quarters.Q4,
+                bigBetMade: event.bigBet
+              }
+            })
+          })
+        },
         COMPLETE_QUARTER: {
           target: 'debrief',
           guard: ({ event }) => event.quarter === 'Q4',
@@ -847,8 +897,8 @@ export function processQuarterAdvance(
     competitorSpend: { tv: 50000, radio: 30000, print: 20000, digital: 80000, social: 40000, seo: 20000, events: 10000, pr: 15000 }
   };
 
-  if (context.strategy.marketLandscape === 'disrupted') marketConditions.economicIndex = 0.8;
-  if (context.strategy.marketLandscape === 'hyper-competitive') {
+  if (context.strategy.marketLandscape === 'disruptor') marketConditions.economicIndex = 0.8;
+  if (context.strategy.marketLandscape === 'crowded') {
     Object.keys(marketConditions.competitorSpend).forEach(k => {
       marketConditions.competitorSpend[k as Channel] *= 1.5;
     });

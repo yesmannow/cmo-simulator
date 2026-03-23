@@ -21,8 +21,8 @@ export const generateMockSimulationContext = (overrides: Partial<SimulationConte
       targetAudience: 'Young Professionals',
       brandPositioning: 'Premium Quality',
       primaryChannels: ['Digital Marketing', 'Social Media', 'Content Marketing'],
-      marketLandscape: 'stable',
-      timeHorizon: 'short-term',
+      marketLandscape: 'crowded',
+      timeHorizon: '1-year',
     },
     quarters: {
       Q1: generateMockQuarter('Q1'),

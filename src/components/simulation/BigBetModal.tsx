@@ -72,9 +72,9 @@ export function BigBetModal({
   };
 
   const getRiskColor = (risk: number) => {
-    if (risk <= 0.3) return 'text-green-600 bg-green-50';
-    if (risk <= 0.6) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    if (risk <= 0.3) return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+    if (risk <= 0.6) return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    return 'text-rose-400 bg-rose-500/10 border-rose-500/20';
   };
 
   const getRiskLabel = (risk: number) => {
@@ -89,13 +89,13 @@ export function BigBetModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-slate-950/95 border-white/10 text-white backdrop-blur-2xl shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl flex items-center gap-3">
-            <Sparkles className="h-6 w-6 text-purple-600" />
-            Q4 Big Bet Decision
+          <DialogTitle className="text-3xl font-black flex items-center gap-3 tracking-tight">
+            <Sparkles className="h-8 w-8 text-purple-400" />
+            Q4 EXECUTIVE ACTION: BIG BET
           </DialogTitle>
-          <p className="text-muted-foreground">
+          <p className="text-blue-100/60 font-medium text-lg">
             Make a strategic investment that could transform your business. Choose wisely - the stakes are high.
           </p>
         </DialogHeader>
@@ -118,26 +118,26 @@ export function BigBetModal({
                     transition={{ delay: index * 0.1 }}
                   >
                     <Card
-                      className={`cursor-pointer transition-all duration-200 ${
+                      className={`cursor-pointer transition-all duration-300 border backdrop-blur-md ${
                         selectedBet?.id === bet.id
-                          ? 'ring-2 ring-purple-500 shadow-lg'
-                          : 'hover:shadow-md'
-                      } ${!canAfford(bet) ? 'opacity-60' : ''}`}
+                          ? 'border-purple-500 bg-purple-500/10 shadow-[0_0_30px_rgba(168,85,247,0.2)]'
+                          : 'border-white/10 bg-white/5 hover:bg-white/10'
+                      } ${!canAfford(bet) ? 'opacity-50 grayscale' : ''}`}
                       onClick={() => canAfford(bet) && handleSelectBet(bet)}
                     >
-                      <CardHeader>
+                      <CardHeader className="border-b border-white/5 pb-4">
                         <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                            <CardTitle className="text-xl">{bet.name}</CardTitle>
-                            <p className="text-muted-foreground">{bet.description}</p>
+                          <div className="space-y-1">
+                            <CardTitle className="text-xl font-black tracking-tight">{bet.name}</CardTitle>
+                            <p className="text-sm text-blue-100/50 leading-relaxed">{bet.description}</p>
                           </div>
-                          <div className="flex flex-col items-end gap-2">
+                          <div className="flex flex-col items-end gap-2 shrink-0 ml-4">
                             <Badge className={getRiskColor(bet.risk)}>
                               {getRiskLabel(bet.risk)}
                             </Badge>
                             <div className="text-right">
-                              <div className="text-lg font-bold">${bet.cost.toLocaleString()}</div>
-                              <div className="text-xs text-muted-foreground">Investment</div>
+                              <div className="text-xl font-black text-white">${bet.cost.toLocaleString()}</div>
+                              <div className="text-[10px] uppercase tracking-widest text-blue-100/40 font-bold">Investment</div>
                             </div>
                           </div>
                         </div>
@@ -153,34 +153,34 @@ export function BigBetModal({
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="text-center">
-                            <div className="flex items-center justify-center gap-1 text-green-600">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-2">
+                          <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">
+                            <div className="flex items-center justify-center gap-1 text-emerald-400">
                               <TrendingUp className="h-4 w-4" />
-                              <span className="font-medium">+{(bet.potentialImpact.revenue / 1000).toFixed(0)}K</span>
+                              <span className="font-bold">+{(bet.potentialImpact.revenue / 1000).toFixed(0)}K</span>
                             </div>
-                            <div className="text-xs text-muted-foreground">Revenue</div>
+                            <div className="text-[10px] uppercase tracking-widest font-black text-blue-100/40 mt-1">Revenue</div>
                           </div>
-                          <div className="text-center">
-                            <div className="flex items-center justify-center gap-1 text-blue-600">
+                          <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">
+                            <div className="flex items-center justify-center gap-1 text-blue-400">
                               <BarChart3 className="h-4 w-4" />
-                              <span className="font-medium">+{bet.potentialImpact.marketShare}%</span>
+                              <span className="font-bold">+{bet.potentialImpact.marketShare}%</span>
                             </div>
-                            <div className="text-xs text-muted-foreground">Market Share</div>
+                            <div className="text-[10px] uppercase tracking-widest font-black text-blue-100/40 mt-1">Market Share</div>
                           </div>
-                          <div className="text-center">
-                            <div className="flex items-center justify-center gap-1 text-purple-600">
+                          <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">
+                            <div className="flex items-center justify-center gap-1 text-purple-400">
                               <Award className="h-4 w-4" />
-                              <span className="font-medium">+{bet.potentialImpact.brandAwareness}%</span>
+                              <span className="font-bold">+{bet.potentialImpact.brandAwareness}%</span>
                             </div>
-                            <div className="text-xs text-muted-foreground">Brand Awareness</div>
+                            <div className="text-[10px] uppercase tracking-widest font-black text-blue-100/40 mt-1">Brand</div>
                           </div>
-                          <div className="text-center">
-                            <div className="flex items-center justify-center gap-1 text-orange-600">
+                          <div className="text-center p-3 bg-white/5 rounded-xl border border-white/5">
+                            <div className="flex items-center justify-center gap-1 text-orange-400">
                               <Target className="h-4 w-4" />
-                              <span className="font-medium">+{bet.potentialImpact.customerSatisfaction}%</span>
+                              <span className="font-bold">+{bet.potentialImpact.customerSatisfaction}%</span>
                             </div>
-                            <div className="text-xs text-muted-foreground">Satisfaction</div>
+                            <div className="text-[10px] uppercase tracking-widest font-black text-blue-100/40 mt-1">Satisfaction</div>
                           </div>
                         </div>
 
@@ -192,12 +192,13 @@ export function BigBetModal({
                           <Progress value={(1 - bet.risk) * 100} className="h-2" />
                         </div>
 
-                        <div className="text-sm text-muted-foreground">
-                          <strong>Strategy:</strong> {bet.strategy}
+                        <div className="text-sm text-blue-100/60 bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 italic">
+                          <strong className="text-blue-400 not-italic uppercase tracking-widest text-xs pr-2">Strategy:</strong>
+                          {bet.strategy}
                         </div>
 
                         {!canAfford(bet) && (
-                          <div className="text-sm text-red-600 font-medium">
+                          <div className="text-sm text-rose-400 font-bold bg-rose-500/10 p-3 rounded-lg border border-rose-500/20 text-center">
                             Insufficient budget (Need ${(bet.cost - availableBudget).toLocaleString()} more)
                           </div>
                         )}
@@ -207,17 +208,17 @@ export function BigBetModal({
                 ))}
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" onClick={onClose}>
-                  Skip Big Bet
+              <div className="flex justify-end gap-4 pt-6 mt-4">
+                <Button variant="ghost" className="text-blue-100/40 hover:text-white hover:bg-white/5 font-bold px-6" onClick={onClose}>
+                  Pass on Big Bet
                 </Button>
                 {selectedBet && (
                   <Button
                     onClick={handleConfirmBet}
                     disabled={!canAfford(selectedBet)}
-                    className="px-6 bg-purple-600 hover:bg-purple-700"
+                    className="px-8 h-12 rounded-xl bg-purple-600 hover:bg-purple-500 font-black shadow-[0_0_20px_rgba(168,85,247,0.4)] text-white"
                   >
-                    Commit to {selectedBet.name} - ${selectedBet.cost.toLocaleString()}
+                    AUTHORIZE {selectedBet.name.toUpperCase()} - ${selectedBet.cost.toLocaleString()}
                   </Button>
                 )}
               </div>
