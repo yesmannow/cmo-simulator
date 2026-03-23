@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   eslint: {
-    // Allow build to proceed with warnings (errors will still be shown)
-    // Set to true to ignore all ESLint errors during builds
-    ignoreDuringBuilds: process.env.CI === "true" || process.env.SKIP_ESLINT === "true",
+    // All ESLint rules are set to "warn" level so they won't fail the build.
+    // Set SKIP_ESLINT=true in env vars to skip ESLint entirely during builds.
+    ignoreDuringBuilds: process.env.SKIP_ESLINT === "true",
   },
   typescript: {
     // Allow build to proceed with TypeScript errors for now
