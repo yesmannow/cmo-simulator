@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Badge, badgeVariants } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { type VariantProps } from 'class-variance-authority';
@@ -32,13 +33,15 @@ export function IconBadge({
   const iconElement = typeof icon === 'string' ? (
     <span className={cn(iconSizeClasses[iconSize])}>{icon}</span>
   ) : IconComponent ? (
-    <IconComponent className={cn(iconSizeClasses[iconSize])} />
+    <span className={cn(iconSizeClasses[iconSize])}>
+      {React.isValidElement(IconComponent) ? IconComponent : React.createElement(IconComponent as any, { className: 'w-full h-full' })}
+    </span>
   ) : (
     icon
   );
 
   return (
-    <Badge variant={variant} className={cn('flex items-center gap-1.5', className)} {...props}>
+    <Badge variant={variant} className={cn('flex items-center gap-1.5', className)} {...(props as any)}>
       {iconPosition === 'left' && iconElement}
       <span>{children}</span>
       {iconPosition === 'right' && iconElement}

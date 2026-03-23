@@ -201,7 +201,7 @@ export interface AchievementDashboardProps {
 }
 
 // Default mock data
-const DEFAULT_PROGRESS: AchievementDashboardProps['userProgress'] = {
+const DEFAULT_PROGRESS = {
   totalXP: 2750,
   currentLevel: 5,
   totalPoints: 1250,
@@ -230,20 +230,20 @@ export function AchievementDashboard({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedRarity, setSelectedRarity] = useState<string>('all');
 
-  const levelData = calculateLevelData(userProgress.totalXP);
+  const levelData = calculateLevelData(userProgress?.totalXP || 0);
 
   // Filter achievements
-  const categories = ['all', ...new Set(userProgress.allAchievements.map(a => a.category))];
+  const categories = ['all', ...new Set((userProgress?.allAchievements || []).map(a => a.category))];
   const rarities = ['all', 'common', 'rare', 'epic', 'legendary'];
 
-  const filteredAchievements = userProgress.allAchievements.filter(achievement => {
+  const filteredAchievements = (userProgress?.allAchievements || []).filter(achievement => {
     const categoryMatch = selectedCategory === 'all' || achievement.category === selectedCategory;
     const rarityMatch = selectedRarity === 'all' || achievement.rarity === selectedRarity;
     return categoryMatch && rarityMatch;
   });
 
-  const unlockedCount = userProgress.unlockedAchievements.length;
-  const totalCount = userProgress.allAchievements.length;
+  const unlockedCount = userProgress?.unlockedAchievements?.length || 0;
+  const totalCount = userProgress?.allAchievements?.length || 0;
   const completionRate = totalCount > 0 ? (unlockedCount / totalCount) * 100 : 0;
 
   // Group achievements by category
@@ -262,7 +262,7 @@ export function AchievementDashboard({
           <StatCard
             icon={<Trophy className="w-5 h-5" />}
             label="Total Points"
-            value={userProgress.totalPoints}
+            value={userProgress?.totalPoints || 0}
           />
           <StatCard
             icon={<Award className="w-5 h-5" />}
@@ -270,7 +270,7 @@ export function AchievementDashboard({
             value={`${unlockedCount}/${totalCount}`}
           />
         </div>
-        <LevelProgress totalXP={userProgress.totalXP} compact />
+        <LevelProgress totalXP={userProgress?.totalXP || 0} compact />
       </div>
     );
   }
@@ -309,7 +309,7 @@ export function AchievementDashboard({
         <StatCard
           icon={<Trophy className="w-5 h-5" />}
           label="Total Points"
-          value={userProgress.totalPoints}
+          value={userProgress?.totalPoints || 0}
           animate
         />
         <StatCard
@@ -326,7 +326,7 @@ export function AchievementDashboard({
         <StatCard
           icon={<Zap className="w-5 h-5" />}
           label="Total XP"
-          value={userProgress.totalXP}
+          value={userProgress?.totalXP || 0}
           animate
         />
       </motion.div>
@@ -340,7 +340,7 @@ export function AchievementDashboard({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <LevelProgress totalXP={userProgress.totalXP} showAnimation />
+            <LevelProgress totalXP={userProgress?.totalXP || 0} showAnimation />
           </motion.div>
 
           <motion.div
@@ -356,7 +356,7 @@ export function AchievementDashboard({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <StreakBadge streak={userProgress.streakData} />
+                <StreakBadge streak={userProgress?.streakData || DEFAULT_PROGRESS.streakData} />
               </CardContent>
             </Card>
           </motion.div>
@@ -384,10 +384,10 @@ export function AchievementDashboard({
                 </div>
                 <div className="grid grid-cols-4 gap-2 text-center">
                   {rarities.slice(1).map(rarity => {
-                    const count = userProgress.allAchievements.filter(
-                      a => a.rarity === rarity && userProgress.unlockedAchievements.some(u => u.id === a.id)
+                    const count = (userProgress?.allAchievements || []).filter(
+                      a => a.rarity === rarity && (userProgress?.unlockedAchievements || []).some(u => u.id === a.id)
                     ).length;
-                    const total = userProgress.allAchievements.filter(a => a.rarity === rarity).length;
+                    const total = (userProgress?.allAchievements || []).filter(a => a.rarity === rarity).length;
                     return (
                       <div key={rarity} className="p-2 rounded-lg bg-muted/50">
                         <div className="text-lg font-bold">{count}/{total}</div>
@@ -457,7 +457,7 @@ export function AchievementDashboard({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <AnimatePresence mode="popLayout">
                         {filteredAchievements.map((achievement, index) => {
-                          const earned = userProgress.unlockedAchievements.some(u => u.id === achievement.id);
+                          const earned = (userProgress?.unlockedAchievements || []).some(u => u.id === achievement.id);
                           const progress = achievement.progress || 0;
                           return (
                             <motion.div
@@ -481,7 +481,7 @@ export function AchievementDashboard({
 
                   <TabsContent value="unlocked" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {userProgress.unlockedAchievements
+                      {(userProgress?.unlockedAchievements || [])
                         .filter(a => filteredAchievements.some(f => f.id === a.id))
                         .map((achievement, index) => (
                           <motion.div
@@ -503,7 +503,7 @@ export function AchievementDashboard({
                   <TabsContent value="locked" className="mt-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredAchievements
-                        .filter(a => !userProgress.unlockedAchievements.some(u => u.id === a.id))
+                        .filter(a => !(userProgress?.unlockedAchievements || []).some(u => u.id === a.id))
                         .map((achievement, index) => (
                           <motion.div
                             key={achievement.id}
@@ -525,7 +525,7 @@ export function AchievementDashboard({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {filteredAchievements
                         .filter(a => {
-                          const earned = userProgress.unlockedAchievements.some(u => u.id === a.id);
+                          const earned = (userProgress?.unlockedAchievements || []).some(u => u.id === a.id);
                           const progress = a.progress || 0;
                           return !earned && progress > 0 && progress < 100;
                         })
@@ -553,7 +553,7 @@ export function AchievementDashboard({
       </div>
 
       {/* Additional Stats Section */}
-      {userProgress.stats && (
+      {userProgress?.stats && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -569,21 +569,21 @@ export function AchievementDashboard({
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold">{userProgress.stats.simulationsCompleted}</div>
+                  <div className="text-2xl font-bold">{userProgress?.stats?.simulationsCompleted || 0}</div>
                   <div className="text-sm text-muted-foreground">Simulations</div>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold">{userProgress.stats.averageScore}%</div>
+                  <div className="text-2xl font-bold">{userProgress?.stats?.averageScore || 0}%</div>
                   <div className="text-sm text-muted-foreground">Avg Score</div>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-muted/50">
                   <div className="text-2xl font-bold">
-                    ${(userProgress.stats.totalRevenue / 1000000).toFixed(1)}M
+                    ${((userProgress?.stats?.totalRevenue || 0) / 1000000).toFixed(1)}M
                   </div>
                   <div className="text-sm text-muted-foreground">Revenue</div>
                 </div>
                 <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <div className="text-2xl font-bold">#{userProgress.stats.globalRank}</div>
+                  <div className="text-2xl font-bold">#{userProgress?.stats?.globalRank || 0}</div>
                   <div className="text-sm text-muted-foreground">Global Rank</div>
                 </div>
               </div>

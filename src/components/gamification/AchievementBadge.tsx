@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Achievement } from '@/lib/database/types';
+import { Achievement } from '@/types';
 import { RARITY_COLORS } from '@/lib/achievements/achievements';
 import { Meteors } from '@/components/ui/meteors';
 import { SparklesCore } from '@/components/ui/sparkles';

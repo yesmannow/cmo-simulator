@@ -7,6 +7,7 @@ import {
   Channel,
   Industry,
   QuarterlyResults,
+  ChannelPerformance,
   AIRecommendation,
   MarketInsight,
   ImpactPrediction
@@ -363,8 +364,8 @@ Format as JSON array of recommendations.
     const recommendations: AIRecommendation[] = [];
 
     // Find best and worst performing channels
-    const channelPerformance = Object.entries(context.quarterlyResults.channel_performance)
-      .map(([channel, perf]) => ({ channel: channel as Channel, ...perf }))
+    const channelPerformance = (Object.entries(context.quarterlyResults.channel_performance) as [Channel, ChannelPerformance][])
+      .map(([channel, perf]) => ({ ...perf, channel: channel as Channel }))
       .sort((a, b) => b.roi - a.roi);
 
     const bestChannel = channelPerformance[0];

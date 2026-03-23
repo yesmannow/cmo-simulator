@@ -13,7 +13,7 @@ import { LogoGenerator } from '@/components/LogoGenerator';
 import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
 import { DifficultyLevel, difficultyConfigs } from '@/lib/difficultySystem';
 import { SimulationState } from '@/lib/simulationEngine';
-import { createClient } from '@/lib/supabase/client';
+import { Industry, TimeHorizon, CompanyProfile, MarketLandscape } from '@/types';
 import { logger } from '@/lib/logger';
 import {
   Building2,
@@ -31,10 +31,10 @@ import {
 interface SetupData {
   // Phase 0 Variables
   companyName: string;
-  timeHorizon: '1-year' | '3-year' | '5-year' | null;
-  industry: 'healthcare' | 'legal' | 'ecommerce' | null;
-  companyProfile: 'startup' | 'enterprise' | null;
-  marketLandscape: 'disruptor' | 'crowded' | 'frontier' | null;
+  timeHorizon: TimeHorizon | null;
+  industry: Industry | null;
+  companyProfile: CompanyProfile | null;
+  marketLandscape: MarketLandscape | null;
   difficulty: DifficultyLevel | null;
 
   // Budget Allocation (must sum to 100)
@@ -388,56 +388,6 @@ export default function SetupPage() {
 
   const saveAndContinue = async () => {
     try {
-      // For development testing, skip database operations
-      if (process.env.NODE_ENV === 'development') {
-        // Initialize simulation state locally without database
-        const initialState: SimulationState = {
-          config: {
-            companyName: data.companyName,
-            timeHorizon: data.timeHorizon || '1-year',
-            industry: data.industry || 'healthcare',
-            companyProfile: data.companyProfile || 'startup',
-            marketLandscape: data.marketLandscape || 'crowded',
-            totalBudget: 500000, // Default budget for development
-            budgetAllocation: data.budgetAllocation,
-            difficulty: data.difficulty || 'intermediate',
-          },
-          currentQuarter: 'strategy',
-          status: 'in_progress',
-          simulationId: 'dev-' + Date.now(), // Mock ID for development
-          totalBudget: 500000,
-          budgetRemaining: 500000,
-          totalRevenue: 0,
-          totalProfit: 0,
-          brandEquity: 50.0,
-          teamMorale: 75.0,
-          currentMarketShare: 5.0,
-          competitorSpend: 0,
-          marketSaturation: 0.3,
-          quarterlyResults: [],
-          seoInvestments: [],
-          wildcardEvents: [],
-          decisions: [],
-        };
-
-        // Save to localStorage
-        localStorage.setItem('cmo-sim-state', JSON.stringify(initialState));
-
-        // Navigate to strategy session
-        router.push('/sim/strategy');
-        return;
-      }
-
-      // Production code for authenticated users
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        logger.error('No authenticated user found');
-        router.push('/login');
-        return;
-      }
-
       // Calculate total budget based on difficulty and time horizon
       const budget = data.difficulty && data.timeHorizon
         ? difficultyConfigs[data.difficulty as DifficultyLevel]?.initialBudget || 500000
@@ -445,45 +395,12 @@ export default function SetupPage() {
         ? TIME_HORIZONS.find(h => h.id === data.timeHorizon)?.budget || 500000
         : 500000;
 
-      // Create simulation in database
-      const { data: simulation, error } = await supabase
-        .from('simulations_enhanced')
-        .insert({
-          user_id: user.id,
-          company_name: data.companyName,
-          time_horizon: data.timeHorizon || '1-year',
-          industry: data.industry || 'ecommerce',
-          company_profile: data.companyProfile || 'startup',
-          market_landscape: data.marketLandscape || 'crowded',
-          difficulty: data.difficulty || 'intermediate',
-          budget_brand_awareness: data.budgetAllocation.brandAwareness,
-          budget_lead_generation: data.budgetAllocation.leadGeneration,
-          budget_conversion_optimization: data.budgetAllocation.conversionOptimization,
-          total_budget: budget,
-          status: 'in_progress',
-          current_quarter: 'strategy',
-          started_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (error) {
-        logger.error('Error creating simulation', error, {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        alert(`Failed to create simulation: ${error.message || 'Unknown error'}. Please try again.`);
-        return;
-      }
-
-      // Initialize simulation state locally
+      // Initialize simulation state locally without database
       const initialState: SimulationState = {
         config: {
           companyName: data.companyName,
           timeHorizon: data.timeHorizon || '1-year',
-          industry: data.industry || 'ecommerce',
+          industry: data.industry || 'healthcare',
           companyProfile: data.companyProfile || 'startup',
           marketLandscape: data.marketLandscape || 'crowded',
           totalBudget: budget,
@@ -492,7 +409,7 @@ export default function SetupPage() {
         },
         currentQuarter: 'strategy',
         status: 'in_progress',
-        simulationId: simulation.id,
+        simulationId: 'sim-' + Date.now(),
         totalBudget: budget,
         budgetRemaining: budget,
         totalRevenue: 0,
@@ -511,13 +428,17 @@ export default function SetupPage() {
       // Save to localStorage
       localStorage.setItem('cmo-sim-state', JSON.stringify(initialState));
 
+      // Track completion
+      trackStart(initialState.config);
+
       // Navigate to strategy session
       router.push('/sim/strategy');
     } catch (error) {
       logger.error('Error saving simulation', error);
-      alert('Failed to save simulation. Please try again.');
+      alert('Failed to initialize simulation. Please try again.');
     }
   };
+
 
   const canProceed = () => {
     switch (step) {

@@ -8,6 +8,7 @@
 import { SimulationState } from '../simulationEngine';
 import { calculateAdvancedScore, calculateScoreComponents, ScoreComponents } from './advancedScoring';
 import { ScoringContext } from '../scoringEngine';
+import { Industry } from '@/types';
 
 export interface ScoreTracker {
   currentScore: number;
@@ -85,7 +86,7 @@ export function createScoreTracker(
 function calculateCurrentScore(
   context: ScoringContext,
   difficulty: 'beginner' | 'intermediate' | 'advanced',
-  industry: string
+  industry: Industry
 ): number {
   const score = calculateAdvancedScore(context, difficulty, industry);
   return score.totalScore;

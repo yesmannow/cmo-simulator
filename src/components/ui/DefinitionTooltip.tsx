@@ -140,7 +140,7 @@ export function DefinitionTooltip({
               initial={{ opacity: 0, scale: 0.95, y: position === 'top' ? 10 : -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className={`fixed ${position === 'center' ? 'left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2' : positionClasses[position]} z-50 w-[400px] max-w-[90vw]`}
+              className={`fixed ${(position as any) === 'center' ? 'left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2' : positionClasses[position as keyof typeof positionClasses]} z-50 w-[400px] max-w-[90vw]`}
             >
               <Card className="shadow-2xl border-2">
                 <CardHeader className="pb-3">

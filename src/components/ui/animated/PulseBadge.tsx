@@ -1,12 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-interface PulseBadgeProps extends BadgeProps {
+interface PulseBadgeProps extends React.ComponentProps<typeof Badge> {
   pulse?: boolean;
-  children: React.ReactNode;
 }
 
 export function PulseBadge({

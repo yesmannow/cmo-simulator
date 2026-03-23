@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+
 import { logger } from '@/lib/logger'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -67,7 +67,6 @@ interface BrandPickerProps {
 export default function BrandPicker({ currentTheme }: BrandPickerProps) {
   const [selectedTheme, setSelectedTheme] = useState(currentTheme)
   const [loading, setLoading] = useState(false)
-  const supabase = createClient()
 
   const applyTheme = (themeId: string) => {
     const theme = themes.find(t => t.id === themeId)
@@ -129,21 +128,8 @@ export default function BrandPicker({ currentTheme }: BrandPickerProps) {
     applyTheme(themeId)
 
     try {
-      // Save to Supabase
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            brand_theme: themeId,
-            updated_at: new Date().toISOString()
-          })
-
-        if (error) {
-          logger.error('Error saving theme', error)
-        }
-      }
+      // Save to localStorage
+      localStorage.setItem('cmo-brand-theme', themeId)
     } catch (error) {
       logger.error('Error updating theme', error)
     } finally {

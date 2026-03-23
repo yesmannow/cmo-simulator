@@ -40,7 +40,7 @@ export default function EngineDemoPage() {
 
     // Check for achievements using current state
     // Note: We check current state since achievements should trigger on the state that caused them
-    const newAchievements = [];
+    const newAchievements: string[] = [];
     if (currentState.results.totalSales > 500000) {
       newAchievements.push('Revenue Champion! 🎉');
       setScore(prev => prev + 100);
@@ -294,7 +294,7 @@ export default function EngineDemoPage() {
                   const entries = Object.entries(simulationState.results.channelContributions);
                   if (entries.length === 0) return 'None';
                   const bestChannel = entries.reduce((best, [channel, contrib]) =>
-                    contrib > (simulationState.results.channelContributions[best] || 0) ? channel : best,
+                    contrib > (simulationState.results.channelContributions[best as Channel] || 0) ? channel : best,
                     entries[0][0]
                   );
                   return bestChannel?.replace('-', ' ') || 'None';

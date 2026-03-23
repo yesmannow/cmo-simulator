@@ -35,8 +35,8 @@ export function useSimulation() {
     send,
     
     // Convenience methods
-    startSimulation: (userId: string) => 
-      send({ type: 'START_SIMULATION', userId }),
+    startSimulation: () => 
+      send({ type: 'START_SIMULATION' }),
     
     setStrategy: (strategy: Partial<SimulationContext['strategy']>) =>
       send({ type: 'SET_STRATEGY', strategy }),

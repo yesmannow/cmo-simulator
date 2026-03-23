@@ -299,6 +299,14 @@ export interface KPISnapshot {
 // ============================================================================
 
 export type AchievementCategory =
+  | 'Performance'
+  | 'Financial'
+  | 'Market'
+  | 'Strategy'
+  | 'Speed'
+  | 'Combo'
+  | 'Milestone'
+  | 'Special'
   | 'revenue'
   | 'efficiency'
   | 'strategy'
@@ -316,10 +324,11 @@ export interface Achievement {
   rarity: AchievementRarity;
   icon: string;
   points: number;
-  unlocked: boolean;
+  unlocked?: boolean;
   unlocked_at?: Timestamp;
   progress?: number; // 0-100
-  requirement: string;
+  requirement?: string;
+  criteria?: Record<string, any>;
   reward?: string;
 }
 

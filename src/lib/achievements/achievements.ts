@@ -1,4 +1,4 @@
-import { Achievement } from '@/lib/database/types';
+import { Achievement } from '@/types';
 
 export const ACHIEVEMENT_DEFINITIONS: Omit<Achievement, 'id' | 'created_at'>[] = [
   // Performance Achievements

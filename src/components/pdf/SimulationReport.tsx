@@ -435,7 +435,7 @@ export const SimulationReport: React.FC<SimulationReportProps> = ({ context, gen
                 Competitive Events Handled: {context.wildcards.length}
               </Text>
               <Text style={[styles.insightText, { fontSize: 9 }]}>
-                Successfully navigated {context.wildcards.filter(w => w.type === 'competitive').length} competitive
+                Successfully navigated {context.wildcards.filter(w => w.type === 'market_shift' || w.type === 'competitor_action').length} competitive
                 events, demonstrating strategic agility and market responsiveness.
               </Text>
             </View>

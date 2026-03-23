@@ -10,12 +10,7 @@ import { Target, ArrowRight } from 'lucide-react';
 import { useSimulation } from '@/hooks/useSimulation';
 import { SAMPLE_TACTICS } from '@/lib/tactics';
 
-interface SimpleTactic {
-  id: string;
-  name: string;
-  cost?: number;
-  category: string;
-}
+import { Tactic } from '@/lib/simMachine';
 
 interface AllocationItem {
   id: string;
@@ -29,7 +24,7 @@ export default function Q1Page() {
   const router = useRouter();
   const { context, addTactic, removeTactic, completeQuarter } = useSimulation();
 
-  const [selectedTactics, setSelectedTactics] = useState<SimpleTactic[]>([]);
+  const [selectedTactics, setSelectedTactics] = useState<Tactic[]>([]);
   const [allocations, setAllocations] = useState<AllocationItem[]>([
     { id: 'digital', name: 'Digital Marketing', budgetAmount: 0, timeAmount: 0, color: '#3b82f6' },
     { id: 'content', name: 'Content Creation', budgetAmount: 0, timeAmount: 0, color: '#10b981' },
@@ -39,28 +34,28 @@ export default function Q1Page() {
   ]);
 
   const quarterBudget = Math.floor((context?.totalBudget || 500000) / 4);
-  const usedBudget = selectedTactics.reduce((sum: number, tactic: SimpleTactic) => sum + (tactic.cost || 0), 0);
+  const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + (tactic.cost || 0), 0);
   const remainingBudget = quarterBudget - usedBudget;
 
   useEffect(() => {
     const newAllocations = allocations.map((allocation: AllocationItem) => {
-      const categoryTactics = selectedTactics.filter((t: SimpleTactic) => t.category === allocation.id);
-      const budgetAmount = categoryTactics.reduce((sum: number, t: SimpleTactic) => sum + (t.cost || 0), 0);
+      const categoryTactics = selectedTactics.filter((t: Tactic) => t.category === allocation.id);
+      const budgetAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + (t.cost || 0), 0);
       return { ...allocation, budgetAmount };
     });
     setAllocations(newAllocations);
   }, [selectedTactics]); // Removed allocations from dependency array to prevent infinite loop
 
-  const handleAddTactic = (tactic: SimpleTactic) => {
-    if (!selectedTactics.find((t: SimpleTactic) => t.id === tactic.id)) {
+  const handleAddTactic = (tactic: Tactic) => {
+    if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
       const newTactics = [...selectedTactics, tactic];
       setSelectedTactics(newTactics);
-      if (addTactic) addTactic('Q1', tactic as any); // Type assertion for compatibility
+      if (addTactic) addTactic('Q1', tactic); // Type assertion removed
     }
   };
 
   const handleRemoveTactic = (tacticId: string) => {
-    const newTactics = selectedTactics.filter((t: SimpleTactic) => t.id !== tacticId);
+    const newTactics = selectedTactics.filter((t: Tactic) => t.id !== tacticId);
     setSelectedTactics(newTactics);
     if (removeTactic) removeTactic('Q1', tacticId);
   };
@@ -92,21 +87,21 @@ export default function Q1Page() {
             <TabsContent value="tactics" className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 {SAMPLE_TACTICS.slice(0, 6).map((tactic: unknown) => (
-                  <Card key={(tactic as SimpleTactic).id} className="cursor-pointer hover:shadow-md transition-shadow">
+                  <Card key={(tactic as Tactic).id} className="cursor-pointer hover:shadow-md transition-shadow">
                     <CardHeader>
-                      <CardTitle className="text-lg">{(tactic as SimpleTactic).name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{(tactic as SimpleTactic).category}</p>
+                      <CardTitle className="text-lg">{(tactic as Tactic).name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{(tactic as Tactic).category}</p>
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-2xl font-bold text-primary">
-                          ${(tactic as SimpleTactic).cost?.toLocaleString() || 'N/A'}
+                          ${(tactic as Tactic).cost?.toLocaleString() || 'N/A'}
                         </span>
                         <Button
-                          onClick={() => handleAddTactic(tactic as SimpleTactic)}
-                          disabled={selectedTactics.some((t: SimpleTactic) => t.id === (tactic as SimpleTactic).id)}
+                          onClick={() => handleAddTactic(tactic as Tactic)}
+                          disabled={selectedTactics.some((t: Tactic) => t.id === (tactic as Tactic).id)}
                         >
-                          {selectedTactics.some((t: SimpleTactic) => t.id === (tactic as SimpleTactic).id) ? 'Selected' : 'Add'}
+                          {selectedTactics.some((t: Tactic) => t.id === (tactic as Tactic).id) ? 'Selected' : 'Add'}
                         </Button>
                       </div>
                     </CardContent>
@@ -133,7 +128,7 @@ export default function Q1Page() {
                 </Card>
               ) : (
                 <div className="space-y-4">
-                  {selectedTactics.map((tactic: SimpleTactic) => (
+                  {selectedTactics.map((tactic: Tactic) => (
                     <Card key={tactic.id}>
                       <CardContent className="flex justify-between items-center p-4">
                         <div>

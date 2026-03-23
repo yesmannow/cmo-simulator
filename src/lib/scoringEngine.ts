@@ -17,15 +17,17 @@
 
 import { calculateAdvancedScore } from './scoring/advancedScoring';
 import { calculateMarketShareBass, calculateMarketMaturity } from './models/marketShare';
-import { calculateAdvancedROI, getIndustryCLV } from './models/roi';
+import { calculateAdvancedROI } from './models/roi';
 import { simulateCompetitiveResponse } from './models/competitive';
+import { Industry, TimeHorizon, CompanyProfile, MarketLandscape } from '@/types';
+import { getAvgCustomerValue, getIndustryFactor } from './industryData';
 
 export interface ScoringContext {
   // Strategic Foundation
-  timeHorizon: '1-year' | '3-year' | '5-year';
-  industry: 'healthcare' | 'legal' | 'ecommerce';
-  companyProfile: 'startup' | 'enterprise';
-  marketLandscape: 'disruptor' | 'crowded' | 'frontier';
+  timeHorizon: TimeHorizon;
+  industry: Industry;
+  companyProfile: CompanyProfile;
+  marketLandscape: MarketLandscape;
 
   // Budget & Spend
   totalBudget: number;
@@ -547,11 +549,14 @@ export function calculateFinalScore(
     // Use advanced ROI with CLV
     const customerAcquisitions = context.quarters.reduce((sum, q) => {
       // Estimate acquisitions from revenue (rough estimate)
-      const avgCustomerValue = getAvgCustomerValueForIndustry(context.industry);
-      return sum + (q.results.revenue / avgCustomerValue);
+      const avgValue = getAvgCustomerValue(context.industry);
+      return sum + (q.results.revenue / avgValue);
     }, 0);
 
-    const industryCLV = getIndustryCLV(context.industry);
+    const industryCLV = {
+      avgCLV: getAvgCustomerValue(context.industry) * 5, // Simple heuristic for CLV
+      retentionRate: 0.75
+    };
 
     const roiResult = calculateAdvancedROI({
       immediateRevenue: totalRevenue,

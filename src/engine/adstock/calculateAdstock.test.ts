@@ -1,4 +1,5 @@
-import { calculateAdstock } from '../adstock/calculateAdstock';
+import { describe, it, expect } from '@jest/globals';
+import { calculateAdstock } from './calculateAdstock';
 
 describe('calculateAdstock', () => {
   it('should calculate adstock correctly', () => {

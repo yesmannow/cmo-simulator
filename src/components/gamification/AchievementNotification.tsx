@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Star, Crown, Zap, X } from 'lucide-react';
-import { Achievement } from '@/lib/database/types';
+import { Achievement } from '@/types';
 import { AchievementBadge } from './AchievementBadge';
 import { Meteors } from '@/components/ui/meteors';
 import { SparklesCore } from '@/components/ui/sparkles';

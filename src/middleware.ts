@@ -1,18 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
-import { logger } from '@/lib/logger'
 
 export async function middleware(request: NextRequest) {
-  // Update Supabase session
-  const response = await updateSession(request)
-
-  // Additional protection for API routes
-  if (request.nextUrl.pathname.startsWith('/api/simulations')) {
-    // Authentication is handled by updateSession, but we can add additional checks here
-    // The API routes themselves will check authentication
-  }
-
-  return response
+  // Pass through all requests as we no longer require authentication
+  return NextResponse.next({
+    request,
+  })
 }
 
 export const config = {

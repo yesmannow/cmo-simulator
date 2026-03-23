@@ -34,7 +34,6 @@ export interface Variant {
 export interface ExperimentAssignment {
   experiment_id: string;
   variant_id: string;
-  user_id?: UUID;
   session_id: string;
   assigned_at: string;
 }
@@ -159,7 +158,7 @@ export class ABTestingService {
   /**
    * Get variant for an experiment
    */
-  getVariant(experimentId: string, userId?: UUID): Variant | null {
+  getVariant(experimentId: string): Variant | null {
     const experiment = this.experiments.get(experimentId);
     
     if (!experiment || experiment.status !== 'running') {
@@ -172,7 +171,7 @@ export class ABTestingService {
     }
 
     // Check existing assignment
-    const assignmentKey = `${experimentId}_${userId || this.sessionId}`;
+    const assignmentKey = `${experimentId}_${this.sessionId}`;
     const existingAssignment = this.assignments.get(assignmentKey);
     
     if (existingAssignment) {
@@ -181,13 +180,12 @@ export class ABTestingService {
     }
 
     // Assign new variant
-    const variant = this.assignVariant(experiment, userId);
+    const variant = this.assignVariant(experiment);
     
     if (variant) {
       const assignment: ExperimentAssignment = {
         experiment_id: experimentId,
         variant_id: variant.id,
-        user_id: userId,
         session_id: this.sessionId,
         assigned_at: new Date().toISOString()
       };
@@ -223,8 +221,8 @@ export class ABTestingService {
   /**
    * Assign variant based on allocation percentages
    */
-  private assignVariant(experiment: Experiment, userId?: UUID): Variant | null {
-    const seed = userId || this.sessionId;
+  private assignVariant(experiment: Experiment): Variant | null {
+    const seed = this.sessionId;
     const hash = this.hashString(seed + experiment.id);
     const random = (hash % 100) / 100; // 0-1
     
@@ -315,8 +313,8 @@ export const abTesting = ABTestingService.getInstance();
 /**
  * Get variant for experiment (shorthand)
  */
-export const getVariant = (experimentId: string, userId?: UUID) =>
-  abTesting.getVariant(experimentId, userId);
+export const getVariant = (experimentId: string) =>
+  abTesting.getVariant(experimentId);
 
 /**
  * Track experiment conversion (shorthand)
@@ -332,9 +330,8 @@ export const trackExperimentConversion = (
  */
 export const isInVariant = (
   experimentId: string,
-  variantId: string,
-  userId?: UUID
+  variantId: string
 ): boolean => {
-  const variant = getVariant(experimentId, userId);
+  const variant = getVariant(experimentId);
   return variant?.id === variantId;
 };

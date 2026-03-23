@@ -9,7 +9,6 @@ export type TimeHorizon = 'short-term' | 'mid-term' | 'long-term';
 export interface SimulationContext {
   // Simulation metadata
   simulationId?: string;
-  userId?: string;
   startedAt?: Date;
 
   // Strategic decisions
@@ -165,7 +164,7 @@ export interface SimulationResults {
 
 // Event types
 export type SimulationEvent =
-  | { type: 'START_SIMULATION'; userId: string }
+  | { type: 'START_SIMULATION' }
   | { type: 'SET_STRATEGY'; strategy: Partial<SimulationContext['strategy']> }
   | { type: 'COMPLETE_STRATEGY_SESSION' }
   | { type: 'START_QUARTER'; quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4' }
@@ -279,7 +278,6 @@ export const simulationMachine = createMachine({
         START_SIMULATION: {
           target: 'strategySession',
           actions: assign({
-            userId: ({ event }) => event.userId,
             startedAt: () => new Date(),
           }),
         },
@@ -832,9 +830,8 @@ export const simulationMachine = createMachine({
           target: 'completed',
         },
         SAVE_SIMULATION: {
-          // This would trigger a side effect to save to database
           actions: () => {
-            // Side effect: save simulation to database
+            // No-op: Persistent storage removed
           },
         },
       },

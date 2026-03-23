@@ -6,6 +6,7 @@
  */
 
 import { ScoringContext } from '../scoringEngine';
+import { Industry } from '@/types';
 
 export interface AdvancedScoreBreakdown {
   revenueScore: number;
@@ -32,7 +33,7 @@ export interface ScoreComponents {
 export function calculateAdvancedScore(
   context: ScoringContext,
   difficulty: 'beginner' | 'intermediate' | 'advanced',
-  industry: string
+  industry: Industry
 ): AdvancedScoreBreakdown {
   const totalRevenue = context.quarters.reduce((sum, q) => sum + q.results.revenue, 0);
   const totalProfit = totalRevenue - context.budgetSpent;

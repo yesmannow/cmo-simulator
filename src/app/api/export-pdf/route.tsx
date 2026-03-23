@@ -18,14 +18,14 @@ export async function POST(request: NextRequest) {
 
     // Generate PDF buffer
     const pdfBuffer = await renderToBuffer(
-      React.createElement(SimulationReport, {
-        context,
-        generatedAt: new Date()
-      })
+      <SimulationReport 
+        context={context}
+        generatedAt={new Date()}
+      />
     );
 
     // Create response with PDF
-    const response = new NextResponse(pdfBuffer);
+    const response = new NextResponse(pdfBuffer as any);
 
     // Set headers for PDF download
     response.headers.set('Content-Type', 'application/pdf');

@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Button, type ButtonProps } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface AnimatedButtonProps extends ButtonProps {
+interface AnimatedButtonProps extends React.ComponentProps<typeof Button> {
   ripple?: boolean;
   scaleOnHover?: boolean;
   children: React.ReactNode;

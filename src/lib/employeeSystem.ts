@@ -190,7 +190,7 @@ export const generateTeam = (companyName: string): TeamComposition => {
 
 // Get team member by role or department
 export const getTeamMemberByRole = (team: TeamComposition, role: string): Employee | undefined => {
-  for (const department of Object.values(team)) {
+  for (const department of Object.values(team) as Employee[][]) {
     const member = department.find(emp => emp.role === role);
     if (member) return member;
   }

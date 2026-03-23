@@ -35,7 +35,7 @@ export function EnhancedConfetti({
   achievement
 }: EnhancedConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const particlesRef = useRef<Particle[]>([]);
 
   const getAchievementConfig = (achievement?: string) => {
@@ -208,7 +208,7 @@ export function EnhancedConfetti({
     animate();
 
     const timeoutId = setTimeout(() => {
-      if (animationRef.current) {
+      if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
       }
       particlesRef.current = [];
@@ -216,7 +216,7 @@ export function EnhancedConfetti({
     }, duration);
 
     return () => {
-      if (animationRef.current) {
+      if (animationRef.current !== undefined) {
         cancelAnimationFrame(animationRef.current);
       }
       clearTimeout(timeoutId);

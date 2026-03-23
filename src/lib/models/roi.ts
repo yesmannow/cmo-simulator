@@ -5,6 +5,8 @@
  * Priority: P1 (Week 2)
  */
 
+import { Industry } from '@/types';
+
 export interface ROIContext {
   immediateRevenue: number;
   spend: number;
@@ -12,7 +14,7 @@ export interface ROIContext {
   avgCLV: number; // Average Customer Lifetime Value
   retentionRate: number; // 0-1, customer retention rate
   brandEquity: number; // 0-100
-  industry: string;
+  industry: Industry;
 }
 
 export interface ROIResult {
@@ -74,7 +76,7 @@ export function calculateAdvancedROI(context: ROIContext): ROIResult {
 /**
  * Get industry-specific CLV benchmarks
  */
-export function getIndustryCLV(industry: string): {
+export function getIndustryCLV(industry: Industry): {
   avgCLV: number;
   retentionRate: number;
 } {

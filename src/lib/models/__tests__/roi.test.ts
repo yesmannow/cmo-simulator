@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { calculateAdvancedROI, getIndustryCLV } from '../roi';
 
 describe('ROI Model (CLV-based)', () => {

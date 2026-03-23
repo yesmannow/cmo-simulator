@@ -110,8 +110,10 @@ export function EnhancedKPIDashboard({
     };
   };
 
-  const totalRevenue = calculateTotalRevenue();
-  const currentMetrics = getCurrentMetrics();
+  const totalRevenue = useMemo(() => calculateTotalRevenue(), [context.quarters, context.kpis.revenue]);
+  
+  const currentMetrics = useMemo(() => getCurrentMetrics(), [context.quarters, context.kpis]);
+  
   const projectedRevenue = calculateProjectedRevenue;
 
   // Calculate trends
@@ -124,7 +126,7 @@ export function EnhancedKPIDashboard({
   };
 
   // Calculate quarter-over-quarter trends
-  const getQuarterTrends = () => {
+  const quarterTrends = useMemo(() => {
     const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
     const trends: Record<string, 'up' | 'down' | 'stable' | 'new'> = {};
 
@@ -139,9 +141,7 @@ export function EnhancedKPIDashboard({
     });
 
     return trends;
-  };
-
-  const quarterTrends = getQuarterTrends();
+  }, [context.quarters]);
 
   // Calculate ROI
   const calculateROI = () => {
@@ -167,7 +167,12 @@ export function EnhancedKPIDashboard({
       customerSatisfaction: currentMetrics.customerSatisfaction,
       brandAwareness: currentMetrics.brandAwareness,
     });
-  }, [totalRevenue, currentMetrics]);
+  }, [
+    totalRevenue, 
+    currentMetrics.marketShare, 
+    currentMetrics.customerSatisfaction, 
+    currentMetrics.brandAwareness
+  ]);
 
   const kpis = [
     {

@@ -15,6 +15,7 @@ import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { BudgetTimeAllocator } from '@/components/simulation/BudgetTimeAllocator';
 import { MilestoneConfetti } from '@/components/simulation/ConfettiEffect';
 import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { Tactic } from '@/lib/simMachine';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 import { ArrowRight, Zap, Target, Calendar, TrendingUp } from 'lucide-react';
@@ -39,8 +40,8 @@ export default function Q3Page() {
   const quarterBudget = Math.floor(context.totalBudget / 4);
   const quarterTime = 200;
   
-  const usedBudget = selectedTactics.reduce((sum, tactic) => sum + tactic.cost, 0);
-  const usedTime = selectedTactics.reduce((sum, tactic) => sum + tactic.timeRequired, 0);
+  const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.cost, 0);
+  const usedTime = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.timeRequired, 0);
   const remainingBudget = quarterBudget - usedBudget;
   const remainingTime = quarterTime - usedTime;
 
@@ -50,16 +51,16 @@ export default function Q3Page() {
 
   useEffect(() => {
     const newAllocations = allocations.map(allocation => {
-      const categoryTactics = selectedTactics.filter(t => t.category === allocation.id);
-      const budgetAmount = categoryTactics.reduce((sum, t) => sum + t.cost, 0);
-      const timeAmount = categoryTactics.reduce((sum, t) => sum + t.timeRequired, 0);
+      const categoryTactics = selectedTactics.filter((t: Tactic) => t.category === allocation.id);
+      const budgetAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + t.cost, 0);
+      const timeAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + t.timeRequired, 0);
       return { ...allocation, budgetAmount, timeAmount };
     });
     setAllocations(newAllocations);
   }, [selectedTactics]); // Removed allocations from dependency array to prevent infinite loop
 
-  const handleAddTactic = (tactic: unknown) => {
-    if (!selectedTactics.find(t => t.id === tactic.id)) {
+  const handleAddTactic = (tactic: Tactic) => {
+    if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
       const newTactics = [...selectedTactics, tactic];
       setSelectedTactics(newTactics);
       addTactic('Q3', tactic);
@@ -67,7 +68,7 @@ export default function Q3Page() {
   };
 
   const handleRemoveTactic = (tacticId: string) => {
-    const newTactics = selectedTactics.filter(t => t.id !== tacticId);
+    const newTactics = selectedTactics.filter((t: Tactic) => t.id !== tacticId);
     setSelectedTactics(newTactics);
     removeTactic('Q3', tacticId);
   };
@@ -170,7 +171,7 @@ export default function Q3Page() {
                       }
                     }}
                     onAdd={() => handleAddTactic(tactic)}
-                    isSelected={selectedTactics.some(t => t.id === tactic.id)}
+                    isSelected={selectedTactics.some((t: any) => t.id === tactic.id)}
                     showAddButton={true}
                   />
                 ))}
@@ -197,17 +198,17 @@ export default function Q3Page() {
                 <DndContext onDragEnd={(event: DragEndEvent) => {
                   const { active, over } = event;
                   if (active.id !== over?.id) {
-                    const oldIndex = selectedTactics.findIndex(t => t.id === active.id);
-                    const newIndex = selectedTactics.findIndex(t => t.id === over?.id);
+                    const oldIndex = selectedTactics.findIndex((t: Tactic) => t.id === active.id);
+                    const newIndex = selectedTactics.findIndex((t: Tactic) => t.id === over?.id);
                     const newTactics = [...selectedTactics];
                     const [reorderedItem] = newTactics.splice(oldIndex, 1);
                     newTactics.splice(newIndex, 0, reorderedItem);
                     setSelectedTactics(newTactics);
                   }
                 }}>
-                  <SortableContext items={selectedTactics.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={selectedTactics.map((t: Tactic) => t.id)} strategy={verticalListSortingStrategy}>
                     <div className="space-y-4">
-                      {selectedTactics.map((tactic) => (
+                      {selectedTactics.map((tactic: Tactic) => (
                         <DraggableTacticCard
                           key={tactic.id}
                           tactic={tactic}
@@ -330,7 +331,7 @@ export default function Q3Page() {
               <div>
                 <span className="font-medium">Channels:</span>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {context.strategy.primaryChannels?.map(channel => (
+                  {context.strategy.primaryChannels?.map((channel: string) => (
                     <Badge key={channel} variant="secondary" className="text-xs">
                       {channel}
                     </Badge>

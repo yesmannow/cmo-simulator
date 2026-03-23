@@ -45,8 +45,8 @@ export function FadeInSection({
   return (
     <motion.div
       ref={ref}
-      initial={directionVariants[direction]}
-      animate={inView ? directionAnimate : directionVariants[direction]}
+      initial={directionVariants[direction] as any}
+      animate={(inView ? directionAnimate : directionVariants[direction]) as any}
       transition={{
         duration,
         delay,

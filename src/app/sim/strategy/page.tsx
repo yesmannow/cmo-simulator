@@ -65,7 +65,7 @@ export default function StrategySessionPage() {
 
   const handleChannelToggle = (channelId: string) => {
     const updatedChannels = formData.primaryChannels.includes(channelId)
-      ? formData.primaryChannels.filter(id => id !== channelId)
+      ? formData.primaryChannels.filter((id: string) => id !== channelId)
       : [...formData.primaryChannels, channelId];
 
     setFormData({ ...formData, primaryChannels: updatedChannels });
@@ -97,9 +97,7 @@ export default function StrategySessionPage() {
   };
 
   const handleComplete = () => {
-    if (!context.userId) {
-      startSimulation('current-user'); // In real app, get from auth
-    }
+    startSimulation();
     completeStrategySession();
     router.push('/sim/q1');
   };
@@ -277,7 +275,7 @@ export default function StrategySessionPage() {
             <div className="mt-4 p-3 bg-primary/10 rounded-lg">
               <p className="text-sm font-medium mb-2">Selected Channels:</p>
               <div className="flex flex-wrap gap-2">
-                {formData.primaryChannels.map((channelId) => {
+                {formData.primaryChannels.map((channelId: string) => {
                   const channel = CHANNEL_OPTIONS.find(c => c.id === channelId);
                   return (
                     <Badge key={channelId} variant="secondary">

@@ -76,7 +76,7 @@ export function useNewSimulation() {
         }
         break;
       case 'completed':
-        router.push(`/sim/debrief/${state.simulationId}`);
+        router.push('/sim/debrief');
         break;
       default:
         router.push('/sim/setup');

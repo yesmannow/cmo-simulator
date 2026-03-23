@@ -10,15 +10,15 @@ import { UUID } from '@/types';
 /**
  * Hook to get variant for an experiment
  */
-export function useExperiment(experimentId: string, userId?: UUID) {
+export function useExperiment(experimentId: string) {
   const [variant, setVariant] = useState<Variant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const assignedVariant = getVariant(experimentId, userId);
+    const assignedVariant = getVariant(experimentId);
     setVariant(assignedVariant);
     setIsLoading(false);
-  }, [experimentId, userId]);
+  }, [experimentId]);
 
   const trackConversion = useCallback((metric: string, value?: number) => {
     trackExperimentConversion(experimentId, metric, value);
@@ -44,8 +44,8 @@ export function useExperiment(experimentId: string, userId?: UUID) {
 /**
  * Hook for feature flags (simple on/off experiments)
  */
-export function useFeatureFlag(flagName: string, userId?: UUID): boolean {
-  const { variant, isLoading } = useExperiment(flagName, userId);
+export function useFeatureFlag(flagName: string): boolean {
+  const { variant, isLoading } = useExperiment(flagName);
   
   if (isLoading) {
     return false; // Default to off while loading
@@ -72,10 +72,9 @@ export function useExperimentConversion(
  */
 export function useVariantComponent<T extends Record<string, React.ComponentType<any>>>(
   experimentId: string,
-  components: T,
-  userId?: UUID
+  components: T
 ): React.ComponentType<any> | null {
-  const { variant, isLoading } = useExperiment(experimentId, userId);
+  const { variant, isLoading } = useExperiment(experimentId);
 
   if (isLoading || !variant) {
     return components.control || null;
@@ -89,10 +88,9 @@ export function useVariantComponent<T extends Record<string, React.ComponentType
  */
 export function useVariantConfig<T extends Record<string, any>>(
   experimentId: string,
-  defaultConfig: T,
-  userId?: UUID
+  defaultConfig: T
 ): T {
-  const { variant } = useExperiment(experimentId, userId);
+  const { variant } = useExperiment(experimentId);
 
   return useMemo(() => {
     if (!variant) return defaultConfig;
@@ -104,18 +102,17 @@ export function useVariantConfig<T extends Record<string, any>>(
  * Hook for multivariate testing (multiple experiments)
  */
 export function useMultipleExperiments(
-  experimentIds: string[],
-  userId?: UUID
+  experimentIds: string[]
 ): Record<string, Variant | null> {
   const [variants, setVariants] = useState<Record<string, Variant | null>>({});
 
   useEffect(() => {
     const newVariants: Record<string, Variant | null> = {};
     experimentIds.forEach(id => {
-      newVariants[id] = getVariant(id, userId);
+      newVariants[id] = getVariant(id);
     });
     setVariants(newVariants);
-  }, [experimentIds, userId]);
+  }, [experimentIds]);
 
   return variants;
 }

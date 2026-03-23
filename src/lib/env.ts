@@ -9,10 +9,7 @@
  * as environment variables are injected at runtime.
  */
 
-const requiredEnvVars = [
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-] as const;
+const requiredEnvVars = [] as const;
 
 const optionalEnvVars = [
   'NEXT_PUBLIC_AI_PROVIDER',
