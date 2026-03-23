@@ -1,8 +1,10 @@
 import { SimulationContext, Tactic, WildcardEvent, SimulationResults } from '@/lib/simMachine';
+import { initializeSimulationState } from '@/engine';
 
 // Mock simulation contexts for testing
 export const generateMockSimulationContext = (overrides: Partial<SimulationContext> = {}): SimulationContext => {
   const baseContext: SimulationContext = {
+    engineState: initializeSimulationState(),
     remainingBudget: 1000000,
     totalBudget: 1000000,
     kpis: {

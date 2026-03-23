@@ -13,6 +13,7 @@
  * - Bass Diffusion Model for market share
  * - Customer Lifetime Value (CLV) for ROI
  * - Dynamic competitive response
+ * - Tactic Synergy Model (Performance multipliers for matching tactics)
  */
 
 import { calculateAdvancedScore } from './scoring/advancedScoring';
@@ -319,6 +320,47 @@ export function updateAdstockHistory(
   });
 
   return newHistory;
+}
+
+/**
+ * Calculate Tactic Synergy
+ * Rewards combinations of tactics that amplify each other
+ * e.g., Content + Digital Ads = 1.2x multiplier
+ */
+export function calculateTacticSynergy(tactics: TacticUsage[]): number {
+  if (tactics.length < 2) return 1.0;
+
+  let multiplier = 1.0;
+  const categories = new Set(tactics.map(t => t.category));
+
+  // Synergy Pair: Content + Paid Ads (Content fuels the ads)
+  if (categories.has('content') && (categories.has('paid-ads') || categories.has('social'))) {
+    multiplier += 0.15; // 15% boost
+  }
+
+  // Synergy Pair: PR/Partnerships + Events (Events amplify the PR reach)
+  if ((categories.has('pr') || categories.has('partnerships' as any)) && categories.has('events')) {
+    multiplier += 0.20; // 20% boost
+  }
+
+  // Synergy Pair: SEO + Content (SEO needs content to rank)
+  if (categories.has('seo') && categories.has('content')) {
+    multiplier += 0.25; // 25% boost
+  }
+
+  // Synergy Pair: Social + Events (Live social coverage of events)
+  if (categories.has('social') && categories.has('events')) {
+    multiplier += 0.10; // 10% boost
+  }
+
+  // Diversity Penalty/Bonus
+  if (categories.size >= 4) {
+    multiplier += 0.10; // "Omichannel" bonus
+  } else if (categories.size === 1 && tactics.length > 2) {
+    multiplier -= 0.15; // "Too many eggs in one basket" penalty
+  }
+
+  return Math.max(0.5, multiplier);
 }
 
 /**

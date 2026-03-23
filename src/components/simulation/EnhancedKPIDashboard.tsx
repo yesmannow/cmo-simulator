@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Users, Target, Heart, Sparkles, Zap, TrendingUpIcon } from 'lucide-react';
-import { SimulationContext } from '@/lib/simMachine';
+import { SimulationContext, processQuarterAdvance } from '@/lib/simMachine';
 import CountUp from 'react-countup';
 import { SparklesCore } from '@/components/ui/sparkles';
 // Note: calculateQuarterResults is not exported, so we'll calculate projection differently
@@ -44,51 +44,28 @@ export function EnhancedKPIDashboard({
 
   // Calculate projected revenue for current quarter based on selected tactics
   const calculateProjectedRevenue = useMemo(() => {
-    if (!quarter || selectedTactics.length === 0) return 0;
-
-    // Calculate projection based on tactic expected impacts
-    // This is a simplified version - in production, use the actual calculation function
-    let totalExpectedRevenue = 0;
-    let totalSpend = 0;
-    let totalTraffic = 0;
-
-    selectedTactics.forEach((tactic: any) => {
-      const cost = tactic.cost || 0;
-      totalSpend += cost;
-      totalExpectedRevenue += (tactic.expectedImpact?.revenue || 0);
-
-      // Estimate traffic based on category
-      const category = tactic.category || 'digital';
-      const trafficMultipliers: Record<string, number> = {
-        digital: 5,
-        content: 10,
-        events: 8,
-        partnerships: 12,
-        traditional: 3,
+    if (!quarter || selectedTactics.length === 0 || !['Q1', 'Q2', 'Q3', 'Q4'].includes(quarter)) return 0;
+    
+    try {
+      // Create a temporary context with the currently selected tactics
+      const tempContext = {
+        ...context,
+        quarters: {
+          ...context.quarters,
+          [quarter]: {
+            ...context.quarters[quarter],
+            tactics: selectedTactics
+          }
+        }
       };
-      totalTraffic += cost * (trafficMultipliers[category] || 4);
-    });
-
-    // Apply market saturation
-    const marketSaturation = Math.min(context.kpis.marketShare / 50, 0.8);
-    totalTraffic *= (1 - marketSaturation);
-
-    // Convert to revenue
-    const leads = Math.floor(totalTraffic * 0.05);
-    const brandMultiplier = 0.8 + (context.kpis.brandAwareness / 100) * 0.4;
-    const conversions = Math.floor(leads * 0.15 * brandMultiplier);
-
-    const baseCustomerValue = 200;
-    const brandValueMultiplier = 0.7 + (context.kpis.brandAwareness / 100) * 0.6;
-    const marketShareValueMultiplier = 0.8 + (context.kpis.marketShare / 100) * 0.4;
-    const customerValue = baseCustomerValue * brandValueMultiplier * marketShareValueMultiplier;
-
-    const trafficBasedRevenue = conversions * customerValue;
-    const baseRevenue = (trafficBasedRevenue * 0.6) + (totalExpectedRevenue * 0.4);
-    const budgetEfficiency = totalSpend > 0 ? Math.min(1.2, 1.0 + (totalSpend / 500000) * 0.2) : 1.0;
-
-    return Math.max(0, baseRevenue * budgetEfficiency);
-  }, [quarter, selectedTactics, context.kpis]);
+      
+      const projection = processQuarterAdvance(tempContext, quarter as 'Q1' | 'Q2' | 'Q3' | 'Q4');
+      return projection.newQuarterData.results.revenue;
+    } catch (e) {
+      console.error("Projection error:", e);
+      return 0;
+    }
+  }, [quarter, selectedTactics, context]);
 
   // Get current metrics
   const getCurrentMetrics = () => {
@@ -223,6 +200,18 @@ export function EnhancedKPIDashboard({
       description: 'Brand recognition level',
       trend: calculateTrend(currentMetrics.brandAwareness, previousValues.brandAwareness || 0),
     },
+    {
+      title: 'Brand Adstock',
+      value: Object.values(context.engineState?.adstock || {}).reduce((a, b) => a + b, 0),
+      format: (val: number) => `$${(val / 1000).toFixed(0)}k`,
+      icon: Sparkles,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      borderColor: 'border-amber-200',
+      target: 200000,
+      description: 'Carryover brand momentum',
+      trend: 'up', // Adstock usually grows early on
+    },
   ];
 
   const getTrendIcon = (trend: string) => {
@@ -246,7 +235,7 @@ export function EnhancedKPIDashboard({
   return (
     <div className="space-y-6">
       {/* Main KPI Cards with Animations */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {kpis.map((kpi, index) => {
           const Icon = kpi.icon;
           const progress = Math.min((kpi.value / kpi.target) * 100, 100);

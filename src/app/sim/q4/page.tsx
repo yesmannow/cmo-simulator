@@ -1,509 +1,289 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { DndContext, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSimulation } from '@/hooks/useSimulation';
+import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { Tactic } from '@/lib/simMachine';
+import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { EnhancedKPIDashboard } from '@/components/simulation/EnhancedKPIDashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSimulation } from '@/hooks/useSimulation';
-import { logger } from '@/lib/logger';
-import { EnhancedKPIDashboard } from '@/components/simulation/EnhancedKPIDashboard';
-import { TacticCard, DraggableTacticCard } from '@/components/simulation/TacticCard';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Target, Megaphone, ArrowRight, Zap, Trophy } from 'lucide-react';
+import { CMOMentor } from '@/components/simulation/CMOMentor';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
-import { BigBetModal } from '@/components/simulation/BigBetModal';
-import { BudgetTimeAllocator } from '@/components/simulation/BudgetTimeAllocator';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
-import { getTacticsByCategory } from '@/lib/tactics';
-import { getRandomBigBets } from '@/lib/talentMarket';
-import { Tactic } from '@/lib/simMachine';
-import { BigBetOption } from '@/lib/talentMarket';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
-import { ArrowRight, Zap, Target, Calendar, Crown, Flame, Sparkles, HelpCircle } from 'lucide-react';
-import CountUp from 'react-countup';
-import { InlineDefinition } from '@/components/ui/DefinitionTooltip';
-import { ContextualHelp } from '@/components/help/ContextualHelp';
-import { SmartHintPanel } from '@/components/help/SmartHintPanel';
 
 export default function Q4Page() {
   const router = useRouter();
   const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
 
-  const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q4.tactics);
-  const [availableTactics] = useState(getTacticsByCategory('digital'));
+  const [selectedTactics, setSelectedTactics] = useState<Tactic[]>(context.quarters.Q4.tactics || []);
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [bigBetOptions, setBigBetOptions] = useState<BigBetOption[]>([]);
-  const [showBigBetModal, setShowBigBetModal] = useState(false);
-  const [hasTriggeredBigBet, setHasTriggeredBigBet] = useState(false);
-  const [allocations, setAllocations] = useState([
-    { id: 'digital', name: 'Digital Marketing', budgetAmount: 0, timeAmount: 0, color: '#3b82f6' },
-    { id: 'content', name: 'Content Creation', budgetAmount: 0, timeAmount: 0, color: '#10b981' },
-    { id: 'traditional', name: 'Traditional Media', budgetAmount: 0, timeAmount: 0, color: '#f59e0b' },
-    { id: 'events', name: 'Events & Experiences', budgetAmount: 0, timeAmount: 0, color: '#8b5cf6' },
-    { id: 'partnerships', name: 'Partnerships', budgetAmount: 0, timeAmount: 0, color: '#ef4444' },
-  ]);
 
-  const quarterBudget = Math.floor(context.totalBudget / 4);
-  const quarterTime = 200;
-
-  const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.cost, 0);
-  const usedTime = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.timeRequired, 0);
+  const quarterBudget = Math.floor((context?.totalBudget || 500000) / 4);
+  const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + (tactic.cost || 0), 0);
   const remainingBudget = quarterBudget - usedBudget;
-  const remainingTime = quarterTime - usedTime;
-
-  // Calculate year-to-date revenue from all completed quarters
-  // Include Q4 if it has been completed (revenue > 0)
-  const calculateYTDRevenue = () => {
-    let total = 0;
-    const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
-    quarters.forEach((q) => {
-      const quarterData = context.quarters[q];
-      if (quarterData?.results?.revenue) {
-        total += quarterData.results.revenue;
-      }
-    });
-    return total;
-  };
-
-  const ytdRevenue = calculateYTDRevenue();
-  const finalPushBonus = ytdRevenue > 800000 ? 1.5 : ytdRevenue > 500000 ? 1.3 : 1.1; // Up to 50% bonus for exceptional performance
-  const isOnTrack = ytdRevenue > 1200000; // On track for 2M+ annual revenue
 
   useEffect(() => {
-    const newAllocations = allocations.map(allocation => {
-      const categoryTactics = selectedTactics.filter((t: Tactic) => t.category === allocation.id);
-      const budgetAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + t.cost, 0);
-      const timeAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + t.timeRequired, 0);
-      return { ...allocation, budgetAmount, timeAmount };
-    });
-    setAllocations(newAllocations);
-  }, [selectedTactics]);
-
-  const handleAddTactic = (tactic: Tactic) => {
-    if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
-      const newTactics = [...selectedTactics, tactic];
-      setSelectedTactics(newTactics);
-      addTactic('Q4', tactic);
+    if (!showWildcardModal && !currentWildcard && Math.random() > 0.6) {
+      handleTriggerWildcard();
     }
-  };
-
-  const handleRemoveTactic = (tacticId: string) => {
-    const newTactics = selectedTactics.filter((t: Tactic) => t.id !== tacticId);
-    setSelectedTactics(newTactics);
-    removeTactic('Q4', tacticId);
-  };
+  }, []);
 
   const handleTriggerWildcard = () => {
     const wildcard = getEnhancedWildcardForQuarter(context, 'Q4');
     if (!wildcard) return;
     setCurrentWildcard(wildcard);
     setShowWildcardModal(true);
-    triggerWildcard('Q4', wildcard);
+    if (triggerWildcard) triggerWildcard('Q4', wildcard);
   };
 
   const handleWildcardResponse = (choiceId: string) => {
-    if (currentWildcard) {
+    if (currentWildcard && respondToWildcard) {
       const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
       respondToWildcard('Q4', currentWildcard, choiceId, impact);
       setShowWildcardModal(false);
-      setCurrentWildcard(null);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
     }
   };
 
-  const handleOpenBigBet = () => {
-    const bigBets = getRandomBigBets(3);
-    setBigBetOptions(bigBets);
-    setShowBigBetModal(true);
-    setHasTriggeredBigBet(true);
+  const handleAddTactic = (tactic: Tactic) => {
+    if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
+      const newTactics = [...selectedTactics, tactic];
+      setSelectedTactics(newTactics);
+      if (addTactic) addTactic('Q4', tactic);
+    }
   };
 
-  const handleSelectBigBet = (bigBet: BigBetOption) => {
-    // Integrate with simulation state machine
-    // This should update the simulation state with the selected big bet
-    logger.debug('Selected Big Bet', { bigBet });
-    setShowBigBetModal(false);
+  const handleRemoveTactic = (tacticId: string) => {
+    const newTactics = selectedTactics.filter((t: Tactic) => t.id !== tacticId);
+    setSelectedTactics(newTactics);
+    if (removeTactic) removeTactic('Q4', tacticId);
   };
 
   const handleCompleteQuarter = () => {
-    completeQuarter('Q4');
-    setShowConfetti(true);
-    setTimeout(() => {
-      router.push('/sim/debrief');
-    }, 3000);
+    if (completeQuarter) completeQuarter('Q4');
+    router.push('/sim/debrief');
   };
 
-  const canComplete = selectedTactics.length > 0 && remainingBudget >= 0 && remainingTime >= 0;
+  const canComplete = selectedTactics.length > 0 && remainingBudget >= 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <ConfettiEffect trigger={showConfetti} />
-
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <ContextualHelp
-            context="Q4 Final Quarter - Year-End Push"
-            termIds={['revenue', 'roi', 'market-share', 'brand-awareness', 'customer-satisfaction', 'budget', 'tactics']}
-            tips={[
-              'Q4 is your final chance to hit the $2M annual revenue target',
-              'Year-end bonuses can multiply your tactic effectiveness by up to 50%',
-              'Review Q1-Q3 results to see what tactics worked best',
-              'Consider making a "Big Bet" for maximum impact',
-              'Balance aggressive growth with sustainable practices'
-            ]}
-            className="absolute top-4 right-4"
-          />
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            <Calendar className="h-4 w-4 mr-2" />
-            Quarter 4 - Final Sprint
-          </Badge>
-          {finalPushBonus >= 1.5 && (
-            <Badge className="text-lg px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
-              <Crown className="h-4 w-4 mr-2" />
-              Elite Performance!
-            </Badge>
-          )}
-          {finalPushBonus >= 1.3 && finalPushBonus < 1.5 && (
-            <Badge className="text-lg px-4 py-2 bg-orange-100 text-orange-800">
-              <Flame className="h-4 w-4 mr-2" />
-              Hot Streak!
-            </Badge>
-          )}
-        </div>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Q4 Final Sprint
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          The final quarter! Make it count with your strongest tactics and biggest bets. This is where legends are made.
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-lg p-4 relative overflow-hidden hover:shadow-lg transition-all duration-300">
-            <div className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-              Year-to-Date <InlineDefinition termId="revenue">Revenue</InlineDefinition>
-            </div>
-            <div className="text-2xl font-bold text-blue-900">
-              $<CountUp end={ytdRevenue} duration={1.5} separator="," />
-            </div>
-            <div className="text-sm text-blue-600 mt-2">
-              {isOnTrack ? (
-                <span className="flex items-center gap-1">
-                  <span>🎯</span>
-                  <span>On track for 2M+ target!</span>
-                </span>
-              ) : (
-                <span>
-                  <CountUp end={(ytdRevenue / 2000000) * 100} duration={1.5} decimals={1} />% to target
-                </span>
-              )}
-            </div>
-            {/* Progress indicator */}
-            <div className="mt-3 h-2 bg-blue-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000"
-                style={{ width: `${Math.min((ytdRevenue / 2000000) * 100, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 relative overflow-hidden hover:shadow-lg transition-all duration-300">
-            <div className="font-semibold text-green-800 mb-2 flex items-center gap-2">
-              Q4 Effectiveness Bonus
-              <InlineDefinition termId="roi">
-                <HelpCircle className="h-3 w-3 text-green-600" />
-              </InlineDefinition>
-            </div>
-            <div className="text-2xl font-bold text-green-900">
-              +<CountUp end={(finalPushBonus - 1) * 100} duration={1.5} decimals={0} />%
-            </div>
-            <div className="text-sm text-green-600 mt-2">
-              {finalPushBonus >= 1.5 ? (
-                <span className="flex items-center gap-1">
-                  <span>🚀</span>
-                  <span>Maximum boost unlocked!</span>
-                </span>
-              ) : finalPushBonus >= 1.3 ? (
-                <span className="flex items-center gap-1">
-                  <span>⚡</span>
-                  <span>Strong momentum bonus!</span>
-                </span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <span>📈</span>
-                  <span>Year-end push active!</span>
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Performance Dashboard</h2>
-          <SmartHintPanel
-            context={context}
-            currentQuarter="Q4"
-            tacticsSelected={selectedTactics.length}
-          />
-        </div>
-        <EnhancedKPIDashboard
-          context={context}
+    <ImmersiveLayout
+      title="Q4 Final Year-End Push"
+      subtitle="The Grand Finale. Deploy your remaining budget and maximize results for the annual board review."
+      quarter="Quarter 4"
+    >
+      <div className="space-y-10 max-w-7xl mx-auto pb-20">
+        <EnhancedKPIDashboard 
+          context={context} 
           quarter="Q4"
-          showQuarterlyBreakdown={true}
           selectedTactics={selectedTactics}
         />
-      </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="tactics" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="tactics">Select Tactics</TabsTrigger>
-              <TabsTrigger value="plan">Your Plan</TabsTrigger>
-              <TabsTrigger value="allocations">Budget & Time</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="tactics" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Available Marketing Tactics</h3>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleOpenBigBet}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                    disabled={hasTriggeredBigBet}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    {hasTriggeredBigBet ? 'Big Bet Made' : 'Make Big Bet'}
-                  </Button>
-                  <Button
-                    onClick={handleTriggerWildcard}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Zap className="h-4 w-4" />
-                    Trigger Market Event
-                  </Button>
+        <div className="grid lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-1 space-y-6">
+            <GlassCard className="border-primary/40 bg-primary/10 shadow-[0_0_50px_rgba(59,130,246,0.3)]">
+              <div className="p-8 space-y-8">
+                <div className="flex items-center gap-3 border-b border-primary/20 pb-4">
+                  <Trophy className="h-8 w-8 text-amber-400" />
+                  <h3 className="text-2xl font-black text-white italic tracking-tighter uppercase">Board Review</h3>
                 </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {availableTactics.map((tactic) => (
-                  <TacticCard
-                    key={tactic.id}
-                    tactic={{
-                      ...tactic,
-                      expectedImpact: {
-                        ...tactic.expectedImpact,
-                        revenue: Math.round(tactic.expectedImpact.revenue * finalPushBonus),
-                        marketShare: Math.round(tactic.expectedImpact.marketShare * finalPushBonus),
-                        customerSatisfaction: Math.round(tactic.expectedImpact.customerSatisfaction * finalPushBonus),
-                        brandAwareness: Math.round(tactic.expectedImpact.brandAwareness * finalPushBonus),
-                      }
-                    }}
-                    onAdd={() => handleAddTactic(tactic)}
-                    isSelected={selectedTactics.some((t: Tactic) => t.id === tactic.id)}
-                    showAddButton={true}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="plan" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Your Q4 Marketing Plan</h3>
-                <Badge variant="outline">
-                  {selectedTactics.length} tactics selected
-                </Badge>
-              </div>
-
-              {selectedTactics.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <div className="text-muted-foreground">
-                    <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h4 className="text-lg font-medium mb-2">No tactics selected</h4>
-                    <p>Switch to the &quot;Select Tactics&quot; tab to build your final quarter plan.</p>
-                  </div>
-                </Card>
-              ) : (
-                <DndContext onDragEnd={(event: DragEndEvent) => {
-                  const { active, over } = event;
-                  if (active.id !== over?.id) {
-                    const oldIndex = selectedTactics.findIndex((t: Tactic) => t.id === active.id);
-                    const newIndex = selectedTactics.findIndex((t: Tactic) => t.id === over?.id);
-                    const newTactics = [...selectedTactics];
-                    const [reorderedItem] = newTactics.splice(oldIndex, 1);
-                    newTactics.splice(newIndex, 0, reorderedItem);
-                    setSelectedTactics(newTactics);
-                  }
-                }}>
-                  <SortableContext items={selectedTactics.map((t: Tactic) => t.id)} strategy={verticalListSortingStrategy}>
-                    <div className="space-y-4">
-                      {selectedTactics.map((tactic: Tactic) => (
-                        <DraggableTacticCard
-                          key={tactic.id}
-                          tactic={tactic}
-                          onRemove={() => handleRemoveTactic(tactic.id)}
-                          showRemoveButton={true}
-                        />
-                      ))}
+                
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-xs font-black uppercase tracking-widest">
+                      <span className="text-blue-100/60">Final Momentum</span>
+                      <span className={remainingBudget < 0 ? "text-red-400" : "text-primary italic"}>
+                        {((usedBudget / quarterBudget) * 100).toFixed(0)}% Utilized
+                      </span>
                     </div>
-                  </SortableContext>
-                </DndContext>
-              )}
-            </TabsContent>
+                    <div className="h-5 w-full bg-white/5 rounded-full overflow-hidden p-1 border border-primary/20 shadow-inner">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min((usedBudget / quarterBudget) * 100, 100)}%` }}
+                        className={cn("h-full rounded-full transition-all duration-1000 ease-out", remainingBudget < 0 ? "bg-red-500" : "bg-gradient-to-r from-primary to-blue-400")}
+                      />
+                    </div>
+                  </div>
 
-            <TabsContent value="allocations" className="space-y-4">
-              <h3 className="text-lg font-semibold">Final Resource Allocation</h3>
-              <BudgetTimeAllocator
-                totalBudget={quarterBudget}
-                totalTime={quarterTime}
-                allocations={allocations}
-                onAllocationsChange={setAllocations}
-                remainingBudget={remainingBudget}
-                remainingTime={remainingTime}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
+                  <div className="grid grid-cols-2 gap-3 pt-6">
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-blue-100/40 mb-1">Reserve</p>
+                      <p className={cn("text-xl font-black tabular-nums", remainingBudget < 0 ? "text-red-400" : "text-white")}>
+                        ${remainingBudget.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 shadow-inner">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-blue-100/40 mb-1">Units</p>
+                      <p className="text-xl font-black text-white tabular-nums">{selectedTactics.length}</p>
+                    </div>
+                  </div>
+                </div>
 
-        <div className="space-y-6">
-          <Card className="border-2 border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Crown className="h-5 w-5 text-yellow-600" />
-                Q4 Final Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="font-medium">Budget</div>
-                  <div className="text-muted-foreground">
-                    ${usedBudget.toLocaleString()} / ${quarterBudget.toLocaleString()}
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Time</div>
-                  <div className="text-muted-foreground">
-                    {usedTime}h / {quarterTime}h
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Tactics</div>
-                  <div className="text-muted-foreground">
-                    {selectedTactics.length} selected
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Events</div>
-                  <div className="text-muted-foreground">
-                    {context.quarters.Q4.wildcardEvents.length} triggered
-                  </div>
-                </div>
+                <CMOMentor 
+                  selectedTactics={selectedTactics}
+                  remainingBudget={remainingBudget}
+                  currentQuarter="Q4"
+                  context={context}
+                />
+
+                <Button
+                  onClick={handleCompleteQuarter}
+                  disabled={!canComplete}
+                  className={cn(
+                    "w-full py-10 text-2xl font-black rounded-3xl transition-all duration-700 uppercase tracking-widest",
+                    canComplete 
+                      ? "bg-primary text-white shadow-[0_0_50px_rgba(59,130,246,0.6)] hover:shadow-[0_0_80px_rgba(59,130,246,0.8)] hover:scale-[1.05] hover:-rotate-1" 
+                      : "bg-white/5 text-white/5 cursor-not-allowed border-white/5"
+                  )}
+                >
+                  Initiate Final Audit
+                  <ArrowRight className="ml-3 h-8 w-8" />
+                </Button>
               </div>
-
-              <Button
-                onClick={handleCompleteQuarter}
-                disabled={!canComplete}
-                className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
-                size="lg"
+            </GlassCard>
+            
+            <motion.div
+              animate={{ rotate: [0, 1, -1, 0] }}
+              transition={{ repeat: Infinity, duration: 5 }}
+            >
+              <Button 
+                className="w-full bg-white/5 border border-primary/30 text-white hover:bg-white/10 h-20 rounded-3xl font-black uppercase tracking-widest italic group"
+                onClick={handleTriggerWildcard}
+                disabled={showWildcardModal}
               >
-                Complete Year & See Results
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <Zap className="h-6 w-6 mr-3 text-primary group-hover:scale-150 transition-transform" />
+                Q4 Wildcard Logic
               </Button>
+            </motion.div>
+          </div>
 
-              {!canComplete && (
-                <div className="text-sm text-muted-foreground">
-                  {selectedTactics.length === 0 && "• Select at least one tactic"}
-                  {remainingBudget < 0 && "• Budget exceeded"}
-                  {remainingTime < 0 && "• Time allocation exceeded"}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-3">
+            <Tabs defaultValue="available" className="w-full">
+              <TabsList className="bg-[#0f172a]/50 border border-primary/20 p-2 rounded-3xl mb-10 overflow-hidden">
+                <TabsTrigger value="available" className="px-16 py-4 data-[state=active]:bg-primary data-[state=active]:text-white rounded-2xl transition-all font-black uppercase italic tracking-widest text-sm">Strategic Inventory</TabsTrigger>
+                <TabsTrigger value="active" className="px-16 py-4 data-[state=active]:bg-primary data-[state=active]:text-white rounded-2xl transition-all font-black uppercase italic tracking-widest text-sm text-white/20">Final Deployment ({selectedTactics.length})</TabsTrigger>
+              </TabsList>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Annual Performance</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Annual Target:</span>
-                  <span className="font-semibold">$2,000,000</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>YTD Revenue:</span>
-                  <span className="font-semibold text-blue-600">${ytdRevenue.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Remaining to Target:</span>
-                  <span className={`font-semibold ${2000000 - ytdRevenue <= 0 ? 'text-green-600' : 'text-orange-600'}`}>
-                    ${Math.max(0, 2000000 - ytdRevenue).toLocaleString()}
-                  </span>
-                </div>
-              </div>
+              <TabsContent value="available" className="mt-0">
+                <div className="grid md:grid-cols-2 gap-8">
+                  {SAMPLE_TACTICS.slice(12, 18).map((tactic: Tactic) => {
+                    const isSelected = selectedTactics.some(st => st.id === tactic.id);
+                    return (
+                      <GlassCard 
+                        key={tactic.id} 
+                        className={cn(
+                          "group transition-all duration-700",
+                          isSelected ? "border-primary/80 bg-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.3)]" : "hover:shadow-[0_0_20px_rgba(59,130,246,0.1)]"
+                        )}
+                      >
+                        <div className="p-10 space-y-8">
+                          <div className="flex justify-between items-start border-b border-white/5 pb-6">
+                            <div className="space-y-2">
+                              <h4 className="text-3xl font-black text-white tracking-tighter leading-none">{tactic.name}</h4>
+                              <p className="text-xs font-black uppercase tracking-[0.4em] text-primary/60">{tactic.category}</p>
+                            </div>
+                            {isSelected && <Badge className="bg-primary text-white font-black px-4 py-1 animate-pulse">DEPLOYED</Badge>}
+                          </div>
+                          
+                          {(tactic as any).strategicRationale && (
+                             <p className="text-lg text-blue-100/60 leading-relaxed font-medium italic opacity-80 group-hover:opacity-100 transition-opacity border-l-2 border-primary/30 pl-3">
+                               {(tactic as any).strategicRationale}
+                             </p>
+                           )}
 
-              {finalPushBonus >= 1.3 && (
-                <div className="p-2 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded text-yellow-800 text-xs">
-                  🏆 Elite performance bonus: +{((finalPushBonus - 1) * 100).toFixed(0)}% effectiveness
+                          <div className="flex justify-between items-center pt-8 border-t border-white/5">
+                            <div className="space-y-1">
+                              <p className="text-xs text-blue-100/20 uppercase font-black italic tracking-[0.2em]">Final Call</p>
+                              <p className="text-4xl font-black text-white tabular-nums tracking-tighter italic">${tactic.cost.toLocaleString()}</p>
+                            </div>
+                            <Button
+                              onClick={() => handleAddTactic(tactic)}
+                              disabled={isSelected}
+                              className={cn(
+                                "rounded-2xl px-12 h-16 font-black uppercase tracking-widest transition-all duration-500",
+                                isSelected ? "bg-white/5 text-white/10" : "bg-primary text-white shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:scale-110"
+                              )}
+                            >
+                              {isSelected ? 'LOCKED' : 'DEPLOY'}
+                            </Button>
+                          </div>
+                        </div>
+                      </GlassCard>
+                    );
+                  })}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </TabsContent>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Your Strategy</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div>
-                <span className="font-medium">Target:</span> {context.strategy.targetAudience}
-              </div>
-              <div>
-                <span className="font-medium">Position:</span> {context.strategy.brandPositioning}
-              </div>
-              <div>
-                <span className="font-medium">Channels:</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {context.strategy.primaryChannels?.map((channel: string) => (
-                    <Badge key={channel} variant="secondary" className="text-xs">
-                      {channel}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <TabsContent value="active" className="mt-0">
+                {selectedTactics.length === 0 ? (
+                  <GlassCard className="p-60 text-center border-dashed border-primary/20 bg-transparent">
+                    <motion.div
+                      animate={{ opacity: [0.1, 0.3, 0.1] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                    >
+                      <Megaphone className="h-32 w-32 mx-auto text-primary mb-10" />
+                      <p className="text-blue-100/10 font-black uppercase tracking-[1em] text-2xl italic">Operational Zero</p>
+                    </motion.div>
+                  </GlassCard>
+                ) : (
+                  <div className="space-y-6">
+                    {selectedTactics.map(tactic => (
+                      <GlassCard key={tactic.id} className="border-l-8 border-l-primary hover:bg-white/20 transition-colors">
+                        <div className="p-8 flex justify-between items-center">
+                          <div className="flex items-center gap-8">
+                            <div className="w-20 h-20 rounded-3xl bg-primary/20 border border-primary/40 flex items-center justify-center font-black text-primary text-3xl italic shadow-[inset_0_0_20px_rgba(59,130,246,0.3)]">
+                              {tactic.category.substring(0,2).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="text-2xl font-black text-white italic">{tactic.name}</h4>
+                              <div className="flex items-center gap-4 mt-2">
+                                <span className="text-sm font-black text-primary uppercase italic tracking-widest tabular-nums">${tactic.cost.toLocaleString()}</span>
+                                <span className="text-white/10 scale-150">•</span>
+                                <span className="text-sm text-blue-100/30 font-black uppercase tracking-[0.2em]">{tactic.category}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            className="text-red-500 hover:bg-red-500/10 hover:text-red-400 rounded-2xl px-8 py-8 font-black uppercase tracking-widest text-sm"
+                            onClick={() => handleRemoveTactic(tactic.id)}
+                          >
+                            RETRACT UNIT
+                          </Button>
+                        </div>
+                      </GlassCard>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
 
-      <WildcardModal
-        wildcard={currentWildcard}
-        isOpen={showWildcardModal}
-        onClose={() => setShowWildcardModal(false)}
-        onChoose={handleWildcardResponse}
-      />
-
-      <BigBetModal
-        bigBets={bigBetOptions}
-        isOpen={showBigBetModal}
-        onClose={() => setShowBigBetModal(false)}
-        onSelect={handleSelectBigBet}
-        availableBudget={remainingBudget}
-        currentKPIs={{
-          revenue: ytdRevenue,
-          marketShare: context.quarters.Q4.results.marketShare || context.quarters.Q3.results.marketShare || 15,
-          customerSatisfaction: context.quarters.Q4.results.customerSatisfaction || context.quarters.Q3.results.customerSatisfaction || 75,
-          brandAwareness: context.quarters.Q4.results.brandAwareness || context.quarters.Q3.results.brandAwareness || 60
-        }}
-      />
-    </div>
+      <AnimatePresence>
+        {showWildcardModal && currentWildcard && (
+          <WildcardModal
+             wildcard={currentWildcard}
+             isOpen={showWildcardModal}
+             onChoose={handleWildcardResponse}
+             onClose={() => setShowWildcardModal(false)}
+          />
+        )}
+      </AnimatePresence>
+      <ConfettiEffect trigger={showConfetti} />
+    </ImmersiveLayout>
   );
 }

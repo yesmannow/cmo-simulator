@@ -1,16 +1,21 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { useSimulation } from '@/hooks/useSimulation';
+import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { Tactic } from '@/lib/simMachine';
+import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { EnhancedKPIDashboard } from '@/components/simulation/EnhancedKPIDashboard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Target, ArrowRight } from 'lucide-react';
-import { useSimulation } from '@/hooks/useSimulation';
-import { SAMPLE_TACTICS } from '@/lib/tactics';
-
-import { Tactic } from '@/lib/simMachine';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { Target, Megaphone, ArrowRight } from 'lucide-react';
+import { CMOMentor } from '@/components/simulation/CMOMentor';
+import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 
 interface AllocationItem {
   id: string;
@@ -44,13 +49,13 @@ export default function Q1Page() {
       return { ...allocation, budgetAmount };
     });
     setAllocations(newAllocations);
-  }, [selectedTactics]); // Removed allocations from dependency array to prevent infinite loop
+  }, [selectedTactics]);
 
   const handleAddTactic = (tactic: Tactic) => {
     if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
       const newTactics = [...selectedTactics, tactic];
       setSelectedTactics(newTactics);
-      if (addTactic) addTactic('Q1', tactic); // Type assertion removed
+      if (addTactic) addTactic('Q1', tactic);
     }
   };
 
@@ -68,133 +73,201 @@ export default function Q1Page() {
   const canComplete = selectedTactics.length > 0 && remainingBudget >= 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 p-4">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">Q1 Marketing Campaign</h1>
-        <p className="text-lg text-muted-foreground">
-          Plan your first quarter marketing initiatives.
-        </p>
-      </div>
+    <ImmersiveLayout
+      title="Q1 Marketing Campaign"
+      subtitle="Plan your first quarter marketing initiatives. Focus on building awareness and laying the groundwork for the year."
+      quarter="Quarter 1"
+    >
+      <div className="space-y-10 max-w-7xl mx-auto pb-20">
+        {/* Real-time Performance HUD */}
+        <EnhancedKPIDashboard 
+          context={context} 
+          quarter="Q1"
+          selectedTactics={selectedTactics}
+        />
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="tactics" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="tactics">Select Tactics</TabsTrigger>
-              <TabsTrigger value="plan">Your Plan</TabsTrigger>
-            </TabsList>
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <Tabs defaultValue="tactics" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 p-1 rounded-xl">
+                <TabsTrigger value="tactics" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300">Select Tactics</TabsTrigger>
+                <TabsTrigger value="plan" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300">Your Plan</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="tactics" className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                {SAMPLE_TACTICS.slice(0, 6).map((tactic: unknown) => (
-                  <Card key={(tactic as Tactic).id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="text-lg">{(tactic as Tactic).name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{(tactic as Tactic).category}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-2xl font-bold text-primary">
-                          ${(tactic as Tactic).cost?.toLocaleString() || 'N/A'}
-                        </span>
-                        <Button
-                          onClick={() => handleAddTactic(tactic as Tactic)}
-                          disabled={selectedTactics.some((t: Tactic) => t.id === (tactic as Tactic).id)}
-                        >
-                          {selectedTactics.some((t: Tactic) => t.id === (tactic as Tactic).id) ? 'Selected' : 'Add'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="plan" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Your Q1 Marketing Plan</h3>
-                <Badge variant="outline">
-                  {selectedTactics.length} tactics selected
-                </Badge>
-              </div>
-
-              {selectedTactics.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <div className="text-muted-foreground">
-                    <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h4 className="text-lg font-medium mb-2">No tactics selected</h4>
-                    <p>Switch to the &quot;Select Tactics&quot; tab to build your marketing plan.</p>
-                  </div>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {selectedTactics.map((tactic: Tactic) => (
-                    <Card key={tactic.id}>
-                      <CardContent className="flex justify-between items-center p-4">
-                        <div>
-                          <h4 className="font-medium">{tactic.name}</h4>
-                          <p className="text-sm text-muted-foreground">{tactic.category}</p>
+              <TabsContent value="tactics" className="mt-6 space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  {SAMPLE_TACTICS.slice(0, 6).map((tactic: unknown) => {
+                    const t = tactic as Tactic;
+                    const isSelected = selectedTactics.some((st: Tactic) => st.id === t.id);
+                    return (
+                      <GlassCard 
+                        key={t.id} 
+                        className={cn(
+                          "group transition-all duration-300",
+                          isSelected ? "border-primary/50 bg-primary/10" : "hover:border-primary/30"
+                        )}
+                      >
+                        <div className="p-6 space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-xl font-bold text-white group-hover:text-primary transition-colors">{t.name}</h4>
+                              <p className="text-xs font-black uppercase tracking-widest text-blue-200/40 mt-1">{t.category}</p>
+                              {(t as any).strategicRationale && (
+                                <p className="text-sm text-blue-100/60 mt-3 leading-relaxed border-l-2 border-primary/30 pl-3 italic">
+                                  {(t as any).strategicRationale}
+                                </p>
+                              )}
+                            </div>
+                            {isSelected && (
+                              <Badge className="bg-primary text-white border-none animate-pulse">Selected</Badge>
+                            )}
+                          </div>
+                          
+                          <div className="flex justify-between items-end pt-4">
+                            <div className="space-y-1">
+                              <p className="text-xs text-blue-200/40 uppercase font-bold tracking-tighter">Required Investment</p>
+                              <p className="text-2xl font-black text-white">${t.cost?.toLocaleString()}</p>
+                            </div>
+                            
+                            <Button
+                              onClick={() => handleAddTactic(t)}
+                              disabled={isSelected}
+                              className={cn(
+                                "rounded-full px-6 transition-all duration-300",
+                                isSelected 
+                                  ? "bg-white/10 text-white/40 cursor-not-allowed" 
+                                  : "bg-primary hover:bg-primary/80 text-white shadow-lg shadow-primary/20"
+                              )}
+                            >
+                              {isSelected ? 'In Strategy' : 'Add to Plan'}
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-medium">${tactic.cost?.toLocaleString() || 'N/A'}</span>
+                      </GlassCard>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="plan" className="mt-6 space-y-4">
+                {selectedTactics.length === 0 ? (
+                  <GlassCard className="p-20 text-center">
+                    <div className="max-w-xs mx-auto space-y-4">
+                      <Target className="h-16 w-16 mx-auto text-blue-200/20" />
+                      <h4 className="text-2xl font-bold text-white">Strategy Empty</h4>
+                      <p className="text-blue-200/40">Launch your Q1 initiatives by selecting tactics from the deployment matrix.</p>
+                    </div>
+                  </GlassCard>
+                ) : (
+                  <div className="space-y-4">
+                    {selectedTactics.map((tactic: Tactic) => (
+                      <GlassCard key={tactic.id} className="border-l-4 border-l-primary hover:bg-white/10">
+                        <div className="p-6 flex justify-between items-center">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                              <Megaphone className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="text-lg font-bold text-white">{tactic.name}</h4>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-[10px] uppercase border-white/10 text-blue-200/40">{tactic.category}</Badge>
+                                <span className="text-xs text-blue-200/40">•</span>
+                                <span className="text-xs font-bold text-primary">${tactic.cost?.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveTactic(tactic.id)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-full"
                           >
-                            Remove
+                            Abandon
                           </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+                      </GlassCard>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Q1 Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="font-medium">Budget</div>
-                  <div className="text-muted-foreground">
-                    ${usedBudget.toLocaleString()} / ${quarterBudget.toLocaleString()}
+          <div className="space-y-6">
+            <GlassCard className="border-primary/30">
+              <div className="p-8 space-y-8">
+                <h3 className="text-xl font-bold text-white border-b border-white/10 pb-4">Deployment Status</h3>
+                
+                <CMOMentor 
+                  selectedTactics={selectedTactics}
+                  remainingBudget={remainingBudget}
+                  currentQuarter="Q1"
+                  context={context}
+                />
+
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-blue-200/60 font-medium">Budget Utilization</span>
+                      <span className={cn("font-bold", remainingBudget < 0 ? "text-red-400" : "text-green-400")}>
+                        {((usedBudget / quarterBudget) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min((usedBudget / quarterBudget) * 100, 100)}%` }}
+                        className={cn(
+                          "h-full transition-colors duration-500",
+                          remainingBudget < 0 ? "bg-red-500" : "bg-primary"
+                        )}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span className="text-blue-200/40">${usedBudget.toLocaleString()} spent</span>
+                      <span className="text-blue-200/40">${quarterBudget.toLocaleString()} limit</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-tighter text-blue-200/40">Remaining</p>
+                      <p className={cn("text-xl font-black", remainingBudget < 0 ? "text-red-400" : "text-white")}>
+                        ${remainingBudget.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase tracking-tighter text-blue-200/40">Tactics</p>
+                      <p className="text-xl font-black text-white">{selectedTactics.length} Units</p>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="font-medium">Tactics</div>
-                  <div className="text-muted-foreground">
-                    {selectedTactics.length} selected
-                  </div>
-                </div>
+
+                <Button
+                  onClick={handleCompleteQuarter}
+                  disabled={!canComplete}
+                  className={cn(
+                    "w-full py-8 text-lg font-black rounded-2xl transition-all duration-300",
+                    canComplete 
+                      ? "bg-primary hover:bg-primary/80 text-white shadow-xl shadow-primary/20" 
+                      : "bg-white/5 text-blue-200/20 cursor-not-allowed border-white/5"
+                  )}
+                >
+                  Finalize Q1 Tactics
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+
+                {!canComplete && (
+                  <p className="text-center text-xs text-red-400/60 font-bold italic">
+                    {selectedTactics.length === 0 ? "Matrix requires at least 1 deployment" : "Budget threshold exceeded"}
+                  </p>
+                )}
               </div>
-
-              <Button
-                onClick={handleCompleteQuarter}
-                disabled={!canComplete}
-                className="w-full"
-                size="lg"
-              >
-                Complete Q1
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-
-              {!canComplete && (
-                <div className="text-sm text-muted-foreground">
-                  {selectedTactics.length === 0 && "• Select at least one tactic"}
-                  {remainingBudget < 0 && "• Budget exceeded"}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </GlassCard>
+          </div>
         </div>
       </div>
-    </div>
+      <ConfettiEffect trigger={canComplete && selectedTactics.length >= 3} />
+    </ImmersiveLayout>
   );
 }

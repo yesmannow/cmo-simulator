@@ -1,7 +1,13 @@
 import { Tactic, WildcardEvent } from './simMachine';
 
+export interface EnrichedTactic extends Tactic {
+  strategicRationale?: string;
+  marketingPrinciple?: string;
+  synergyTags?: string[];
+}
+
 // Sample tactics library for the simulation
-export const SAMPLE_TACTICS: Tactic[] = [
+export const SAMPLE_TACTICS: EnrichedTactic[] = [
   // Digital Marketing Tactics
   {
     id: 'digital-1',
@@ -15,6 +21,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 2,
       brandAwareness: 15,
     },
+    strategicRationale: "Social advertising allows for precise demographic targeting and rapid feedback loops, making it ideal for quick market entry.",
+    marketingPrinciple: "The Law of Focused Targeting: Advertising is most effective when it speaks directly to a specific audience segment rather than the mass market.",
+    synergyTags: ['paid', 'broad-reach', 'digital-footprint']
   },
   {
     id: 'digital-2',
@@ -28,6 +37,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 1,
       brandAwareness: 10,
     },
+    strategicRationale: "SEM captures high-intent users who are actively searching for solutions, leading to higher short-term conversion rates.",
+    marketingPrinciple: "Intent-Based Marketing: Capturing a customer at the moment of search is significantly more efficient than trying to create interest from scratch.",
+    synergyTags: ['paid', 'high-intent', 'conversion-focus']
   },
   {
     id: 'digital-3',
@@ -41,6 +53,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 5,
       brandAwareness: 20,
     },
+    strategicRationale: "Influencers provide social proof and access to niche communities that traditional ads often struggle to penetrate authentically.",
+    marketingPrinciple: "Social Proof Theory: Consumers are more likely to trust a recommendation from a peer or perceived authority than an direct brand message.",
+    synergyTags: ['social-proof', 'community', 'trust-builder']
   },
   
   // Content Marketing Tactics
@@ -56,6 +71,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 8,
       brandAwareness: 12,
     },
+    strategicRationale: "Building a hub of valuable information establishes your brand as a thought leader and builds long-term organic authority.",
+    marketingPrinciple: "Inbound Methodology: By providing value before asking for a sale, you build a sustainable pipeline of pre-educated leads.",
+    synergyTags: ['organic', 'educational', 'long-term-growth']
   },
   {
     id: 'content-2',
@@ -69,6 +87,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 6,
       brandAwareness: 18,
     },
+    strategicRationale: "Video is the most engaging medium for storytelling, helping to build an emotional connection with your audience.",
+    marketingPrinciple: "Multimedia Encoding: Information presented through both visual and auditory channels is retained longer and creates stronger brand recall.",
+    synergyTags: ['engagement', 'storytelling', 'emotional-connection']
   },
   {
     id: 'content-3',
@@ -82,6 +103,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 3,
       brandAwareness: 8,
     },
+    strategicRationale: "Sponsoring podcasts allows you to reach a captive audience in a high-trust, long-form environment.",
+    marketingPrinciple: "The Halo Effect: Aligning with a trusted voice allows your brand to inherit the credibility and loyalty associated with that influencer.",
+    synergyTags: ['voice', 'trust-builder', 'niche-reach']
   },
   
   // Traditional Marketing Tactics
@@ -97,6 +121,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 2,
       brandAwareness: 25,
     },
+    strategicRationale: "Television remains the gold standard for massive reach and building immediate brand legitimacy in the eyes of the general public.",
+    marketingPrinciple: "Signaling Theory: Massive investment in TV advertising signals to the market that a company is stable, successful, and reliable.",
+    synergyTags: ['mass-market', 'legitimacy', 'high-investment']
   },
   {
     id: 'traditional-2',
@@ -110,19 +137,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 1,
       brandAwareness: 8,
     },
-  },
-  {
-    id: 'traditional-3',
-    name: 'Radio Sponsorship',
-    category: 'traditional',
-    cost: 25000,
-    timeRequired: 10,
-    expectedImpact: {
-      revenue: 40000,
-      marketShare: 1,
-      customerSatisfaction: 1,
-      brandAwareness: 6,
-    },
+    strategicRationale: "Print allows for high-quality visual representation and targeted reach in specific industry or lifestyle publications.",
+    marketingPrinciple: "The Tangibility Effect: Physical media is often perceived as more permanent and trustworthy than ephemeral digital advertisements.",
+    synergyTags: ['tangible', 'niche-traditional', 'authoritative']
   },
   
   // Events & Experiences
@@ -138,6 +155,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 10,
       brandAwareness: 15,
     },
+    strategicRationale: "Trade shows facilitate face-to-face networking and immediate lead qualification in a highly concentrated market environment.",
+    marketingPrinciple: "The Propinquity Effect: Physical proximity and direct interaction lead to stronger relationship building and faster trust acquisition.",
+    synergyTags: ['b2b-focus', 'networking', 'direct-sales']
   },
   {
     id: 'events-2',
@@ -151,19 +171,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 15,
       brandAwareness: 12,
     },
-  },
-  {
-    id: 'events-3',
-    name: 'Product Launch Event',
-    category: 'events',
-    cost: 150000,
-    timeRequired: 90,
-    expectedImpact: {
-      revenue: 250000,
-      marketShare: 6,
-      customerSatisfaction: 8,
-      brandAwareness: 20,
-    },
+    strategicRationale: "Exclusive events for existing customers drive retention and turn satisfied users into vocal brand advocates.",
+    marketingPrinciple: "Experiential Marketing: Creating a positive physical experience with a brand builds a deeper neurological connection than passive observation.",
+    synergyTags: ['retention', 'advocacy', 'experience-focus']
   },
   
   // Partnerships
@@ -179,6 +189,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 6,
       brandAwareness: 14,
     },
+    strategicRationale: "Partnering with a non-competitive brand allows you to access a pre-vetted audience with high credibility.",
+    marketingPrinciple: "The Co-Branding Effect: Two brands working together create a '1+1=3' effect by combining their unique strengths and audience trust.",
+    synergyTags: ['audience-sharing', 'credibility', 'co-marketing']
   },
   {
     id: 'partnerships-2',
@@ -192,19 +205,9 @@ export const SAMPLE_TACTICS: Tactic[] = [
       customerSatisfaction: 4,
       brandAwareness: 10,
     },
-  },
-  {
-    id: 'partnerships-3',
-    name: 'Technology Integration Partnership',
-    category: 'partnerships',
-    cost: 80000,
-    timeRequired: 70,
-    expectedImpact: {
-      revenue: 160000,
-      marketShare: 5,
-      customerSatisfaction: 12,
-      brandAwareness: 8,
-    },
+    strategicRationale: "Placing your product in physical or digital retail environments provides immediate distribution and 'at-the-shelf' visibility.",
+    marketingPrinciple: "Availability Heuristic: Customers are more likely to buy the brands that are most easily accessible at the moment of need.",
+    synergyTags: ['distribution', 'visibility', 'sales-enablement']
   },
 ];
 
@@ -260,160 +263,10 @@ export const SAMPLE_WILDCARDS: WildcardEvent[] = [
       },
     ],
   },
-  {
-    id: 'wildcard-2',
-    type: 'opportunity',
-    title: 'Celebrity Endorsement Opportunity',
-    description: 'A popular celebrity has expressed interest in endorsing your brand.',
-    choices: [
-      {
-        id: 'opportunity-2-decline',
-        title: 'Decline the Offer',
-        description: 'Pass on the opportunity to maintain current strategy.',
-        cost: 0,
-        timeRequired: 0,
-        impact: {
-          revenue: 0,
-          profit: 0,
-          marketShare: 0,
-          customerSatisfaction: 0,
-          brandAwareness: 0,
-        },
-      },
-      {
-        id: 'opportunity-2-basic',
-        title: 'Basic Endorsement Deal',
-        description: 'Sign a standard endorsement contract.',
-        cost: 150000,
-        timeRequired: 30,
-        impact: {
-          revenue: 300000,
-          profit: 150000,
-          marketShare: 8,
-          customerSatisfaction: 5,
-          brandAwareness: 25,
-        },
-      },
-      {
-        id: 'opportunity-2-premium',
-        title: 'Premium Partnership',
-        description: 'Create a comprehensive partnership with co-created content.',
-        cost: 300000,
-        timeRequired: 60,
-        impact: {
-          revenue: 500000,
-          profit: 200000,
-          marketShare: 12,
-          customerSatisfaction: 8,
-          brandAwareness: 35,
-        },
-      },
-    ],
-  },
-  {
-    id: 'wildcard-3',
-    type: 'market_shift',
-    title: 'Economic Downturn',
-    description: 'A sudden economic downturn has affected consumer spending patterns.',
-    choices: [
-      {
-        id: 'downturn-3-maintain',
-        title: 'Maintain Current Strategy',
-        description: 'Continue with planned marketing activities.',
-        cost: 0,
-        timeRequired: 0,
-        impact: {
-          revenue: -100000,
-          profit: -100000,
-          marketShare: -3,
-          customerSatisfaction: -2,
-          brandAwareness: -5,
-        },
-      },
-      {
-        id: 'downturn-3-pivot',
-        title: 'Pivot to Value Messaging',
-        description: 'Shift marketing focus to value and affordability.',
-        cost: 50000,
-        timeRequired: 40,
-        impact: {
-          revenue: -30000,
-          profit: -80000,
-          marketShare: 2,
-          customerSatisfaction: 5,
-          brandAwareness: 0,
-        },
-      },
-      {
-        id: 'downturn-3-aggressive',
-        title: 'Aggressive Market Capture',
-        description: 'Increase marketing spend to capture market share from competitors.',
-        cost: 200000,
-        timeRequired: 50,
-        impact: {
-          revenue: 100000,
-          profit: -100000,
-          marketShare: 8,
-          customerSatisfaction: 3,
-          brandAwareness: 15,
-        },
-      },
-    ],
-  },
-  {
-    id: 'wildcard-4',
-    type: 'competitor_action',
-    title: 'Major Competitor Product Launch',
-    description: 'Your main competitor has launched a revolutionary product that threatens your market position.',
-    choices: [
-      {
-        id: 'competitor-4-ignore',
-        title: 'Focus on Strengths',
-        description: 'Double down on your existing product advantages.',
-        cost: 25000,
-        timeRequired: 20,
-        impact: {
-          revenue: -50000,
-          profit: -25000,
-          marketShare: -5,
-          customerSatisfaction: 2,
-          brandAwareness: 0,
-        },
-      },
-      {
-        id: 'competitor-4-counter',
-        title: 'Counter-Launch Campaign',
-        description: 'Launch an aggressive campaign highlighting your competitive advantages.',
-        cost: 100000,
-        timeRequired: 45,
-        impact: {
-          revenue: 50000,
-          profit: -50000,
-          marketShare: 0,
-          customerSatisfaction: 0,
-          brandAwareness: 12,
-        },
-      },
-      {
-        id: 'competitor-4-innovate',
-        title: 'Accelerate Innovation',
-        description: 'Fast-track your own product development and launch.',
-        cost: 250000,
-        timeRequired: 80,
-        impact: {
-          revenue: 200000,
-          profit: -50000,
-          marketShare: 6,
-          customerSatisfaction: 10,
-          brandAwareness: 18,
-        },
-      },
-    ],
-  },
 ];
 
 // Helper functions to get tactics and wildcards
-export function getTacticsByCategory(category: Tactic['category']): Tactic[] {
+export function getTacticsByCategory(category: Tactic['category']): EnrichedTactic[] {
   return SAMPLE_TACTICS.filter(tactic => tactic.category === category);
 }
 
@@ -422,7 +275,7 @@ export function getRandomWildcard(): WildcardEvent {
   return SAMPLE_WILDCARDS[randomIndex];
 }
 
-export function getTacticById(id: string): Tactic | undefined {
+export function getTacticById(id: string): EnrichedTactic | undefined {
   return SAMPLE_TACTICS.find(tactic => tactic.id === id);
 }
 

@@ -1,35 +1,24 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { logger } from '@/lib/logger';
-import {
-  Calendar,
-  Target,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Clock,
-  Zap,
-  AlertTriangle,
-  Briefcase
-} from 'lucide-react';
 import { useSimulation } from '@/hooks/useSimulation';
-import { KPIDashboard } from '@/components/simulation/KPIDashboard';
-import { TacticCard } from '@/components/simulation/TacticCard';
-import { BudgetTimeAllocator } from '@/components/simulation/BudgetTimeAllocator';
+import { SAMPLE_TACTICS, getTacticsByCategory } from '@/lib/tactics';
+import { Tactic } from '@/lib/simMachine';
+import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { EnhancedKPIDashboard } from '@/components/simulation/EnhancedKPIDashboard';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Target, Megaphone, ArrowRight, Zap, Users, Briefcase } from 'lucide-react';
+import { CMOMentor } from '@/components/simulation/CMOMentor';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { TalentMarketModal } from '@/components/simulation/TalentMarketModal';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
-import { getTacticsByCategory } from '@/lib/tactics';
 import { getRandomTalentPool } from '@/lib/talentMarket';
-import { Tactic } from '@/lib/simMachine';
 import { TalentCandidate } from '@/lib/talentMarket';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
@@ -38,298 +27,287 @@ export default function Q2Page() {
   const router = useRouter();
   const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
 
-  const [selectedTactics, setSelectedTactics] = useState(context.quarters.Q2.tactics);
-  const [availableTactics] = useState(getTacticsByCategory('digital'));
+  const [selectedTactics, setSelectedTactics] = useState<Tactic[]>(context.quarters.Q2.tactics || []);
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [talentCandidates, setTalentCandidates] = useState<TalentCandidate[]>([]);
   const [showTalentMarket, setShowTalentMarket] = useState(false);
   const [hasTriggeredTalentMarket, setHasTriggeredTalentMarket] = useState(false);
-  const [allocations, setAllocations] = useState([
-    { id: 'digital', name: 'Digital Marketing', budgetAmount: 0, timeAmount: 0, color: '#3b82f6' },
-    { id: 'content', name: 'Content Creation', budgetAmount: 0, timeAmount: 0, color: '#10b981' },
-    { id: 'traditional', name: 'Traditional Media', budgetAmount: 0, timeAmount: 0, color: '#f59e0b' },
-    { id: 'events', name: 'Events & Experiences', budgetAmount: 0, timeAmount: 0, color: '#8b5cf6' },
-    { id: 'partnerships', name: 'Partnerships', budgetAmount: 0, timeAmount: 0, color: '#ef4444' },
-  ]);
 
-  const quarterBudget = Math.floor(context.totalBudget / 4);
-  const quarterTime = 200;
-
-  const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.cost, 0);
-  const usedTime = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + tactic.timeRequired, 0);
+  const quarterBudget = Math.floor((context?.totalBudget || 500000) / 4);
+  const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + (tactic.cost || 0), 0);
   const remainingBudget = quarterBudget - usedBudget;
-  const remainingTime = quarterTime - usedTime;
 
   useEffect(() => {
-    const newAllocations = allocations.map(allocation => {
-      const categoryTactics = selectedTactics.filter((t: Tactic) => t.category === allocation.id);
-      const budgetAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + t.cost, 0);
-      const timeAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + t.timeRequired, 0);
-      return { ...allocation, budgetAmount, timeAmount };
-    });
-    setAllocations(newAllocations);
-  }, [selectedTactics]);
-
-  const handleAddTactic = (tactic: Tactic) => {
-    if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
-      const newTactics = [...selectedTactics, tactic];
-      setSelectedTactics(newTactics);
-      addTactic('Q2', tactic);
+    // Check for random wildcard trigger
+    if (!showWildcardModal && !currentWildcard && Math.random() > 0.7) {
+      handleTriggerWildcard();
     }
-  };
-
-  const handleRemoveTactic = (tacticId: string) => {
-    const newTactics = selectedTactics.filter((t: Tactic) => t.id !== tacticId);
-    setSelectedTactics(newTactics);
-    removeTactic('Q2', tacticId);
-  };
+  }, []);
 
   const handleTriggerWildcard = () => {
     const wildcard = getEnhancedWildcardForQuarter(context, 'Q2');
     if (!wildcard) return;
     setCurrentWildcard(wildcard);
     setShowWildcardModal(true);
-    triggerWildcard('Q2', wildcard);
+    if (triggerWildcard) triggerWildcard('Q2', wildcard);
   };
 
   const handleWildcardResponse = (choiceId: string) => {
-    if (currentWildcard) {
+    if (currentWildcard && respondToWildcard) {
       const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
       respondToWildcard('Q2', currentWildcard, choiceId, impact);
       setShowWildcardModal(false);
-      setCurrentWildcard(null);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
     }
   };
 
   const handleOpenTalentMarket = () => {
-    const candidates = getRandomTalentPool(4);
-    setTalentCandidates(candidates);
+    setTalentCandidates(getRandomTalentPool(3));
     setShowTalentMarket(true);
     setHasTriggeredTalentMarket(true);
   };
 
-  const handleHireTalent = (candidate: TalentCandidate) => {
-    // Integrate with simulation state machine
-    // This should update the simulation state with the hired candidate
-    logger.debug('Hired candidate', { candidate });
-    setShowTalentMarket(false);
+  const handleAddTactic = (tactic: Tactic) => {
+    if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
+      const newTactics = [...selectedTactics, tactic];
+      setSelectedTactics(newTactics);
+      if (addTactic) addTactic('Q2', tactic);
+    }
+  };
+
+  const handleRemoveTactic = (tacticId: string) => {
+    const newTactics = selectedTactics.filter((t: Tactic) => t.id !== tacticId);
+    setSelectedTactics(newTactics);
+    if (removeTactic) removeTactic('Q2', tacticId);
   };
 
   const handleCompleteQuarter = () => {
-    completeQuarter('Q2');
-    setShowConfetti(true);
-    setTimeout(() => {
-      router.push('/sim/q3');
-    }, 3000);
+    if (completeQuarter) completeQuarter('Q2');
+    router.push('/sim/q3');
   };
 
-  const canComplete = selectedTactics.length > 0 && remainingBudget >= 0 && remainingTime >= 0;
+  const canComplete = selectedTactics.length > 0 && remainingBudget >= 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      <ConfettiEffect trigger={showConfetti} />
+    <ImmersiveLayout
+      title="Q2 Campaign Expansion"
+      subtitle="Scaling operations and responding to market shifts. Quality execution is paramount this quarter."
+      quarter="Quarter 2"
+    >
+      <div className="space-y-10 max-w-7xl mx-auto pb-20">
+        <EnhancedKPIDashboard 
+          context={context} 
+          quarter="Q2"
+          selectedTactics={selectedTactics}
+        />
 
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            <Calendar className="h-4 w-4 mr-2" />
-            Quarter 2
-          </Badge>
-        </div>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          Q2 Marketing Campaign
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Build on Q1 momentum. Optimize your strategy based on early results and market feedback.
-        </p>
-      </div>
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Action Center Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <GlassCard className="border-primary/20 bg-primary/5">
+              <div className="p-6 space-y-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  Strategic Actions
+                </h3>
+                
+                <CMOMentor 
+                  selectedTactics={selectedTactics}
+                  remainingBudget={remainingBudget}
+                  currentQuarter="Q2"
+                  context={context}
+                />
 
-      <KPIDashboard context={context} quarter="Q2" showQuarterlyBreakdown={true} />
-
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="tactics" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="tactics">Select Tactics</TabsTrigger>
-              <TabsTrigger value="plan">Your Plan</TabsTrigger>
-              <TabsTrigger value="allocations">Budget & Time</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="tactics" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Available Marketing Tactics</h3>
-                <div className="flex gap-2">
-                  <Button
+                <div className="space-y-4">
+                  <Button 
+                    className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white justify-start gap-3 h-14"
                     onClick={handleOpenTalentMarket}
-                    variant="outline"
-                    className="flex items-center gap-2"
                     disabled={hasTriggeredTalentMarket}
                   >
-                    <Briefcase className="h-4 w-4" />
-                    {hasTriggeredTalentMarket ? 'Talent Hired' : 'Hire Talent'}
+                    <Users className="h-5 w-5 text-blue-400" />
+                    <div className="text-left">
+                      <p className="text-sm font-bold">Acquire Talent</p>
+                      <p className="text-[10px] text-blue-200/40 uppercase">Boost team morale</p>
+                    </div>
                   </Button>
-                  <Button
+
+                  <Button 
+                    className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white justify-start gap-3 h-14"
                     onClick={handleTriggerWildcard}
-                    variant="outline"
-                    className="flex items-center gap-2"
+                    disabled={showWildcardModal}
                   >
-                    <Zap className="h-4 w-4" />
-                    Trigger Market Event
+                    <Briefcase className="h-5 w-5 text-amber-400" />
+                    <div className="text-left">
+                      <p className="text-sm font-bold">Executive Briefing</p>
+                      <p className="text-[10px] text-blue-200/40 uppercase">Market Intelligence</p>
+                    </div>
                   </Button>
                 </div>
               </div>
+            </GlassCard>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                {availableTactics.map((tactic) => (
-                  <TacticCard
-                    key={tactic.id}
-                    tactic={tactic}
-                    onAdd={() => handleAddTactic(tactic)}
-                    isSelected={selectedTactics.some((t: Tactic) => t.id === tactic.id)}
-                    showAddButton={true}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="plan" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Your Q2 Marketing Plan</h3>
-                <Badge variant="outline">
-                  {selectedTactics.length} tactics selected
-                </Badge>
-              </div>
-
-              {selectedTactics.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <div className="text-muted-foreground">
-                    <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <h4 className="text-lg font-medium mb-2">No tactics selected</h4>
-                    <p>Switch to the &quot;Select Tactics&quot; tab to build your marketing plan.</p>
-                  </div>
-                </Card>
-              ) : (
+            <GlassCard className="border-primary/30">
+              <div className="p-6 space-y-6">
+                <h3 className="text-lg font-bold text-white">Resource Allocation</h3>
                 <div className="space-y-4">
-                  {selectedTactics.map((tactic) => (
-                    <TacticCard
-                      key={tactic.id}
-                      tactic={tactic}
-                      onRemove={() => handleRemoveTactic(tactic.id)}
-                      showRemoveButton={true}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="allocations" className="space-y-4">
-              <h3 className="text-lg font-semibold">Resource Allocation</h3>
-              <BudgetTimeAllocator
-                totalBudget={quarterBudget}
-                totalTime={quarterTime}
-                allocations={allocations}
-                onAllocationsChange={setAllocations}
-                remainingBudget={remainingBudget}
-                remainingTime={remainingTime}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Q2 Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <div className="font-medium">Budget</div>
-                  <div className="text-muted-foreground">
-                    ${usedBudget.toLocaleString()} / ${quarterBudget.toLocaleString()}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold uppercase tracking-tighter">
+                      <span className="text-blue-200/60">Budget Depth</span>
+                      <span className={remainingBudget < 0 ? "text-red-400" : "text-green-400"}>
+                        {((usedBudget / quarterBudget) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min((usedBudget / quarterBudget) * 100, 100)}%` }}
+                        className={cn("h-full", remainingBudget < 0 ? "bg-red-500" : "bg-primary")}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="font-medium">Time</div>
-                  <div className="text-muted-foreground">
-                    {usedTime}h / {quarterTime}h
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Tactics</div>
-                  <div className="text-muted-foreground">
-                    {selectedTactics.length} selected
-                  </div>
-                </div>
-                <div>
-                  <div className="font-medium">Events</div>
-                  <div className="text-muted-foreground">
-                    {context.quarters.Q2.wildcardEvents.length} triggered
-                  </div>
-                </div>
-              </div>
 
-              <Button
-                onClick={handleCompleteQuarter}
-                disabled={!canComplete}
-                className="w-full"
-                size="lg"
-              >
-                Complete Q2
-              </Button>
-
-              {!canComplete && (
-                <div className="text-sm text-muted-foreground">
-                  {selectedTactics.length === 0 && "• Select at least one tactic"}
-                  {remainingBudget < 0 && "• Budget exceeded"}
-                  {remainingTime < 0 && "• Time allocation exceeded"}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Your Strategy</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div>
-                <span className="font-medium">Target:</span> {context.strategy.targetAudience}
-              </div>
-              <div>
-                <span className="font-medium">Position:</span> {context.strategy.brandPositioning}
-              </div>
-              <div>
-                <span className="font-medium">Channels:</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {context.strategy.primaryChannels?.map((channel: string) => (
-                    <Badge key={channel} variant="secondary" className="text-xs">
-                      {channel}
-                    </Badge>
-                  ))}
+                <div className="pt-4 border-t border-white/10">
+                  <Button
+                    onClick={handleCompleteQuarter}
+                    disabled={!canComplete}
+                    className={cn(
+                      "w-full py-6 font-black rounded-xl",
+                      canComplete ? "bg-primary text-white" : "bg-white/5 text-blue-200/20"
+                    )}
+                  >
+                    Seal Q2 Strategy
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </GlassCard>
+          </div>
+
+          {/* Main Deployment Matrix */}
+          <div className="lg:col-span-3">
+            <Tabs defaultValue="available" className="w-full">
+              <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl mb-6">
+                <TabsTrigger value="available" className="px-8 data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all">Deployment Matrix</TabsTrigger>
+                <TabsTrigger value="active" className="px-8 data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all">Active Tactics ({selectedTactics.length})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="available" className="space-y-6 mt-0">
+                <div className="grid md:grid-cols-2 gap-4">
+                  {SAMPLE_TACTICS.slice(4, 10).map((tactic: Tactic) => {
+                    const isSelected = selectedTactics.some(st => st.id === tactic.id);
+                    return (
+                      <GlassCard 
+                        key={tactic.id} 
+                        className={cn(
+                          "transition-all duration-300",
+                          isSelected ? "border-primary/50 bg-primary/10" : ""
+                        )}
+                      >
+                        <div className="p-6 space-y-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="text-lg font-bold text-white">{tactic.name}</h4>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">{tactic.category}</p>
+                            </div>
+                            {isSelected && <Badge className="bg-primary text-white border-none">Active</Badge>}
+                          </div>
+                          
+                          {(tactic as any).strategicRationale && (
+                            <p className="text-sm text-blue-100/60 mt-3 leading-relaxed border-l-2 border-primary/30 pl-3 italic">
+                              {(tactic as any).strategicRationale}
+                            </p>
+                          )}
+
+                          <div className="flex justify-between items-end pt-4">
+                            <div className="space-y-1">
+                              <p className="text-[10px] text-blue-100/30 uppercase font-bold">Cost</p>
+                              <p className="text-xl font-black text-white">${tactic.cost.toLocaleString()}</p>
+                            </div>
+                            <Button
+                              onClick={() => handleAddTactic(tactic)}
+                              disabled={isSelected}
+                              size="sm"
+                              className={cn(
+                                "rounded-full px-6",
+                                isSelected ? "bg-white/10 text-white/20" : "bg-primary text-white"
+                              )}
+                            >
+                              {isSelected ? 'Deployed' : 'Deploy'}
+                            </Button>
+                          </div>
+                        </div>
+                      </GlassCard>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="active" className="mt-0">
+                {selectedTactics.length === 0 ? (
+                  <GlassCard className="p-20 text-center">
+                    <Megaphone className="h-16 w-16 mx-auto text-white/5 mb-4" />
+                    <p className="text-blue-100/30 font-bold uppercase tracking-widest text-sm">No Tactical Units Deployed</p>
+                  </GlassCard>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedTactics.map(tactic => (
+                      <GlassCard key={tactic.id} className="border-l-4 border-primary">
+                        <div className="p-5 flex justify-between items-center">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center font-black text-primary text-xs italic">
+                              {tactic.category.substring(0,2).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-white">{tactic.name}</h4>
+                              <p className="text-[10px] text-blue-100/40 font-bold uppercase">${tactic.cost.toLocaleString()} • Q2 Execution</p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            className="text-red-400 hover:bg-red-400/10 hover:text-red-300 rounded-full"
+                            onClick={() => handleRemoveTactic(tactic.id)}
+                          >
+                            Decommission
+                          </Button>
+                        </div>
+                      </GlassCard>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
 
-      <WildcardModal
-        wildcard={currentWildcard}
-        isOpen={showWildcardModal}
-        onClose={() => setShowWildcardModal(false)}
-        onChoose={handleWildcardResponse}
-      />
-
-      <TalentMarketModal
-        candidates={talentCandidates}
-        isOpen={showTalentMarket}
-        onClose={() => setShowTalentMarket(false)}
-        onHire={handleHireTalent}
-        availableBudget={remainingBudget}
-      />
-    </div>
+      {/* Specialty Modals */}
+      <AnimatePresence>
+        {showWildcardModal && currentWildcard && (
+          <WildcardModal
+             wildcard={currentWildcard}
+             isOpen={showWildcardModal}
+             onChoose={handleWildcardResponse}
+             onClose={() => setShowWildcardModal(false)}
+          />
+        )}
+        {showTalentMarket && (
+          <TalentMarketModal
+            candidates={talentCandidates}
+            isOpen={showTalentMarket}
+            onHire={(candidate) => {
+              // Logic for hiring talent
+              setShowTalentMarket(false);
+            }}
+            availableBudget={remainingBudget}
+            onClose={() => setShowTalentMarket(false)}
+          />
+        )}
+      </AnimatePresence>
+      <ConfettiEffect trigger={showConfetti} />
+    </ImmersiveLayout>
   );
 }
