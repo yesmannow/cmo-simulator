@@ -35,8 +35,7 @@ export function calculateAdvancedROI(context: ROIContext): ROIResult {
     customerAcquisitions,
     avgCLV,
     retentionRate,
-    brandEquity,
-    industry
+    brandEquity
   } = context;
 
   // Immediate ROI
@@ -162,4 +161,3 @@ export function calculateROIEfficiency(
   if (spend === 0) return 0;
   return (roi / 100) * spend; // Return per dollar
 }
-

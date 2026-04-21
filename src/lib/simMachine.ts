@@ -1,5 +1,5 @@
 import { createMachine, assign } from 'xstate';
-import { TalentCandidate, BigBetOption, calculateTalentImpact, calculateBigBetOutcome } from './talentMarket';
+import { TalentCandidate, BigBetOption } from './talentMarket';
 
 import { runSimulationTick, initializeSimulationState } from '../engine';
 import { SimulationState, Channel, PlayerInput, MarketConditions } from '../types/engine';
@@ -14,6 +14,8 @@ export interface SimulationContext {
 
   // Strategic decisions
   strategy: {
+    companyName?: string;
+    guidedDemo?: boolean;
     targetAudience?: string;
     brandPositioning?: string;
     primaryChannels?: string[];
@@ -158,7 +160,7 @@ export interface SimulationResults {
     brandAwareness: number;
   };
   quarterlyBreakdown: Record<string, QuarterData>;
-  strategicDecisions: any[];
+  strategicDecisions: unknown[];
   wildcardEvents: WildcardEvent[];
   recommendations: string[];
   score: number;
@@ -282,9 +284,7 @@ export const simulationMachine = createMachine({
     idle: {
       on: {
         HYDRATE_CONTEXT: {
-          actions: assign(({ event }: any) => ({
-            ...event.context
-          })),
+          actions: assign(({ event }) => event.type === 'HYDRATE_CONTEXT' ? event.context : {}),
         },
         START_SIMULATION: {
           target: 'strategySession',
@@ -339,7 +339,6 @@ export const simulationMachine = createMachine({
           guard: ({ event }) => event.quarter === 'Q1',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q1.tactics.find(t => t.id === event.tacticId);
               return {
                 ...context.quarters,
                 Q1: {
@@ -453,7 +452,6 @@ export const simulationMachine = createMachine({
           guard: ({ event }) => event.quarter === 'Q2',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q2.tactics.find(t => t.id === event.tacticId);
               return {
                 ...context.quarters,
                 Q2: {
@@ -567,7 +565,6 @@ export const simulationMachine = createMachine({
           guard: ({ event }) => event.quarter === 'Q3',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q3.tactics.find(t => t.id === event.tacticId);
               return {
                 ...context.quarters,
                 Q3: {
@@ -703,7 +700,6 @@ export const simulationMachine = createMachine({
           guard: ({ event }) => event.quarter === 'Q4',
           actions: assign({
             quarters: ({ context, event }) => {
-              const tactic = context.quarters.Q4.tactics.find(t => t.id === event.tacticId);
               return {
                 ...context.quarters,
                 Q4: {
@@ -973,12 +969,6 @@ export function processQuarterAdvance(
   };
 
   return { newEngineState, newQuarterData, newKpis };
-}
-
-function calculateQuarterResults(quarter: QuarterData, currentKPIs: SimulationContext['kpis']) {
-  // Legacy fallback (should ideally not be called since we are overriding COMPLETE_QUARTER, 
-  // but kept to prevent breaking other UI usages that might import it directly)
-  return quarter.results;
 }
 
 function calculateFinalResults(context: SimulationContext): SimulationResults {

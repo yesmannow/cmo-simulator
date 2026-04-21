@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { BrainCircuit, MessageSquare, Info, AlertOctagon, TrendingUp, Zap, RadioReceiver } from 'lucide-react';
+import { BrainCircuit, Info, AlertOctagon, TrendingUp, Zap, RadioReceiver } from 'lucide-react';
 import { Tactic, SimulationContext, processQuarterAdvance } from '@/lib/simMachine';
 
 import { cn } from '@/lib/utils';
@@ -26,7 +26,7 @@ export function CMOMentor({ selectedTactics, remainingBudget, currentQuarter, co
     }, currentQuarter as 'Q1' | 'Q2' | 'Q3' | 'Q4');
   }, [context, currentQuarter, selectedTactics]);
 
-  const synergy = useMemo(() => 1.0, [selectedTactics]);
+  const synergy = 1.0;
   
   const advice = useMemo(() => {
     if (selectedTactics.length === 0) {
@@ -50,7 +50,7 @@ export function CMOMentor({ selectedTactics, remainingBudget, currentQuarter, co
       const rois = predictiveState.newEngineState?.results?.channelRoi || {};
       
       // Check for Saturation (Low ROI despite spend)
-      const saturatedChannels = Object.entries(rois).filter(([channel, roi]) => (roi as number) > 0 && (roi as number) < 50);
+      const saturatedChannels = Object.entries(rois).filter(([, roi]) => roi > 0 && roi < 50);
       if (saturatedChannels.length > 0) {
         return {
           title: "Structural Saturation Detected",
@@ -61,7 +61,7 @@ export function CMOMentor({ selectedTactics, remainingBudget, currentQuarter, co
       }
 
       // Check for Synergy Bonus Check
-      const hasSynergy = Object.values(rois).reduce((a: any, b: any) => a + b, 0) > 0 && synergy > 1.2;
+      const hasSynergy = Object.values(rois).reduce((a, b) => a + b, 0) > 0 && synergy > 1.2;
       if (hasSynergy) {
         return {
           title: "Optimal Synaptic Chain",
@@ -191,7 +191,7 @@ export function CMOMentor({ selectedTactics, remainingBudget, currentQuarter, co
               className="space-y-1"
             >
               <h3 className="text-xl font-bold text-white tracking-tight">{advice.title}</h3>
-              <p className="text-sm text-slate-300/80 leading-relaxed font-medium">"{advice.message}"</p>
+              <p className="text-sm text-slate-300/80 leading-relaxed font-medium">{advice.message}</p>
             </motion.div>
           </AnimatePresence>
         </div>

@@ -96,6 +96,19 @@ export default function StrategySessionPage() {
 
   const canComplete = formData.targetAudience && formData.brandPositioning && formData.primaryChannels.length > 0;
 
+  useEffect(() => {
+    if (
+      context.strategy.guidedDemo &&
+      context.strategy.targetAudience &&
+      context.strategy.brandPositioning &&
+      context.strategy.primaryChannels?.length
+    ) {
+      startSimulation();
+      completeStrategySession();
+      router.replace('/sim/q1');
+    }
+  }, [completeStrategySession, context.strategy, router, startSimulation]);
+
   return (
     <ImmersiveLayout
       title="Build Your Company"

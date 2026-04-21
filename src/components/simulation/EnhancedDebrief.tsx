@@ -3,8 +3,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Area,
   AreaChart,
@@ -18,14 +16,12 @@ import {
 } from "recharts";
 import {
   Download,
+  Save,
   TrendingUp,
   Target,
   Users,
-  DollarSign,
   Award,
   Zap,
-  Calendar,
-  Share2,
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
@@ -38,15 +34,18 @@ import {
 } from "lucide-react";
 import { SimulationContext } from "@/lib/simMachine";
 import CountUp from "react-countup";
+import { buildTeachingReport } from "@/lib/simulationInsights";
 
 interface EnhancedDebriefProps {
   context: SimulationContext;
   onExportPDF: () => void;
+  onSaveRun: () => void;
+  saveDisabled?: boolean;
   onRestart: () => void;
   onShare?: () => void;
 }
 
-export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: EnhancedDebriefProps) {
+export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled = false, onRestart }: EnhancedDebriefProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Calculate metrics
@@ -69,6 +68,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
 
   const overallScore = Math.round((totalRevenue / 2000000) * 50 + finalMarketShare * 2);
   const gradeInfo = getGrade(overallScore);
+  const report = buildTeachingReport(context);
 
   // Phase 3 Calculations
   // 1. Archetype Assignment
@@ -128,6 +128,35 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
   const turningPoint = getTurningPoint();
 
   const slides = [
+    {
+      id: "teaching-report",
+      title: "Teaching + Proof Report",
+      subtitle: "Structured debrief for growth leaders",
+      content: (
+        <div className="grid md:grid-cols-2 gap-6 py-4">
+          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Outcome</p>
+            <p className="text-slate-100">{report.outcome}</p>
+          </div>
+          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Why</p>
+            <p className="text-slate-100">{report.why}</p>
+          </div>
+          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Tradeoff</p>
+            <p className="text-slate-100">{report.tradeoff}</p>
+          </div>
+          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
+            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Recommended Next Move</p>
+            <p className="text-slate-100">{report.nextMove}</p>
+          </div>
+          <div className="md:col-span-2 p-6 bg-blue-500/10 rounded-2xl border border-blue-400/20">
+            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Growth Leader Takeaway</p>
+            <p className="text-blue-100">{report.growthLeaderTakeaway}</p>
+          </div>
+        </div>
+      ),
+    },
     {
       id: "executive-summary",
       title: "Executive Summary",
@@ -237,7 +266,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
             <archetype.icon className="w-20 h-20 text-blue-400 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
             <h3 className="text-4xl font-black text-white uppercase tracking-widest text-center">{archetype.name}</h3>
             <p className="text-blue-200/60 mt-4 text-center max-w-lg text-lg italic leading-relaxed">
-              "{archetype.desc}"
+              {archetype.desc}
             </p>
           </div>
           
@@ -289,7 +318,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
                <h3 className="text-2xl font-bold text-white mb-2">Momentum Spike in {turningPoint.quarter}</h3>
                <p className="text-emerald-100/70 leading-relaxed mb-6">{turningPoint.insight}</p>
                <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5 border-l-emerald-500 border-l-4">
-                 <p className="text-sm text-slate-300 italic">"{turningPoint.lesson}"</p>
+                 <p className="text-sm text-slate-300 italic">{turningPoint.lesson}</p>
                </div>
              </div>
           </div>
@@ -307,7 +336,7 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
              <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-4">Strategic Recommendation</h3>
              
              <p className="text-lg text-indigo-100/80 leading-relaxed max-w-xl mx-auto">
-               "{archetype.advice}"
+               {archetype.advice}
              </p>
              
              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
@@ -390,6 +419,14 @@ export function EnhancedDebrief({ context, onExportPDF, onRestart, onShare }: En
             </div>
 
             <div className="flex gap-4">
+               <Button
+                onClick={onSaveRun}
+                disabled={saveDisabled}
+                variant="outline"
+                className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2 disabled:opacity-40"
+               >
+                <Save className="w-4 h-4" /> Save Run
+               </Button>
                <Button onClick={onExportPDF} variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2">
                 <Download className="w-4 h-4" /> Export Briefing
                </Button>

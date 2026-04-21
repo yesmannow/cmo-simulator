@@ -87,7 +87,7 @@ export function ExecutivePressure({ currentQuarter, context }: ExecutivePressure
       borderColor: "border-red-500/30"
     };
 
-  }, [currentQuarter, context.kpis]);
+  }, [currentQuarter, context.kpis, context.strategy.timeHorizon]);
 
   const Icon = pressureMessage.icon;
 
@@ -114,7 +114,7 @@ export function ExecutivePressure({ currentQuarter, context }: ExecutivePressure
               <InfoTooltip iconOnly position="right" content="Contextual mandates from the Executive Board based on your current KPI performance." />
             </h3>
             <p className="text-sm font-medium leading-relaxed text-slate-300">
-              "{pressureMessage.message}"
+              {pressureMessage.message}
             </p>
             <div className="pt-2">
               <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border tracking-widest

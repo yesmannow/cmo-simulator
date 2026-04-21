@@ -35,9 +35,9 @@ interface InputSlice {
 
 interface UiSlice {
   activeTab: 'dashboard' | 'planning';
-  modal: { isOpen: boolean; content: any };
+  modal: { isOpen: boolean; content: unknown };
   setActiveTab: (tab: 'dashboard' | 'planning') => void;
-  openModal: (content: any) => void;
+  openModal: (content: unknown) => void;
   closeModal: () => void;
 }
 

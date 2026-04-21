@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface ShimmerCardProps {
@@ -53,4 +53,3 @@ export function SkeletonCard({ className }: { className?: string }) {
     </Card>
   );
 }
-

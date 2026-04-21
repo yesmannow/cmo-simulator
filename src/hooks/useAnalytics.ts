@@ -93,7 +93,7 @@ export function useDecisionTracking() {
     type: string;
     channelSpends?: Record<Channel, number>;
     totalSpend?: number;
-    expectedImpact?: any;
+    expectedImpact?: unknown;
   }) => {
     analytics.decisionMade(decision);
   }, []);
@@ -154,7 +154,7 @@ export function useAchievementTracking() {
 export function useInteractionTracking() {
   const trackClick = useCallback((
     elementName: string,
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
   ) => {
     analytics.track(
       EventCategory.ENGAGEMENT,
@@ -205,7 +205,7 @@ export function useErrorTracking() {
     code: string;
     message: string;
     stack?: string;
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
   }) => {
     analytics.trackError(error);
   }, []);

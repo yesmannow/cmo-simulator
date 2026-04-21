@@ -1,7 +1,7 @@
-import { simulateCompetitiveResponse, calculateCompetitiveIntensity } from '../competitive';
+import { simulateCompetitiveResponse, calculateCompetitiveIntensity, type CompetitiveContext } from '../competitive';
 
 describe('Competitive Response Model', () => {
-  const createMockContext = (overrides: any = {}) => ({
+  const createMockContext = (overrides: Partial<CompetitiveContext> = {}): CompetitiveContext => ({
     yourMarketShare: 5,
     yourSpend: 100000,
     competitorSpend: 200000,

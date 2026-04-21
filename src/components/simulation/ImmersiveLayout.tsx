@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import HeroVisual from '@/components/ui/HeroVisual';
 
 interface ImmersiveLayoutProps {
   children: ReactNode;

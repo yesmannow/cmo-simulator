@@ -102,7 +102,7 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
     }
 
     return logs;
-  }, [predictiveResult, context.kpis, selectedTactics]);
+  }, [predictiveResult, context.kpis]);
 
   // Auto-advance animation steps
   useEffect(() => {

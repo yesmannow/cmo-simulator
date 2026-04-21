@@ -9,10 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   TrendingUp,
-  DollarSign,
   AlertTriangle,
   Target,
-  Zap,
   Award,
   BarChart3,
   Sparkles

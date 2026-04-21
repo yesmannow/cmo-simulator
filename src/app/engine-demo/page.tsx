@@ -5,8 +5,6 @@ import { useGameStore } from '@/lib/store';
 import { Channel } from '@/types/engine';
 
 export default function EngineDemoPage() {
-  const [spend, setSpend] = useState(50000);
-  const [animationTrigger, setAnimationTrigger] = useState(0);
   const simulationState = useGameStore(state => state.simulationState);
   const channelBudgets = useGameStore(state => state.channelBudgets);
   const setBudget = useGameStore(state => state.setBudget);
@@ -36,7 +34,6 @@ export default function EngineDemoPage() {
     const currentState = simulationState;
 
     advanceTick(playerInputs, marketConditions);
-    setAnimationTrigger(prev => prev + 1);
 
     // Check for achievements using current state
     // Note: We check current state since achievements should trigger on the state that caused them

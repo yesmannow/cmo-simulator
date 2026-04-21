@@ -287,7 +287,7 @@ export function calculateTalentImpact(candidate: TalentCandidate, quarterlyReven
   return Math.round(baseImpact * performanceMultiplier);
 }
 
-export function calculateBigBetOutcome(bigBet: BigBetOption, context: any, hasStrongTeam: boolean = false): {
+export function calculateBigBetOutcome(bigBet: BigBetOption, _context: unknown, hasStrongTeam: boolean = false): {
   success: boolean;
   actualImpact: {
     revenue: number;

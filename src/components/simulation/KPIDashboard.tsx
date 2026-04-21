@@ -3,7 +3,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { 
   TrendingUp, 
@@ -293,7 +292,6 @@ export function KPIDashboard({ context, quarter, showQuarterlyBreakdown = false 
           {(["Q1", "Q2", "Q3", "Q4"] as const).map((q) => {
             const quarterData = context.quarters[q];
             const isActive = quarter === q;
-            const hasResults = quarterData.tactics.length > 0 || (quarterData.results.revenue !== undefined && quarterData.results.revenue > 0);
 
             return (
               <div key={q} className={`p-4 rounded-xl border transition-all ${

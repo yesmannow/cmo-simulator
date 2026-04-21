@@ -33,7 +33,7 @@ export default function SimulationLayout({
           </Link>
           <div className="flex items-center gap-6">
             <Link 
-              href="/progress" 
+              href="/sim/debrief" 
               className="group flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-white transition-colors"
             >
               <Target className="w-4 h-4 group-hover:text-amber-400 transition-colors" />

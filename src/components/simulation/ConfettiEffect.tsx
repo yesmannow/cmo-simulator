@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useCallback } from 'react';
-import confetti from 'canvas-confetti';
+import confetti, { type Options } from 'canvas-confetti';
 
 interface ConfettiEffectProps {
   trigger: boolean;
@@ -84,7 +84,7 @@ export function MilestoneConfetti({ trigger, onComplete }: ConfettiEffectProps) 
       origin: { y: 0.7 }
     };
 
-    function fire(particleRatio: number, opts: any) {
+    function fire(particleRatio: number, opts: Options) {
       confetti({
         ...defaults,
         ...opts,

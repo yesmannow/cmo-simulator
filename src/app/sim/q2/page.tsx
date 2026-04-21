@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSimulation } from '@/hooks/useSimulation';
 import { SAMPLE_TACTICS, EnrichedTactic } from '@/lib/tactics';
@@ -10,11 +10,10 @@ import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EnhancedKPIDashboard } from '@/components/simulation/EnhancedKPIDashboard';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Megaphone, ArrowRight, Zap, Users, Briefcase } from 'lucide-react';
+import { Megaphone, ArrowRight, Zap, Users, Briefcase } from 'lucide-react';
 import { CMOMentor } from '@/components/simulation/CMOMentor';
 import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
 import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
@@ -26,6 +25,7 @@ import { TalentCandidate } from '@/lib/talentMarket';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
 
 export default function Q2Page() {
   const router = useRouter();
@@ -44,20 +44,19 @@ export default function Q2Page() {
   const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + (tactic.cost || 0), 0);
   const remainingBudget = quarterBudget - usedBudget;
 
-  useEffect(() => {
-    // Check for random wildcard trigger
-    if (!showWildcardModal && !currentWildcard && Math.random() > 0.7) {
-      handleTriggerWildcard();
-    }
-  }, []);
-
-  const handleTriggerWildcard = () => {
+  const handleTriggerWildcard = useCallback(() => {
     const wildcard = getEnhancedWildcardForQuarter(context, 'Q2');
     if (!wildcard) return;
     setCurrentWildcard(wildcard);
     setShowWildcardModal(true);
     if (triggerWildcard) triggerWildcard('Q2', wildcard);
-  };
+  }, [context, triggerWildcard]);
+
+  useEffect(() => {
+    if (!showWildcardModal && !currentWildcard && Math.random() > 0.7) {
+      handleTriggerWildcard();
+    }
+  }, [currentWildcard, handleTriggerWildcard, showWildcardModal]);
 
   const handleWildcardResponse = (choiceId: string) => {
     if (currentWildcard && respondToWildcard) {
@@ -276,7 +275,7 @@ export default function Q2Page() {
           <TalentMarketModal
             candidates={talentCandidates}
             isOpen={showTalentMarket}
-            onHire={(candidate) => {
+            onHire={(_candidate) => {
               // Logic for hiring talent
               setShowTalentMarket(false);
             }}
@@ -292,6 +291,7 @@ export default function Q2Page() {
         quarter="Q2"
         selectedTactics={selectedTactics}
         onConfirm={() => {
+          void saveSimulationSnapshot(context, 'Q2', 'in_progress');
           setShowDebrief(false);
           if (completeQuarter) completeQuarter('Q2');
           router.push('/sim/q3');

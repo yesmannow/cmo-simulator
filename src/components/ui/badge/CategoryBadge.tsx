@@ -7,7 +7,6 @@ import {
   TrendingUp,
   Target,
   Zap,
-  Users,
   DollarSign,
   Award,
   Star
@@ -115,4 +114,3 @@ export function CategoryBadge({
     </Badge>
   );
 }
-

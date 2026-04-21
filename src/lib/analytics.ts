@@ -3,7 +3,7 @@
  * Tracks user behavior and performance locally without persistent identity.
  */
 
-import { UUID, Timestamp, Channel, Industry, DifficultyLevel } from '@/types';
+import { Industry, DifficultyLevel } from '@/types';
 import { logger } from './logger';
 
 export enum EventCategory {
@@ -51,7 +51,7 @@ export interface AnalyticsEvent {
   action: EventAction;
   label?: string;
   value?: number;
-  properties?: Record<string, any>;
+  properties?: object;
   session_id?: string;
   timestamp: string;
   page_url?: string;
@@ -88,7 +88,7 @@ export class AnalyticsService {
     action: EventAction,
     label?: string,
     value?: number,
-    properties?: Record<string, any>
+    properties?: object
   ): void {
     if (!this.enabled) return;
 
@@ -120,7 +120,7 @@ export class AnalyticsService {
   /**
    * Track page view
    */
-  pageView(pageName: string, properties?: Record<string, any>): void {
+  pageView(pageName: string, properties?: object): void {
     this.track(
       EventCategory.ENGAGEMENT,
       EventAction.PAGE_VIEW,
@@ -208,7 +208,7 @@ export class AnalyticsService {
     code: string;
     message: string;
     stack?: string;
-    context?: Record<string, any>;
+    context?: object;
   }): void {
     this.track(
       EventCategory.ERROR,
@@ -236,7 +236,7 @@ export class AnalyticsService {
     );
   }
 
-  private sendToThirdParty(events: AnalyticsEvent[]): void {
+  private sendToThirdParty(_events: AnalyticsEvent[]): void {
     // Shims for third-party trackers remain available but disabled
     if (typeof window === 'undefined') return;
     
@@ -285,8 +285,8 @@ export const trackEvent = (
   action: EventAction,
   label?: string,
   value?: number,
-  properties?: Record<string, any>
+  properties?: object
 ) => analytics.track(category, action, label, value, properties);
 
-export const trackPageView = (pageName: string, properties?: Record<string, any>) =>
+export const trackPageView = (pageName: string, properties?: object) =>
   analytics.pageView(pageName, properties);

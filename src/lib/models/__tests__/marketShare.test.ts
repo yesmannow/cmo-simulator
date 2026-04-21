@@ -1,7 +1,7 @@
-import { calculateMarketShareBass, calculateMarketMaturity } from '../marketShare';
+import { calculateMarketShareBass, calculateMarketMaturity, type MarketShareContext } from '../marketShare';
 
 describe('Market Share Model (Bass Diffusion)', () => {
-  const createMockContext = (overrides: any = {}) => ({
+  const createMockContext = (overrides: Partial<MarketShareContext> = {}): MarketShareContext => ({
     currentShare: 5,
     yourSpend: 100000,
     competitorSpend: 200000,

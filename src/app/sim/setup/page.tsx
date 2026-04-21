@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,18 +11,16 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { LogoGenerator } from '@/components/LogoGenerator';
 import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
-import { DifficultyLevel, difficultyConfigs } from '@/lib/difficultySystem';
 import { SimulationContext } from '@/lib/simMachine';
 import { Industry, TimeHorizon, CompanyProfile, MarketLandscape } from '@/types';
 import { logger } from '@/lib/logger';
+import { getSimAuthSession } from '@/lib/simAuth';
+import { resolveSimulationPath } from '@/lib/simulationRouting';
 import {
   Building2,
-  Clock,
-  Briefcase,
   Target,
   TrendingUp,
   Zap,
-  Users,
   Rocket,
   ArrowRight,
   Sparkles,
@@ -107,7 +105,7 @@ export const SCENARIOS = [
   }
 ];
 
-const TIME_HORIZONS = [
+const _TIME_HORIZONS = [
   {
     id: '1-year' as const,
     name: '1-Year Sprint',
@@ -137,7 +135,7 @@ const TIME_HORIZONS = [
   }
 ];
 
-const INDUSTRIES = [
+const _INDUSTRIES = [
   {
     id: 'healthcare' as const,
     name: 'Healthcare',
@@ -356,7 +354,7 @@ const INDUSTRIES = [
   }
 ];
 
-const COMPANY_PROFILES = [
+const _COMPANY_PROFILES = [
   {
     id: 'startup' as const,
     name: 'Startup / Small Business',
@@ -377,7 +375,7 @@ const COMPANY_PROFILES = [
   }
 ];
 
-const MARKET_LANDSCAPES = [
+const _MARKET_LANDSCAPES = [
   {
     id: 'disruptor' as const,
     name: 'The Disruptor',
@@ -425,11 +423,35 @@ export default function SetupPage() {
   const { trackStart } = useSimulationTracking();
 
   // Validation state
-  const [companyNameError, setCompanyNameError] = useState<string | null>(null);
-  const [budgetError, setBudgetError] = useState<string | null>(null);
+  const [budgetError] = useState<string | null>(null);
+  const [hasSavedRun, setHasSavedRun] = useState(false);
+  const [savedRunContext, setSavedRunContext] = useState<Partial<SimulationContext> | null>(null);
+  const [savedRunPhase, setSavedRunPhase] = useState<string>('idle');
 
   const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
+
+  useEffect(() => {
+    const session = getSimAuthSession();
+    if (!session) return;
+
+    const loadLatestRun = async () => {
+      try {
+        const response = await fetch(`/api/simulations/latest?userId=${encodeURIComponent(session.userId)}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data?.run?.context) {
+          setHasSavedRun(true);
+          setSavedRunContext(data.run.context as Partial<SimulationContext>);
+          setSavedRunPhase(data.run.current_phase || 'idle');
+        }
+      } catch (error) {
+        logger.error('Failed to load latest saved run', error);
+      }
+    };
+
+    void loadLatestRun();
+  }, []);
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -453,6 +475,8 @@ export default function SetupPage() {
       const initialState: Partial<SimulationContext> = {
         scenarioId: scenario.id,
         strategy: {
+          companyName: data.companyName.trim(),
+          guidedDemo: false,
           targetAudience: '',
           brandPositioning: '',
           primaryChannels: [],
@@ -469,8 +493,12 @@ export default function SetupPage() {
       // Save to localStorage v2 so SimulationProvider mounts it into XState context
       localStorage.setItem('cmo-sim-state-v2', JSON.stringify(initialState));
 
-      // Track completion (using any valid shape expected by analytic event)
-      trackStart(initialState as any);
+      trackStart({
+        industry: scenario.industry,
+        difficulty: 'intermediate',
+        timeHorizon: scenario.timeHorizon,
+        totalBudget: scenario.budget,
+      });
 
       // Navigate to strategy session
       router.push('/sim/strategy');
@@ -478,6 +506,39 @@ export default function SetupPage() {
       logger.error('Error saving simulation', error);
       alert('Failed to initialize simulation. Please try again.');
     }
+  };
+
+  const launchGuidedDemo = () => {
+    const demoScenario = SCENARIOS.find((scenario) => scenario.id === 'challenger') || SCENARIOS[0];
+    const guidedDemoState: Partial<SimulationContext> = {
+      scenarioId: demoScenario.id,
+      strategy: {
+        companyName: 'Guided Demo Co.',
+        guidedDemo: true,
+        targetAudience: 'Young Professionals (25-35)',
+        brandPositioning: 'Innovation & Technology',
+        primaryChannels: ['digital', 'social', 'content'],
+        budgetAllocation: {
+          brandAwareness: 35,
+          leadGeneration: 40,
+          conversionOptimization: 25,
+        },
+        marketLandscape: demoScenario.marketLandscape,
+        timeHorizon: demoScenario.timeHorizon,
+      },
+      kpis: demoScenario.startingKPIs,
+      totalBudget: demoScenario.budget,
+      remainingBudget: demoScenario.budget,
+    };
+
+    localStorage.setItem('cmo-sim-state-v2', JSON.stringify(guidedDemoState));
+    router.push('/sim/strategy?demo=1');
+  };
+
+  const resumeSavedRun = () => {
+    if (!savedRunContext) return;
+    localStorage.setItem('cmo-sim-state-v2', JSON.stringify(savedRunContext));
+    router.push(resolveSimulationPath(savedRunPhase));
   };
 
 
@@ -507,8 +568,6 @@ export default function SetupPage() {
   };
 
   const selectedScenario = SCENARIOS.find(s => s.id === data.scenarioId);
-  const selectedBudget = selectedScenario?.budget || 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-8">
       <div className="max-w-5xl mx-auto px-4">
@@ -527,6 +586,26 @@ export default function SetupPage() {
           <p className="text-muted-foreground">
             Define your strategic foundation for the next 12 months
           </p>
+          <div className="mt-5">
+            <Button
+              type="button"
+              variant="outline"
+              className="border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20"
+              onClick={launchGuidedDemo}
+            >
+              Start Guided Demo Run (2 min)
+            </Button>
+            {hasSavedRun && (
+              <Button
+                type="button"
+                variant="outline"
+                className="ml-2 border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20"
+                onClick={resumeSavedRun}
+              >
+                Resume Latest Saved Run
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -599,7 +678,7 @@ export default function SetupPage() {
                             
                             <div className="bg-black/20 p-4 rounded-xl border border-white/5">
                               <p className="text-[10px] uppercase tracking-widest font-black text-amber-500/70 mb-2">Board Mandate</p>
-                              <p className="text-sm font-medium text-amber-100/80 italic">"{scenario.executiveMandate}"</p>
+                              <p className="text-sm font-medium text-amber-100/80 italic">{scenario.executiveMandate}</p>
                             </div>
                           </CardContent>
                         </Card>
@@ -628,7 +707,7 @@ export default function SetupPage() {
                       id="company-name"
                       placeholder="e.g., Apex Health, Innovate Legal, Urban Outfitters Co."
                       value={data.companyName}
-                      onChange={(e: any) => setData({ ...data, companyName: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData({ ...data, companyName: e.target.value })}
                       className="text-2xl font-bold h-16 bg-white/5 border-white/10 text-white placeholder:text-white/20"
                       autoFocus
                     />
@@ -816,7 +895,7 @@ export default function SetupPage() {
                     <AlertTriangle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
                     <div>
                       <h4 className="font-black tracking-widest uppercase text-xs text-amber-500 mb-2">CEO Mandate</h4>
-                      <p className="text-amber-100/80 italic font-medium">"{selectedScenario.executiveMandate}"</p>
+                      <p className="text-amber-100/80 italic font-medium">{selectedScenario.executiveMandate}</p>
                     </div>
                   </div>
                 </CardContent>

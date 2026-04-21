@@ -11,15 +11,6 @@
 
 const requiredEnvVars = [] as const;
 
-const optionalEnvVars = [
-  'NEXT_PUBLIC_AI_PROVIDER',
-  'NEXT_PUBLIC_OPENAI_API_KEY',
-  'NEXT_PUBLIC_POSTHOG_KEY',
-  'NEXT_PUBLIC_MIXPANEL_TOKEN',
-  'NEXT_PUBLIC_GA_MEASUREMENT_ID',
-  'NEXT_PUBLIC_SENTRY_DSN',
-] as const;
-
 /**
  * Check if we're in a build context (not runtime)
  * This allows the build to succeed even if env vars aren't set yet
@@ -102,4 +93,3 @@ export function getEnvVar(name: string, defaultValue?: string): string {
 export function hasEnvVar(name: string): boolean {
   return Boolean(process.env[name]);
 }
-

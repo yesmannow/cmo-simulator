@@ -215,7 +215,7 @@ export interface AIRecommendation {
   suggested_action?: string;
   expected_impact?: ImpactPrediction;
   reasoning: string[];
-  data_points: Record<string, any>;
+  data_points: Record<string, unknown>;
   dismissed: boolean;
   created_at: Timestamp;
 }
@@ -293,5 +293,4 @@ export interface KPISnapshot {
   team_morale: number;
   budget_remaining: Currency;
 }
-
 

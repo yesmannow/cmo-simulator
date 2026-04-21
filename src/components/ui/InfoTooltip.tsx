@@ -13,6 +13,15 @@ interface InfoTooltipProps {
   delay?: number;
 }
 
+type TooltipMotionPosition = {
+  top?: string;
+  bottom?: string;
+  left?: string;
+  right?: string;
+  x?: string | number;
+  y?: string | number;
+};
+
 export function InfoTooltip({ 
   content, 
   children, 
@@ -23,7 +32,7 @@ export function InfoTooltip({
 }: InfoTooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
 
-  const positions: Record<"top" | "bottom" | "left" | "right", any> = {
+  const positions: Record<"top" | "bottom" | "left" | "right", TooltipMotionPosition> = {
     top: { bottom: "100%", left: "50%", x: "-50%", y: -8 },
     bottom: { top: "100%", left: "50%", x: "-50%", y: 8 },
     left: { right: "100%", top: "50%", y: "-50%", x: -8 },
@@ -55,7 +64,12 @@ export function InfoTooltip({
             transition={{ duration: 0.2, delay: delay }}
             className={`absolute z-50 w-64 p-3 pointer-events-none text-left
                        bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)]`}
-            style={{ [position]: currentPosition[position] }}
+            style={{
+              top: currentPosition.top,
+              bottom: currentPosition.bottom,
+              left: currentPosition.left,
+              right: currentPosition.right,
+            }}
           >
             <div className="text-sm text-slate-200 font-medium leading-relaxed">
               {content}

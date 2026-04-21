@@ -1,6 +1,6 @@
 // Enhanced Wildcard System with Dynamic Events and Morale/Brand Equity Impact
 
-import { WildcardEvent, WildcardChoice, type SimulationContext } from './simMachine';
+import { WildcardEvent, type SimulationContext } from './simMachine';
 import type { MarketLandscape, TimeHorizon } from '@/types';
 
 export interface EnhancedWildcardEvent extends WildcardEvent {
@@ -25,9 +25,14 @@ export interface EnhancedWildcardEvent extends WildcardEvent {
 }
 
 export interface EnhancedWildcardImpactResult {
-  kpiImpact: any;
+  kpiImpact: NonNullable<WildcardEvent['impact']>;
   moraleImpact: number;
   brandEquityImpact: number;
+}
+
+interface WildcardKpis {
+  revenue: number;
+  marketShare: number;
 }
 
 export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
@@ -492,7 +497,7 @@ function resolveModifier(
 
 export function selectRandomWildcard(
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4',
-  currentKPIs: any,
+  currentKPIs: WildcardKpis,
   hasHiredTalent: boolean = false,
   strategy?: Partial<Pick<SimulationContext['strategy'], 'marketLandscape' | 'timeHorizon'>>,
 ): EnhancedWildcardEvent | null {
@@ -565,7 +570,7 @@ export function calculateEnhancedWildcardImpact(
   const choice = wildcard.choices.find(c => c.id === choiceId);
   if (!choice) {
     return {
-      kpiImpact: {},
+      kpiImpact: { revenue: 0, profit: 0 },
       moraleImpact: wildcard.moraleImpact.base,
       brandEquityImpact: wildcard.brandEquityImpact.base,
     };

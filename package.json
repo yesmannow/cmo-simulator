@@ -7,7 +7,7 @@
     "build": "next build --turbopack",
     "build:cloudflare": "npx opennextjs-cloudflare build && node scripts/fix-cloudflare-output.js",
     "start": "next start",
-    "lint": "eslint --no-error-on-unmatched-pattern .",
+    "lint": "eslint --no-error-on-unmatched-pattern src",
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "cli": "node scripts/dev-cli.js",

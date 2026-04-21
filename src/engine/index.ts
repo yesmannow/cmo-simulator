@@ -2,7 +2,7 @@ import { SimulationState, PlayerInput, MarketConditions, Channel } from '../type
 import { calculateAdstockAll } from './adstock';
 import { applyHillTransformAll } from './saturation';
 import { applySynergy } from './synergy';
-import { safeDivide, clamp, isValidNumber, validateCalculationResult } from '@/lib/utils/calculationHelpers';
+import { safeDivide, clamp, validateCalculationResult } from '@/lib/utils/calculationHelpers';
 
 // Channel-specific parameters
 const DECAY_RATES: Record<Channel, number> = {
@@ -172,7 +172,6 @@ export function runSimulationTick(
 
   // Calculate channel contributions proportionally
   const channelContributions: Record<Channel, number> = {} as Record<Channel, number>;
-  let totalChannelContribution = 0;
 
   for (const channel of Object.keys(trafficSources) as Channel[]) {
     const channelTraffic = trafficSources[channel];
@@ -180,7 +179,6 @@ export function runSimulationTick(
     const trafficShare = safeDivide(channelTraffic, totalTraffic, 0);
     const channelContribution = trafficShare * finalRevenue;
     channelContributions[channel] = validateCalculationResult(channelContribution, `Channel contribution for ${channel}`, 0);
-    totalChannelContribution += channelContribution;
   }
 
   // Calculate ROI per channel

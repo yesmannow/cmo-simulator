@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSimulation } from '@/hooks/useSimulation';
 import { SAMPLE_TACTICS, EnrichedTactic } from '@/lib/tactics';
@@ -10,11 +10,10 @@ import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { EnhancedKPIDashboard } from '@/components/simulation/EnhancedKPIDashboard';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Megaphone, ArrowRight, Zap } from 'lucide-react';
+import { Megaphone, ArrowRight, Zap } from 'lucide-react';
 import { CMOMentor } from '@/components/simulation/CMOMentor';
 import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
 import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
@@ -25,6 +24,7 @@ import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/l
 import { BigBetModal } from '@/components/simulation/BigBetModal';
 import { getRandomBigBets, BigBetOption, calculateBigBetOutcome } from '@/lib/talentMarket';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
 
 export default function Q3Page() {
   const router = useRouter();
@@ -42,22 +42,23 @@ export default function Q3Page() {
   const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + (tactic.cost || 0), 0);
   const remainingBudget = quarterBudget - usedBudget;
 
-  useEffect(() => {
-    // Generate big bets once
-    setAvailableBigBets(getRandomBigBets(3));
-    
-    if (!showWildcardModal && !currentWildcard && Math.random() > 0.8) {
-      handleTriggerWildcard();
-    }
-  }, []);
-
-  const handleTriggerWildcard = () => {
+  const handleTriggerWildcard = useCallback(() => {
     const wildcard = getEnhancedWildcardForQuarter(context, 'Q3');
     if (!wildcard) return;
     setCurrentWildcard(wildcard);
     setShowWildcardModal(true);
     if (triggerWildcard) triggerWildcard('Q3', wildcard);
-  };
+  }, [context, triggerWildcard]);
+
+  useEffect(() => {
+    setAvailableBigBets(getRandomBigBets(3));
+  }, []);
+
+  useEffect(() => {
+    if (!showWildcardModal && !currentWildcard && Math.random() > 0.8) {
+      handleTriggerWildcard();
+    }
+  }, [currentWildcard, handleTriggerWildcard, showWildcardModal]);
 
   const handleWildcardResponse = (choiceId: string) => {
     if (currentWildcard && respondToWildcard) {
@@ -288,6 +289,7 @@ export default function Q3Page() {
         quarter="Q3"
         selectedTactics={selectedTactics}
         onConfirm={() => {
+          void saveSimulationSnapshot(context, 'Q3', 'in_progress');
           setShowDebrief(false);
           if (completeQuarter) completeQuarter('Q3');
           router.push('/sim/q4');

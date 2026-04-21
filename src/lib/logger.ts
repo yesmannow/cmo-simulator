@@ -8,9 +8,6 @@
  * - Can disable logs in production
  * - Type-safe logging
  */
-
-type LogLevel = 'log' | 'error' | 'warn' | 'info' | 'debug';
-
 interface LogContext {
   [key: string]: unknown;
 }
@@ -76,4 +73,3 @@ class Logger {
 }
 
 export const logger = new Logger();
-

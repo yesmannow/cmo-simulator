@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Users, Target, Heart, Sparkles, Zap, TrendingUpIcon, ArrowRight } from 'lucide-react';
-import { SimulationContext, processQuarterAdvance } from '@/lib/simMachine';
+import { SimulationContext, Tactic, processQuarterAdvance } from '@/lib/simMachine';
 import CountUp from 'react-countup';
 import { SparklesCore } from '@/components/ui/sparkles';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { logger } from '@/lib/logger';
 
 interface EnhancedKPIDashboardProps {
   context: SimulationContext;
   quarter?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
   showQuarterlyBreakdown?: boolean;
-  selectedTactics?: any[]; // For real-time projection
+  selectedTactics?: Tactic[];
 }
 
 export function EnhancedKPIDashboard({
@@ -28,7 +28,7 @@ export function EnhancedKPIDashboard({
   const [showSparkles, setShowSparkles] = useState<string | null>(null);
 
   // Calculate total revenue from all completed quarters
-  const calculateTotalRevenue = () => {
+  const calculateTotalRevenue = useCallback(() => {
     let total = 0;
     const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
     quarters.forEach((q) => {
@@ -40,7 +40,7 @@ export function EnhancedKPIDashboard({
       }
     });
     return total > 0 ? total : (context.kpis.revenue || 0);
-  };
+  }, [context.quarters, context.kpis.revenue]);
 
   // Calculate projected revenue for current quarter based on selected tactics
   const calculateProjectedRevenue = useMemo(() => {
@@ -61,13 +61,13 @@ export function EnhancedKPIDashboard({
       const projection = processQuarterAdvance(tempContext, quarter as 'Q1' | 'Q2' | 'Q3' | 'Q4');
       return projection.newQuarterData.results.revenue;
     } catch (e) {
-      console.error("Projection error:", e);
+      logger.error("Projection error", e);
       return 0;
     }
   }, [quarter, selectedTactics, context]);
 
   // Get current metrics
-  const getCurrentMetrics = () => {
+  const getCurrentMetrics = useCallback(() => {
     const quarters = ['Q4', 'Q3', 'Q2', 'Q1'] as const;
     for (const q of quarters) {
       const quarterData = context.quarters[q];
@@ -84,10 +84,10 @@ export function EnhancedKPIDashboard({
       customerSatisfaction: context.kpis.customerSatisfaction,
       brandAwareness: context.kpis.brandAwareness,
     };
-  };
+  }, [context.quarters, context.kpis]);
 
-  const totalRevenue = useMemo(() => calculateTotalRevenue(), [context.quarters, context.kpis.revenue]);
-  const currentMetrics = useMemo(() => getCurrentMetrics(), [context.quarters, context.kpis]);
+  const totalRevenue = useMemo(() => calculateTotalRevenue(), [calculateTotalRevenue]);
+  const currentMetrics = useMemo(() => getCurrentMetrics(), [getCurrentMetrics]);
   const projectedRevenue = calculateProjectedRevenue;
 
   // Calculate trends
@@ -311,7 +311,7 @@ export function EnhancedKPIDashboard({
                   </div>
                   <CardTitle className="text-xs font-semibold tracking-wider text-slate-400 mt-2 uppercase flex items-center justify-between">
                     {kpi.title}
-                    <InfoTooltip iconOnly content={(kpi as any).tooltipContent} position="bottom" />
+                  <InfoTooltip iconOnly content={kpi.tooltipContent} position="bottom" />
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3 pt-4 relative z-10">
@@ -502,7 +502,6 @@ export function EnhancedKPIDashboard({
                   const isActive = quarter === q;
                   const hasResults = quarterData.tactics.length > 0 || (quarterData.results.revenue !== undefined && quarterData.results.revenue > 0);
                   const revenue = quarterData.results.revenue || 0;
-                  const tacticsCount = quarterData.tactics.length || 0;
                   const budgetSpent = quarterData.budgetSpent || 0;
                   const trend = quarterTrends[q];
                   const quarterROI = budgetSpent > 0 ? ((revenue - budgetSpent) / budgetSpent) * 100 : 0;

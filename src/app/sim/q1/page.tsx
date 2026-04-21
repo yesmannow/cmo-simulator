@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSimulation } from '@/hooks/useSimulation';
 import { SAMPLE_TACTICS, EnrichedTactic } from '@/lib/tactics';
 import { TacticCard } from '@/components/simulation/matrix/TacticCard';
@@ -20,14 +20,7 @@ import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
 import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-
-interface AllocationItem {
-  id: string;
-  name: string;
-  budgetAmount: number;
-  timeAmount: number;
-  color: string;
-}
+import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
 
 export default function Q1Page() {
   const router = useRouter();
@@ -35,26 +28,9 @@ export default function Q1Page() {
 
   const [selectedTactics, setSelectedTactics] = useState<Tactic[]>([]);
   const [showDebrief, setShowDebrief] = useState(false);
-  const [allocations, setAllocations] = useState<AllocationItem[]>([
-    { id: 'digital', name: 'Digital Marketing', budgetAmount: 0, timeAmount: 0, color: '#3b82f6' },
-    { id: 'content', name: 'Content Creation', budgetAmount: 0, timeAmount: 0, color: '#10b981' },
-    { id: 'traditional', name: 'Traditional Media', budgetAmount: 0, timeAmount: 0, color: '#f59e0b' },
-    { id: 'events', name: 'Events & Experiences', budgetAmount: 0, timeAmount: 0, color: '#8b5cf6' },
-    { id: 'partnerships', name: 'Partnerships', budgetAmount: 0, timeAmount: 0, color: '#ef4444' },
-  ]);
-
   const quarterBudget = Math.floor((context?.totalBudget || 500000) / 4);
   const usedBudget = selectedTactics.reduce((sum: number, tactic: Tactic) => sum + (tactic.cost || 0), 0);
   const remainingBudget = quarterBudget - usedBudget;
-
-  useEffect(() => {
-    const newAllocations = allocations.map((allocation: AllocationItem) => {
-      const categoryTactics = selectedTactics.filter((t: Tactic) => t.category === allocation.id);
-      const budgetAmount = categoryTactics.reduce((sum: number, t: Tactic) => sum + (t.cost || 0), 0);
-      return { ...allocation, budgetAmount };
-    });
-    setAllocations(newAllocations);
-  }, [selectedTactics]);
 
   const handleAddTactic = (tactic: Tactic) => {
     if (!selectedTactics.find((t: Tactic) => t.id === tactic.id)) {
@@ -246,6 +222,7 @@ export default function Q1Page() {
         quarter="Q1"
         selectedTactics={selectedTactics}
         onConfirm={() => {
+          void saveSimulationSnapshot(context, 'Q1', 'in_progress');
           setShowDebrief(false);
           if (completeQuarter) completeQuarter('Q1');
           router.push('/sim/q2');

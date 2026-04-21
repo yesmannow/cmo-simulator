@@ -10,15 +10,18 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    ignores: [".next/**", ".open-next/**", "out/**", "coverage/**", "node_modules/**"],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {
-      // Allow console in development, but warn in production
-      "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
+      // Console use is centralized in src/lib/logger.ts.
+      "no-console": "off",
       // Allow 'any' types for now (will fix incrementally)
       "@typescript-eslint/no-explicit-any": "warn",
-      // Allow unescaped entities (apostrophes, quotes) - common in user-facing text
-      "react/no-unescaped-entities": "warn",
+      // User-facing educational copy contains normal apostrophes and quotes.
+      "react/no-unescaped-entities": "off",
       // Allow unused vars (many are for future use)
       "@typescript-eslint/no-unused-vars": ["warn", {
         argsIgnorePattern: "^_",

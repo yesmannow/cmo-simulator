@@ -89,7 +89,7 @@ export function generateWildcardEvent(
 
 function selectWeightedEvent(
   events: WildcardEvent[],
-  context: any
+  _context: unknown
 ): WildcardEvent {
   // Simple random selection for now
   // Could be enhanced with weighted probability based on context

@@ -1,6 +1,10 @@
 # CMO Simulator
 
-An advanced, educational marketing strategy game built with Next.js 15. Take on the role of a Chief Marketing Officer and navigate a 12-month campaign with realistic challenges, strategic decisions, and complex market dynamics.
+An advanced, educational marketing strategy game built with Next.js 15. The **CMO Simulator** is a powerful, interactive Chief Marketing Officer simulation tool designed to teach advanced marketing strategy, complex systems thinking, and resource allocation. Assume the role of a CMO, navigating a 12-month campaign with realistic challenges, strategic decisions, and complex market dynamics where you're accountable to the CEO, CFO, and your team.
+
+## 🌟 Comprehensive Overview
+
+The CMO Simulator acts as a digital twin "sandbox" where players deploy marketing budgets across various channels, balancing growth, profitability, and team morale. It integrates realistic marketing math (diminishing returns, compounding effects, tactic synergy, and adstock/marketing carryover effects) into a gamified educational experience. Players must navigate market shifts, manage internal crises via an adaptive crisis engine, and optimize their strategy tech tree to build a resilient and highly effective marketing engine.
 
 ## 🎮 What Makes This Special
 
@@ -12,50 +16,53 @@ The CMO Simulator is not just another portfolio project—it's a comprehensive l
 - **Game Design**: Engaging mechanics that make learning marketing strategy fun
 - **Strategic Depth**: Multiple paths to success, no single "correct" strategy
 
-## ✨ Core Features
+## 🛠️ Simulation Features & Tools
+
+### 📈 Advanced Scoring & Simulation Engine
+- **Hidden Metrics**: Brand Equity and Team Morale affect all outcomes.
+- **Compounding Growth & Adstock**: SEO investments grow exponentially, while marketing carryover (Adstock) ensures past campaigns continue affecting the present.
+- **Tactic Synergy**: Deploying complementary tactics (e.g., Performance marketing immediately following Brand Awareness flights) reveals powerful synergy multipliers.
+- **Diminishing Returns**: Paid ads saturate with increased spend.
+- **Share of Voice Model**: Market share is dynamically calculated based on competitive spending.
+- **Multiple Success Paths**: Win through growth, efficiency, or brand building.
+
+### 🤖 "Board of Directors" AI & Constraints
+The game enforces strategic balance through three pressure meters:
+- **CEO (Growth Focus)**: Demands increasing market share and bolder category creation.
+- **CFO (Profit Focus)**: Demands high MROI, low CAC, and tight financial margins.
+- **CMO / Team (Sanity Focus)**: Demands stable workloads and skill alignment to prevent burnout.
+*Dropping any meter to zero triggers a "Board Meeting" defense event.*
+
+### 🔮 Interactive Holographic Tooltips
+- Discover deeper marketing insights and contextual information through beautifully animated, glassmorphism-styled global tooltips attached to tactical nodes and key metrics across the War Room and KPI dashboard.
+
+### ⚡ The Crisis Engine (Adaptive Difficulty)
+The simulator detects if your strategy is becoming too comfortable and unleashes randomized constraints:
+- **Supply Chain Shocks**: Inventory drops, forcing a pivot in messaging.
+- **Data Privacy Hacks**: Trust Score plummets, requiring PR remediation.
+- **Competitor Price Wars**: Triggers a new Nash Equilibrium where total market value shrinks.
+- **Dynamic Wildcard Events**: Context-aware events based on your industry, market landscape, and performance (e.g. key resignations, website outages, press features).
+
+### 🧬 Strategy Tech Tree (MarTech Stack)
+- Upgrade infrastructure (e.g., AI Personalization) via capital investments that yield permanent conversion multipliers, teaching the trade-off between operating expenses and capital investments.
+- **Hiring vs. Outsourcing**: Balance fixed vs. variable costs by bringing talent in-house versus hiring agencies.
+
+### 🧪 Digital Twin "Sandbox" & A/B Testing
+- **Synthetic Personas**: Dry-run limited budgets and view localized CTR reactions before blindly spending millions (teaching Agile Marketing).
+- **A/B Test Mini-Game**: Choose between ad variations, learn why one performs better, and see the real impact on campaign metrics (±25% CPA, ±35% conversions). Industry-specific tests included.
 
 ### 🏢 Phase 0: Strategic Foundation
 - **Company Naming**: Personalize your venture
 - **Time Horizon Selection**: 1-year sprint, 3-year growth, or 5-year long game
 - **Industry Choice**: Healthcare, Legal Services, or E-commerce
-- **Company Profile**: Startup (lean & agile) or Enterprise (resourced & established)
 - **Market Landscape**: Choose your battlefield (Disruptor, Crowded Field, or Open Frontier)
 - **Budget Allocation**: Strategic distribution across Brand Awareness, Lead Generation, and Conversion Optimization
 
-### 🎯 Advanced Scoring Engine
-- **Hidden Metrics**: Brand Equity and Team Morale affect all outcomes
-- **Compounding Growth**: SEO investments grow exponentially (15% per quarter)
-- **Diminishing Returns**: Paid ads saturate with increased spend
-- **Share of Voice Model**: Market share based on competitive spending
-- **Multiple Success Paths**: Win through growth, efficiency, or brand building
-
-### 🎲 Dynamic Wildcard Events
-Context-aware events based on your industry, market landscape, and performance:
-- **Competitive Moves**: Price wars, viral campaigns, acquisitions
-- **Market Shifts**: Privacy regulations, trending categories, recessions
-- **Internal Crises**: Website outages, key resignations, PR disasters
-- **Opportunities**: Strategic partnerships, press features, market openings
-
-### 🧪 A/B Test Mini-Game
-Educational creative testing that teaches marketing principles:
-- Choose between two ad variations
-- Learn why one performs better
-- See real impact on campaign metrics (±25% CPA, ±35% conversions)
-- Industry-specific tests for Healthcare, Legal, and E-commerce
-
-### 📊 Campaign Debrief
-Post-simulation analysis with deep insights:
-- **Decision Timeline**: Review every choice and its impact
-- **Strategic Analysis**: Strengths, weaknesses, recommendations
-- **Comparison**: See how you rank against other players
-- **Educational Feedback**: Learn from successes and mistakes
-- **Downloadable Report**: PDF export of your campaign
-
-### 🏆 Leaderboard & Competition
-- Global rankings by Strategy Score
-- Filter by industry, time horizon, or market landscape
-- Percentile rankings
-- Industry averages and benchmarks
+### 📊 Tactical Data & Visualizations
+- **Sonar Radar (Perceptual Mapping)**: Displays your brand's position relative to the customer's "Ideal Point".
+- **Risk Indicator Slider**: Adjust brand aggression vs. margin stability, which feeds directly into the Stochastic probability engine.
+- **Campaign Debrief**: Post-simulation analysis with deep insights, decision timelines, and educational feedback. Includes downloadable PDF reports.
+- **Leaderboards**: Global rankings by Strategy Score with percentile rankings and industry benchmarks.
 
 ### 🎨 Theme System ✅
 - 5 beautiful brand themes (Aurora Tech, Heritage Serif, Clinic Clean, Forest Nature, Sunset Warm)

@@ -1,5 +1,4 @@
 import { SimulationState } from '../types/engine';
-import { WildcardEvent } from './advancedWildcards';
 // Leveraging the types from advancedWildcards but we build the stochastic trigger logic here
 
 export const BLACK_SWAN_EVENTS = [
@@ -57,11 +56,13 @@ export const BLACK_SWAN_EVENTS = [
   }
 ];
 
+export type CrisisEvent = (typeof BLACK_SWAN_EVENTS)[number];
+
 /**
  * Probabilistic engine for determining if a Black Swan event occurs this quarter.
  * Risk increases geometrically with aggressive spending and low trust.
  */
-export function evaluateCrisisRisk(state: SimulationState): any | null {
+export function evaluateCrisisRisk(state: SimulationState): CrisisEvent | null {
   const currentTrust = state.trustMultiplier ?? 1.0;
   
   // Calculate total marketing mass (adstock) as a proxy for aggression

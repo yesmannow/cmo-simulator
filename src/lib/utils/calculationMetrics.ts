@@ -96,7 +96,7 @@ export function calculateMetrics(params: {
     : 0;
 
   // Channel efficiency
-  const channelEfficiency: Record<string, any> = {};
+  const channelEfficiency: CalculationMetrics['channelEfficiency'] = {};
   channelData.forEach(({ channel, spend: channelSpend, traffic: channelTraffic, conversions: channelConversions, revenue: channelRevenue }) => {
     channelEfficiency[channel] = {
       cac: calculateCAC(channelSpend, channelConversions),
@@ -146,4 +146,3 @@ export function calculatePaybackPeriod(initialInvestment: number, periodicCashFl
   if (periodicCashFlow <= 0) return Infinity;
   return Math.ceil(safeDivide(initialInvestment, periodicCashFlow, 0));
 }
-

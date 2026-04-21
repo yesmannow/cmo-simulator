@@ -1,8 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
-import { calculateAdvancedROI, getIndustryCLV } from '../roi';
+import { calculateAdvancedROI, getIndustryCLV, type ROIContext } from '../roi';
 
 describe('ROI Model (CLV-based)', () => {
-  const createMockContext = (overrides: any = {}) => ({
+  const createMockContext = (overrides: Partial<ROIContext> = {}): ROIContext => ({
     immediateRevenue: 500000,
     spend: 200000,
     customerAcquisitions: 1000,
