@@ -32,7 +32,7 @@ export default function Q1Page() {
   };
 
   return (
-    <ImmersiveLayout title="Q1 Operating Plan" subtitle="Set the first quarter foundation." quarter="Quarter 1">
+    <ImmersiveLayout title="Q1 Operating Plan" subtitle="Set the first quarter foundation." quarter="Quarter 1" hideHeader>
       <QuarterOperatingConsole
         context={context}
         quarter="Q1"
@@ -62,4 +62,3 @@ export default function Q1Page() {
     </ImmersiveLayout>
   );
 }
-

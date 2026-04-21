@@ -240,6 +240,9 @@ export function runSimulationTick(
     totalSales,
     baseSales,
     incrementalSales: finalRevenue,
+    traffic: Math.floor(totalTraffic),
+    leads,
+    conversions,
     channelContributions,
     channelRoi
   };
@@ -292,6 +295,9 @@ export function initializeSimulationState(options?: { industry?: Industry }): Si
       totalSales: 100000,
       baseSales: 100000,
       incrementalSales: 0,
+      traffic: 0,
+      leads: 0,
+      conversions: 0,
       channelContributions: initialAdstock,
       channelRoi: initialAdstock
     }

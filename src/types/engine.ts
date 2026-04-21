@@ -42,6 +42,9 @@ export interface SimulationOutput {
   totalSales: number;
   baseSales: number;
   incrementalSales: number;
+  traffic: number;
+  leads: number;
+  conversions: number;
   channelContributions: Record<Channel, number>;
   channelRoi: Record<Channel, number>;
 }

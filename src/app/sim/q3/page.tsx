@@ -90,7 +90,7 @@ export default function Q3Page() {
   );
 
   return (
-    <ImmersiveLayout title="Q3 Operating Plan" subtitle="Optimize from real signals." quarter="Quarter 3">
+    <ImmersiveLayout title="Q3 Operating Plan" subtitle="Optimize from real signals." quarter="Quarter 3" hideHeader>
       <QuarterOperatingConsole
         context={context}
         quarter="Q3"
@@ -149,4 +149,3 @@ export default function Q3Page() {
     </ImmersiveLayout>
   );
 }
-

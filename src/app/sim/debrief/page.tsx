@@ -148,30 +148,30 @@ export default function DebriefPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+    <div className="space-y-6">
       <ConfettiEffect trigger={showConfetti} />
       {!authSession && (
-        <div className="max-w-5xl mx-auto mb-6 p-4 border border-blue-500/30 rounded-xl bg-blue-950/20">
-          <h2 className="font-semibold text-lg mb-2">Unlock Save + Export</h2>
-          <p className="text-sm text-blue-100/70 mb-4">
+        <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-950">Unlock Save + Export</h2>
+          <p className="mt-2 text-sm text-slate-600">
             Keep simulation play open for everyone; require email sign-in for persistence and report exports.
           </p>
-          <div className="grid md:grid-cols-3 gap-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
             <input
-              className="px-3 py-2 rounded-md bg-black/20 border border-white/10"
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
               placeholder="Name (optional)"
               value={nameInput}
               onChange={(event) => setNameInput(event.target.value)}
             />
             <input
-              className="px-3 py-2 rounded-md bg-black/20 border border-white/10"
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
               placeholder="Work email"
               value={emailInput}
               onChange={(event) => setEmailInput(event.target.value)}
             />
             <button
               type="button"
-              className="px-3 py-2 rounded-md bg-blue-500 hover:bg-blue-400 font-semibold"
+              className="rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800"
               onClick={handleSignIn}
             >
               Sign In For Save/Export
@@ -180,7 +180,7 @@ export default function DebriefPage() {
         </div>
       )}
       {statusMessage && (
-        <div className="max-w-5xl mx-auto mb-4 text-sm text-blue-100/80">{statusMessage}</div>
+        <div className="mx-auto max-w-5xl text-sm text-slate-700">{statusMessage}</div>
       )}
       <EnhancedDebrief
         context={context}

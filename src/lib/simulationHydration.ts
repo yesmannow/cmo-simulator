@@ -65,6 +65,9 @@ function mergeSimulationOutput(
     ...(typeof patch.totalSales === "number" ? { totalSales: patch.totalSales } : null),
     ...(typeof patch.baseSales === "number" ? { baseSales: patch.baseSales } : null),
     ...(typeof patch.incrementalSales === "number" ? { incrementalSales: patch.incrementalSales } : null),
+    ...(typeof patch.traffic === "number" ? { traffic: patch.traffic } : null),
+    ...(typeof patch.leads === "number" ? { leads: patch.leads } : null),
+    ...(typeof patch.conversions === "number" ? { conversions: patch.conversions } : null),
     channelContributions,
     channelRoi,
   };

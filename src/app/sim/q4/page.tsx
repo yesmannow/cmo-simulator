@@ -69,7 +69,7 @@ export default function Q4Page() {
   );
 
   return (
-    <ImmersiveLayout title="Q4 Operating Plan" subtitle="Close the year with a defensible scorecard." quarter="Quarter 4">
+    <ImmersiveLayout title="Q4 Operating Plan" subtitle="Close the year with a defensible scorecard." quarter="Quarter 4" hideHeader>
       <QuarterOperatingConsole
         context={context}
         quarter="Q4"
@@ -113,4 +113,3 @@ export default function Q4Page() {
     </ImmersiveLayout>
   );
 }
-

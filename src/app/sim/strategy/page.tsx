@@ -125,18 +125,18 @@ export default function StrategySessionPage() {
     >
       <div className="max-w-5xl mx-auto space-y-10 pb-20">
         {/* Budget Overview */}
-        <GlassCard className="border-primary/20 bg-primary/5">
+        <GlassCard className="border-slate-200 bg-white">
           <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="p-4 rounded-full bg-primary/20 border border-primary/30">
+              <div className="p-4 rounded-full bg-slate-50 border border-slate-200">
                 <DollarSign className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-1">Annual Marketing Budget</h3>
-                <p className="text-blue-200/60 text-sm font-medium">Allocated across 4 quarters for maximum impact</p>
+                <h3 className="text-xl font-semibold text-slate-950 mb-1">Annual Marketing Budget</h3>
+                <p className="text-slate-600 text-sm">Allocated across 4 quarters for maximum impact</p>
               </div>
             </div>
-            <div className="text-5xl font-black bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
+            <div className="text-4xl sm:text-5xl font-semibold tracking-tight text-slate-950">
               ${context.totalBudget.toLocaleString()}
             </div>
           </div>
@@ -147,11 +147,11 @@ export default function StrategySessionPage() {
           <GlassCard className="h-full">
             <div className="p-6 space-y-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-white">
+                <div className="flex items-center gap-2 text-slate-950">
                   <Users className="h-6 w-6 text-primary" />
-                  <h3 className="text-xl font-bold">Target Audience</h3>
+                  <h3 className="text-xl font-semibold">Target Audience</h3>
                 </div>
-                <p className="text-blue-200/60 text-sm font-medium">
+                <p className="text-slate-600 text-sm">
                   Who is your primary customer segment?
                 </p>
               </div>
@@ -160,12 +160,12 @@ export default function StrategySessionPage() {
                 {AUDIENCE_OPTIONS.map((audience) => (
                   <Button
                     key={audience}
-                    variant={formData.targetAudience === audience ? "default" : "outline"}
+                    variant="outline"
                     className={cn(
                       "justify-start h-auto p-4 transition-all duration-300",
                       formData.targetAudience === audience 
-                        ? "bg-primary text-white scale-[1.02]" 
-                        : "bg-white/5 border-white/10 text-blue-100 hover:bg-white/10"
+                        ? "border-slate-900 bg-slate-900 text-white shadow-sm" 
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                     )}
                     onClick={() => handleAudienceSelect(audience)}
                   >
@@ -174,13 +174,13 @@ export default function StrategySessionPage() {
                 ))}
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-white/10">
-                <Label htmlFor="custom-audience" className="text-white font-semibold">Custom Audience</Label>
+              <div className="space-y-3 pt-4 border-t border-slate-200">
+                <Label htmlFor="custom-audience" className="text-slate-900 font-semibold">Custom Audience</Label>
                 <div className="flex gap-2">
                   <Input
                     id="custom-audience"
                     placeholder="Define your own..."
-                    className="bg-white/5 border-white/10 text-white placeholder:text-blue-200/30"
+                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                     value={formData.customAudience}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setFormData((current) => ({ ...current, customAudience: e.target.value }))
@@ -189,7 +189,7 @@ export default function StrategySessionPage() {
                   <Button 
                     onClick={handleCustomAudience} 
                     disabled={!formData.customAudience.trim()}
-                    className="bg-white/10 hover:bg-white/20 text-white"
+                    className="bg-slate-900 hover:bg-slate-800 text-white"
                   >
                     Add
                   </Button>
@@ -200,10 +200,10 @@ export default function StrategySessionPage() {
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-primary/20 rounded-xl border border-primary/30"
+                  className="p-4 bg-slate-50 rounded-xl border border-slate-200"
                 >
-                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Selected Focus</p>
-                  <p className="text-white font-bold text-lg">{formData.targetAudience}</p>
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Selected Focus</p>
+                  <p className="text-slate-950 font-semibold text-lg">{formData.targetAudience}</p>
                 </motion.div>
               )}
             </div>
@@ -213,11 +213,11 @@ export default function StrategySessionPage() {
           <GlassCard className="h-full">
             <div className="p-6 space-y-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2 text-white">
+                <div className="flex items-center gap-2 text-slate-950">
                   <Target className="h-6 w-6 text-primary" />
-                  <h3 className="text-xl font-bold">Brand Positioning</h3>
+                  <h3 className="text-xl font-semibold">Brand Positioning</h3>
                 </div>
-                <p className="text-blue-200/60 text-sm font-medium">
+                <p className="text-slate-600 text-sm">
                   How do you want to be perceived in the market?
                 </p>
               </div>
@@ -226,12 +226,12 @@ export default function StrategySessionPage() {
                 {POSITIONING_OPTIONS.map((positioning) => (
                   <Button
                     key={positioning}
-                    variant={formData.brandPositioning === positioning ? "default" : "outline"}
+                    variant="outline"
                     className={cn(
                       "justify-start h-auto p-4 transition-all duration-300",
                       formData.brandPositioning === positioning 
-                        ? "bg-primary text-white scale-[1.02]" 
-                        : "bg-white/5 border-white/10 text-blue-100 hover:bg-white/10"
+                        ? "border-slate-900 bg-slate-900 text-white shadow-sm" 
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                     )}
                     onClick={() => handlePositioningSelect(positioning)}
                   >
@@ -240,13 +240,13 @@ export default function StrategySessionPage() {
                 ))}
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-white/10">
-                <Label htmlFor="custom-positioning" className="text-white font-semibold">Custom Positioning</Label>
+              <div className="space-y-3 pt-4 border-t border-slate-200">
+                <Label htmlFor="custom-positioning" className="text-slate-900 font-semibold">Custom Positioning</Label>
                 <div className="flex gap-2">
                   <Input
                     id="custom-positioning"
                     placeholder="Define your own..."
-                    className="bg-white/5 border-white/10 text-white placeholder:text-blue-200/30"
+                    className="bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
                     value={formData.customPositioning}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
                       setFormData((current) => ({ ...current, customPositioning: e.target.value }))
@@ -255,7 +255,7 @@ export default function StrategySessionPage() {
                   <Button 
                     onClick={handleCustomPositioning} 
                     disabled={!formData.customPositioning.trim()}
-                    className="bg-white/10 hover:bg-white/20 text-white"
+                    className="bg-slate-900 hover:bg-slate-800 text-white"
                   >
                     Add
                   </Button>
@@ -266,10 +266,10 @@ export default function StrategySessionPage() {
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-primary/20 rounded-xl border border-primary/30"
+                  className="p-4 bg-slate-50 rounded-xl border border-slate-200"
                 >
-                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Market Stance</p>
-                  <p className="text-white font-bold text-lg">{formData.brandPositioning}</p>
+                  <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">Market Stance</p>
+                  <p className="text-slate-950 font-semibold text-lg">{formData.brandPositioning}</p>
                 </motion.div>
               )}
             </div>
@@ -280,11 +280,11 @@ export default function StrategySessionPage() {
         <GlassCard>
           <div className="p-8 space-y-8">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-white">
+              <div className="flex items-center gap-2 text-slate-950">
                 <Megaphone className="h-6 w-6 text-primary" />
-                <h3 className="text-xl font-bold">Primary Marketing Channels</h3>
+                <h3 className="text-xl font-semibold">Primary Marketing Channels</h3>
               </div>
-              <p className="text-blue-200/60 text-sm font-medium">
+              <p className="text-slate-600 text-sm">
                 Select 2-4 channels that align with your strategy (minimum 1 required)
               </p>
             </div>
@@ -293,12 +293,12 @@ export default function StrategySessionPage() {
               {CHANNEL_OPTIONS.map((channel) => (
                 <Button
                   key={channel.id}
-                  variant={formData.primaryChannels.includes(channel.id) ? "default" : "outline"}
+                  variant="outline"
                   className={cn(
                     "h-auto p-6 flex flex-col items-center gap-3 transition-all duration-300",
                     formData.primaryChannels.includes(channel.id)
-                      ? "bg-primary text-white scale-105"
-                      : "bg-white/5 border-white/10 text-blue-100 hover:bg-white/10"
+                      ? "border-slate-900 bg-slate-900 text-white shadow-sm scale-[1.02]"
+                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                   )}
                   onClick={() => handleChannelToggle(channel.id)}
                 >
@@ -312,14 +312,14 @@ export default function StrategySessionPage() {
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="mt-6 p-6 bg-white/5 rounded-2xl border border-white/10"
+                className="mt-6 p-6 bg-slate-50 rounded-2xl border border-slate-200"
               >
-                <p className="text-xs font-bold text-blue-200/60 uppercase tracking-wider mb-4">Tactical Matrix Channels</p>
+                <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-4">Tactical Matrix Channels</p>
                 <div className="flex flex-wrap gap-3">
                   {formData.primaryChannels.map((channelId: string) => {
                     const channel = CHANNEL_OPTIONS.find(c => c.id === channelId);
                     return (
-                      <Badge key={channelId} variant="secondary" className="bg-primary/20 text-primary border-primary/30 px-3 py-1 text-sm font-bold">
+                      <Badge key={channelId} variant="secondary" className="bg-white text-slate-700 border-slate-200 px-3 py-1 text-sm font-semibold">
                         {channel?.icon} {channel?.name}
                       </Badge>
                     );
@@ -339,8 +339,8 @@ export default function StrategySessionPage() {
             className={cn(
               "px-12 py-8 text-xl font-black rounded-full transition-all duration-500",
               canComplete 
-                ? "bg-primary hover:bg-primary/80 text-white shadow-[0_0_30px_rgba(59,130,246,0.5)] hover:shadow-[0_0_50px_rgba(59,130,246,0.7)] scale-110" 
-                : "bg-white/5 text-blue-200/20 border-white/5"
+                ? "bg-slate-900 hover:bg-slate-800 text-white shadow-sm" 
+                : "bg-slate-200 text-slate-400"
             )}
           >
             Launch Q1 Operations
@@ -351,7 +351,7 @@ export default function StrategySessionPage() {
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-blue-200/40 font-medium italic"
+              className="text-slate-500 font-medium italic"
             >
               Strategize your foundation to unlock the command center
             </motion.p>

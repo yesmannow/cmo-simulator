@@ -91,7 +91,7 @@ export default function Q2Page() {
   );
 
   return (
-    <ImmersiveLayout title="Q2 Operating Plan" subtitle="Scale with discipline." quarter="Quarter 2">
+    <ImmersiveLayout title="Q2 Operating Plan" subtitle="Scale with discipline." quarter="Quarter 2" hideHeader>
       <QuarterOperatingConsole
         context={context}
         quarter="Q2"
@@ -145,4 +145,3 @@ export default function Q2Page() {
     </ImmersiveLayout>
   );
 }
-
