@@ -4,6 +4,10 @@ export interface EnrichedTactic extends Tactic {
   strategicRationale?: string;
   marketingPrinciple?: string;
   synergyTags?: string[];
+  businessRole?: string;
+  primaryTradeoff?: string;
+  bestUsedWhen?: string;
+  watchOutFor?: string;
 }
 
 // Sample tactics library for the simulation

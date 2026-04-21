@@ -17,57 +17,36 @@ export function ImmersiveLayout({
   quarter
 }: ImmersiveLayoutProps) {
   return (
-    <div className="relative w-full text-white">
-      <div className="relative z-10 container mx-auto px-4 py-12">
-        {/* Cinematic Header */}
+    <div className="relative w-full min-h-screen bg-slate-50 text-slate-950">
+      <div className="relative z-10 mx-auto w-full px-4 py-8 sm:px-6 lg:px-8">
         <motion.header 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center mb-12 space-y-4"
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="sr-only"
         >
           {quarter && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              <span className="px-4 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase">
-                {quarter}
-              </span>
-            </motion.div>
+            <p>{quarter}</p>
           )}
-          
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-            <span className="bg-gradient-to-r from-white via-white/80 to-white/60 bg-clip-text text-transparent">
-              {title}
-            </span>
-          </h1>
-          
+          <h1>{title}</h1>
           {subtitle && (
-            <p className="text-lg text-blue-200/60 max-w-2xl mx-auto font-medium">
-              {subtitle}
-            </p>
+            <p>{subtitle}</p>
           )}
         </motion.header>
 
-        {/* Cinematic Page Transition Wrapper */}
         <AnimatePresence mode="wait">
           <motion.main
             key={title}
-            initial={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, scale: 1.02, filter: 'blur(10px)' }}
-            transition={{ duration: 0.6, ease: "easeInOut" }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
             className="w-full"
           >
             {children}
           </motion.main>
         </AnimatePresence>
       </div>
-      
-      {/* Subtle HUD scanline effect */}
-      <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-50 bg-[length:100%_2px,3px_100%]" />
     </div>
   );
 }

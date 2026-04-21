@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,6 @@ import { resolveSimulationPath } from '@/lib/simulationRouting';
 import {
   Building2,
   Target,
-  TrendingUp,
   Zap,
   Rocket,
   ArrowRight,
@@ -105,306 +104,6 @@ export const SCENARIOS = [
   }
 ];
 
-const _TIME_HORIZONS = [
-  {
-    id: '1-year' as const,
-    name: '1-Year Sprint',
-    description: 'Aggressive growth tactics, high-risk/high-reward plays',
-    icon: Zap,
-    color: 'text-red-500',
-    budget: 500000,
-    characteristics: ['Fast results', 'Higher risk', 'Tactical focus']
-  },
-  {
-    id: '3-year' as const,
-    name: '3-Year Growth',
-    description: 'Balanced approach with sustainable scaling',
-    icon: TrendingUp,
-    color: 'text-blue-500',
-    budget: 1000000,
-    characteristics: ['Balanced growth', 'Moderate risk', 'Strategic focus']
-  },
-  {
-    id: '5-year' as const,
-    name: '5-Year Long Game',
-    description: 'Brand building and market dominance strategy',
-    icon: Target,
-    color: 'text-purple-500',
-    budget: 2000000,
-    characteristics: ['Long-term value', 'Lower risk', 'Brand focus']
-  }
-];
-
-const _INDUSTRIES = [
-  {
-    id: 'healthcare' as const,
-    name: 'Healthcare',
-    icon: '🏥',
-    description: 'Medical services, health tech, wellness',
-    avgCustomerValue: 5000,
-    salesCycle: 'Long',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'legal' as const,
-    name: 'Legal Services',
-    icon: '⚖️',
-    description: 'Law firms, legal tech, consulting',
-    avgCustomerValue: 8000,
-    salesCycle: 'Very Long',
-    competitionLevel: 'Medium'
-  },
-  {
-    id: 'ecommerce' as const,
-    name: 'E-commerce',
-    icon: '🛒',
-    description: 'Online retail, DTC brands, marketplaces',
-    avgCustomerValue: 150,
-    salesCycle: 'Short',
-    competitionLevel: 'Very High'
-  },
-  {
-    id: 'saas' as const,
-    name: 'SaaS/Software',
-    icon: '💻',
-    description: 'B2B software, productivity tools, cloud services',
-    avgCustomerValue: 2500,
-    salesCycle: 'Medium',
-    competitionLevel: 'Very High'
-  },
-  {
-    id: 'fintech' as const,
-    name: 'Fintech',
-    icon: '💰',
-    description: 'Financial technology, payments, banking apps',
-    avgCustomerValue: 1200,
-    salesCycle: 'Medium',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'education' as const,
-    name: 'Education Tech',
-    icon: '📚',
-    description: 'Online learning platforms, tutoring, corporate training',
-    avgCustomerValue: 800,
-    salesCycle: 'Medium',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'real-estate' as const,
-    name: 'Real Estate',
-    icon: '🏠',
-    description: 'Property sales, rentals, property management',
-    avgCustomerValue: 15000,
-    salesCycle: 'Very Long',
-    competitionLevel: 'Medium'
-  },
-  {
-    id: 'food-delivery' as const,
-    name: 'Food Delivery',
-    icon: '🍕',
-    description: 'Restaurant delivery, meal kits, food platforms',
-    avgCustomerValue: 35,
-    salesCycle: 'Very Short',
-    competitionLevel: 'Very High'
-  },
-  {
-    id: 'fitness' as const,
-    name: 'Fitness & Wellness',
-    icon: '💪',
-    description: 'Gym franchises, fitness apps, wellness products',
-    avgCustomerValue: 200,
-    salesCycle: 'Short',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'automotive' as const,
-    name: 'Automotive',
-    icon: '🚗',
-    description: 'Car dealerships, auto parts, electric vehicles',
-    avgCustomerValue: 25000,
-    salesCycle: 'Long',
-    competitionLevel: 'Medium'
-  },
-  {
-    id: 'travel' as const,
-    name: 'Travel & Hospitality',
-    icon: '✈️',
-    description: 'Hotels, airlines, booking platforms, tourism',
-    avgCustomerValue: 300,
-    salesCycle: 'Medium',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'gaming' as const,
-    name: 'Gaming',
-    icon: '🎮',
-    description: 'Video games, esports, gaming platforms',
-    avgCustomerValue: 60,
-    salesCycle: 'Very Short',
-    competitionLevel: 'Very High'
-  },
-  {
-    id: 'fashion' as const,
-    name: 'Fashion & Apparel',
-    icon: '👗',
-    description: 'Clothing brands, luxury goods, fashion retail',
-    avgCustomerValue: 120,
-    salesCycle: 'Short',
-    competitionLevel: 'Very High'
-  },
-  {
-    id: 'construction' as const,
-    name: 'Construction',
-    icon: '🏗️',
-    description: 'Building contractors, construction services, materials',
-    avgCustomerValue: 50000,
-    salesCycle: 'Very Long',
-    competitionLevel: 'Medium'
-  },
-  {
-    id: 'energy' as const,
-    name: 'Clean Energy',
-    icon: '⚡',
-    description: 'Solar, wind, EV charging, sustainable energy',
-    avgCustomerValue: 8000,
-    salesCycle: 'Very Long',
-    competitionLevel: 'Medium'
-  },
-  {
-    id: 'agritech' as const,
-    name: 'AgriTech',
-    icon: '🌾',
-    description: 'Farm technology, precision agriculture, food tech',
-    avgCustomerValue: 10000,
-    salesCycle: 'Long',
-    competitionLevel: 'Low'
-  },
-  {
-    id: 'manufacturing' as const,
-    name: 'Manufacturing',
-    icon: '🏭',
-    description: 'Industrial equipment, B2B manufacturing, supply chain',
-    avgCustomerValue: 75000,
-    salesCycle: 'Very Long',
-    competitionLevel: 'Medium'
-  },
-  {
-    id: 'nonprofit' as const,
-    name: 'Non-Profit',
-    icon: '🤝',
-    description: 'Charities, foundations, social impact organizations',
-    avgCustomerValue: 250,
-    salesCycle: 'Medium',
-    competitionLevel: 'Low'
-  },
-  {
-    id: 'music' as const,
-    name: 'Music & Entertainment',
-    icon: '🎵',
-    description: 'Streaming services, artists, music platforms',
-    avgCustomerValue: 15,
-    salesCycle: 'Very Short',
-    competitionLevel: 'Very High'
-  },
-  {
-    id: 'sports' as const,
-    name: 'Sports',
-    icon: '⚽',
-    description: 'Sports teams, equipment, fan engagement',
-    avgCustomerValue: 80,
-    salesCycle: 'Short',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'pet-care' as const,
-    name: 'Pet Care',
-    icon: '🐕',
-    description: 'Pet food, veterinary services, pet tech',
-    avgCustomerValue: 180,
-    salesCycle: 'Short',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'home-services' as const,
-    name: 'Home Services',
-    icon: '🔧',
-    description: 'Cleaning, repairs, home improvement, maintenance',
-    avgCustomerValue: 150,
-    salesCycle: 'Short',
-    competitionLevel: 'High'
-  },
-  {
-    id: 'cannabis' as const,
-    name: 'Cannabis Industry',
-    icon: '🌿',
-    description: 'Cannabis products, dispensaries, wellness brands',
-    avgCustomerValue: 90,
-    salesCycle: 'Short',
-    competitionLevel: 'Medium'
-  },
-  {
-    id: 'space' as const,
-    name: 'Space Technology',
-    icon: '🚀',
-    description: 'Satellite services, space tourism, aerospace',
-    avgCustomerValue: 500000,
-    salesCycle: 'Very Long',
-    competitionLevel: 'Very Low'
-  }
-];
-
-const _COMPANY_PROFILES = [
-  {
-    id: 'startup' as const,
-    name: 'Startup / Small Business',
-    icon: Rocket,
-    description: 'Lean, agile, growth-focused',
-    teamSize: '5-20 people',
-    advantages: ['Agile', 'Innovative', 'Risk-tolerant'],
-    challenges: ['Limited budget', 'Brand recognition', 'Resources']
-  },
-  {
-    id: 'enterprise' as const,
-    name: 'Established Enterprise',
-    icon: Building2,
-    description: 'Mature, resourced, brand-focused',
-    teamSize: '100+ people',
-    advantages: ['Large budget', 'Brand equity', 'Resources'],
-    challenges: ['Slower decisions', 'Market saturation', 'Innovation']
-  }
-];
-
-const _MARKET_LANDSCAPES = [
-  {
-    id: 'disruptor' as const,
-    name: 'The Disruptor',
-    icon: '⚡',
-    description: 'Challenge one large, slow-moving incumbent',
-    competitorProfile: '1 major player with 5x your budget',
-    difficulty: 'Hard',
-    opportunity: 'High - exploit their weaknesses'
-  },
-  {
-    id: 'crowded' as const,
-    name: 'The Crowded Field',
-    icon: '🎯',
-    description: 'Compete against many agile startups',
-    competitorProfile: 'Multiple competitors, high ad costs',
-    difficulty: 'Very Hard',
-    opportunity: 'Medium - differentiation is key'
-  },
-  {
-    id: 'frontier' as const,
-    name: 'The Open Frontier',
-    icon: '🌅',
-    description: 'New, unsaturated market with low awareness',
-    competitorProfile: 'Few competitors, uneducated customers',
-    difficulty: 'Medium',
-    opportunity: 'High - educate and capture market'
-  }
-];
-
 export default function SetupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -423,13 +122,16 @@ export default function SetupPage() {
   const { trackStart } = useSimulationTracking();
 
   // Validation state
-  const [budgetError] = useState<string | null>(null);
   const [hasSavedRun, setHasSavedRun] = useState(false);
   const [savedRunContext, setSavedRunContext] = useState<Partial<SimulationContext> | null>(null);
   const [savedRunPhase, setSavedRunPhase] = useState<string>('idle');
 
   const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
+  const budgetTotal =
+    data.budgetAllocation.brandAwareness +
+    data.budgetAllocation.leadGeneration +
+    data.budgetAllocation.conversionOptimization;
 
   useEffect(() => {
     const session = getSimAuthSession();
@@ -547,10 +249,7 @@ export default function SetupPage() {
       case 1: return data.scenarioId !== null;
       case 2: return data.companyName.trim().length >= 2;
       case 3: {
-        const total = data.budgetAllocation.brandAwareness +
-                     data.budgetAllocation.leadGeneration +
-                     data.budgetAllocation.conversionOptimization;
-        return total === 100;
+        return budgetTotal === 100;
       }
       case 4: return true; // Review step
       default: return false;
@@ -568,6 +267,7 @@ export default function SetupPage() {
   };
 
   const selectedScenario = SCENARIOS.find(s => s.id === data.scenarioId);
+  const SelectedScenarioIcon = selectedScenario?.icon;
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/80 py-8">
       <div className="max-w-5xl mx-auto px-4">
@@ -707,7 +407,7 @@ export default function SetupPage() {
                       id="company-name"
                       placeholder="e.g., Apex Health, Innovate Legal, Urban Outfitters Co."
                       value={data.companyName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData({ ...data, companyName: e.target.value })}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setData({ ...data, companyName: e.target.value })}
                       className="text-2xl font-bold h-16 bg-white/5 border-white/10 text-white placeholder:text-white/20"
                       autoFocus
                     />
@@ -749,12 +449,6 @@ export default function SetupPage() {
                   <CardDescription className="text-blue-100/60 text-lg">
                     How will you distribute your <span className="text-emerald-400 font-bold">${selectedScenario ? (selectedScenario.budget / 1000000).toFixed(1) : 0}M</span> starting budget across the funnel?
                   </CardDescription>
-                  {budgetError && (
-                    <div className="mt-4 p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-3 text-rose-400 font-bold">
-                      <AlertTriangle className="h-5 w-5" />
-                      {budgetError}
-                    </div>
-                  )}
                 </CardHeader>
                 <CardContent className="space-y-8">
                   {/* Total allocated indicator */}
@@ -762,10 +456,10 @@ export default function SetupPage() {
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-primary/60 mb-1">TOTAL ALLOCATED</p>
                       <div className="text-5xl font-black text-white tracking-tighter">
-                        {data.budgetAllocation.brandAwareness + data.budgetAllocation.leadGeneration + data.budgetAllocation.conversionOptimization}%
+                        {budgetTotal}%
                       </div>
                     </div>
-                    {data.budgetAllocation.brandAwareness + data.budgetAllocation.leadGeneration + data.budgetAllocation.conversionOptimization !== 100 && (
+                    {budgetTotal !== 100 && (
                       <p className="text-rose-400 font-bold text-sm bg-rose-500/10 px-4 py-2 rounded-full border border-rose-500/20">
                         Must equal exactly 100%
                       </p>
@@ -852,7 +546,7 @@ export default function SetupPage() {
                       <h4 className="text-[10px] uppercase tracking-widest font-black text-blue-100/40">Campaign Context</h4>
                       <div className="p-6 bg-white/5 border border-white/10 rounded-2xl flex items-start gap-4 h-full">
                         <div className={`p-3 rounded-xl ${selectedScenario.color}`}>
-                           <selectedScenario.icon className="w-6 h-6" />
+                          {SelectedScenarioIcon ? <SelectedScenarioIcon className="w-6 h-6" /> : null}
                         </div>
                         <div>
                           <h5 className="font-black text-xl text-white tracking-tight">{selectedScenario.name}</h5>

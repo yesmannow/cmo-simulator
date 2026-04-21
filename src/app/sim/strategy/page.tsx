@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useSimulation } from '@/hooks/useSimulation';
 import { ArrowRight, Target, Users, Megaphone, DollarSign } from 'lucide-react';
 
@@ -13,6 +13,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+
+type StrategyFormData = {
+  targetAudience: string;
+  brandPositioning: string;
+  primaryChannels: string[];
+  customAudience: string;
+  customPositioning: string;
+};
 
 const CHANNEL_OPTIONS = [
   { id: 'digital', name: 'Digital Marketing', icon: '💻' },
@@ -44,47 +52,47 @@ const POSITIONING_OPTIONS = [
 export default function StrategySessionPage() {
   const router = useRouter();
   const { context, setStrategy, completeStrategySession, startSimulation } = useSimulation();
+  const { guidedDemo, targetAudience, brandPositioning, primaryChannels } = context.strategy;
 
-
-  const [formData, setFormData] = useState({
-    targetAudience: context.strategy.targetAudience || '',
-    brandPositioning: context.strategy.brandPositioning || '',
-    primaryChannels: context.strategy.primaryChannels || [],
+  const [formData, setFormData] = useState<StrategyFormData>({
+    targetAudience: targetAudience || '',
+    brandPositioning: brandPositioning || '',
+    primaryChannels: primaryChannels || [],
     customAudience: '',
     customPositioning: '',
   });
 
-
   const handleChannelToggle = (channelId: string) => {
-    const updatedChannels = formData.primaryChannels.includes(channelId)
-      ? formData.primaryChannels.filter((id: string) => id !== channelId)
-      : [...formData.primaryChannels, channelId];
-
-    setFormData({ ...formData, primaryChannels: updatedChannels });
-    setStrategy({ primaryChannels: updatedChannels });
+    setFormData((current) => {
+      const nextChannels = current.primaryChannels.includes(channelId)
+        ? current.primaryChannels.filter((id) => id !== channelId)
+        : [...current.primaryChannels, channelId];
+      setStrategy({ primaryChannels: nextChannels });
+      return { ...current, primaryChannels: nextChannels };
+    });
   };
 
   const handleAudienceSelect = (audience: string) => {
-    setFormData({ ...formData, targetAudience: audience });
+    setFormData((current) => ({ ...current, targetAudience: audience }));
     setStrategy({ targetAudience: audience });
   };
 
   const handlePositioningSelect = (positioning: string) => {
-    setFormData({ ...formData, brandPositioning: positioning });
+    setFormData((current) => ({ ...current, brandPositioning: positioning }));
     setStrategy({ brandPositioning: positioning });
   };
 
   const handleCustomAudience = () => {
     if (formData.customAudience.trim()) {
       handleAudienceSelect(formData.customAudience.trim());
-      setFormData({ ...formData, customAudience: '' });
+      setFormData((current) => ({ ...current, customAudience: '' }));
     }
   };
 
   const handleCustomPositioning = () => {
     if (formData.customPositioning.trim()) {
       handlePositioningSelect(formData.customPositioning.trim());
-      setFormData({ ...formData, customPositioning: '' });
+      setFormData((current) => ({ ...current, customPositioning: '' }));
     }
   };
 
@@ -94,20 +102,20 @@ export default function StrategySessionPage() {
     router.push('/sim/q1');
   };
 
-  const canComplete = formData.targetAudience && formData.brandPositioning && formData.primaryChannels.length > 0;
+  const canComplete = Boolean(
+    formData.targetAudience && formData.brandPositioning && formData.primaryChannels.length > 0
+  );
 
   useEffect(() => {
-    if (
-      context.strategy.guidedDemo &&
-      context.strategy.targetAudience &&
-      context.strategy.brandPositioning &&
-      context.strategy.primaryChannels?.length
-    ) {
+    const guidedDemoReady =
+      guidedDemo && targetAudience && brandPositioning && (primaryChannels?.length || 0) > 0;
+
+    if (guidedDemoReady) {
       startSimulation();
       completeStrategySession();
       router.replace('/sim/q1');
     }
-  }, [completeStrategySession, context.strategy, router, startSimulation]);
+  }, [brandPositioning, completeStrategySession, guidedDemo, primaryChannels?.length, router, startSimulation, targetAudience]);
 
   return (
     <ImmersiveLayout
@@ -115,8 +123,6 @@ export default function StrategySessionPage() {
       subtitle="Define your strategic foundation for the next 12 months. Your choices here will influence the tactics available and their effectiveness throughout the simulation."
       quarter="Strategy Session"
     >
-
-
       <div className="max-w-5xl mx-auto space-y-10 pb-20">
         {/* Budget Overview */}
         <GlassCard className="border-primary/20 bg-primary/5">
@@ -176,7 +182,9 @@ export default function StrategySessionPage() {
                     placeholder="Define your own..."
                     className="bg-white/5 border-white/10 text-white placeholder:text-blue-200/30"
                     value={formData.customAudience}
-                    onChange={(e) => setFormData({ ...formData, customAudience: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setFormData((current) => ({ ...current, customAudience: e.target.value }))
+                    }
                   />
                   <Button 
                     onClick={handleCustomAudience} 
@@ -240,7 +248,9 @@ export default function StrategySessionPage() {
                     placeholder="Define your own..."
                     className="bg-white/5 border-white/10 text-white placeholder:text-blue-200/30"
                     value={formData.customPositioning}
-                    onChange={(e) => setFormData({ ...formData, customPositioning: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      setFormData((current) => ({ ...current, customPositioning: e.target.value }))
+                    }
                   />
                   <Button 
                     onClick={handleCustomPositioning} 

@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { MessageSquareWarning, TrendingDown, Eye, AlertOctagon } from 'lucide-react';
-import { SimulationContext } from '@/lib/simMachine';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { useMemo } from 'react';
+import { AlertCircle, Eye, TrendingDown } from 'lucide-react';
+import type { SimulationContext } from '@/lib/simMachine';
+import { cn } from '@/lib/utils';
 
 interface ExecutivePressureProps {
   currentQuarter: string;
@@ -13,121 +11,88 @@ interface ExecutivePressureProps {
 }
 
 export function ExecutivePressure({ currentQuarter, context }: ExecutivePressureProps) {
-  const pressureMessage = useMemo(() => {
-    // Determine context-aware board pressure
-    const isUnderperforming = context.kpis.revenue < (context.strategy.timeHorizon === '1-year' ? 500000 : 250000);
+  const pressure = useMemo(() => {
+    const lowRevenue = context.kpis.revenue < (context.strategy.timeHorizon === '1-year' ? 500000 : 250000);
     const lowMarketShare = context.kpis.marketShare < 5;
 
     if (currentQuarter === 'Q1') {
       return {
-        title: "CEO Directive",
-        message: "The board approved your budget, but expectations are sky-high. We need to see immediate traction. Don't play it too safe.",
-        urgency: "medium",
+        title: 'Board mandate',
+        message: 'Establish a credible first-quarter plan. The board wants early traction, but not at the cost of reckless cash burn.',
+        priority: 'Medium',
+        tone: 'neutral',
         icon: Eye,
-        color: "text-blue-400",
-        bgUrl: "from-blue-500/10 to-transparent",
-        borderColor: "border-blue-500/20"
       };
     }
 
-    if (currentQuarter === 'Q2') {
-      if (isUnderperforming) {
-        return {
-          title: "Board Inquiry",
-          message: "Revenue velocity is severely lacking. The investors are asking questions. Time to pivot or double down on our performing assets.",
-          urgency: "high",
-          icon: TrendingDown,
-          color: "text-rose-400",
-          bgUrl: "from-rose-500/10 to-transparent",
-          borderColor: "border-rose-500/30"
-        };
-      }
+    if (currentQuarter === 'Q2' && lowRevenue) {
       return {
-        title: "Growth Mandate",
-        message: "Solid start, but our competitors aren't sleeping. The mandate this quarter is aggressive expansion. Secure more market share.",
-        urgency: "medium",
-        icon: AlertOctagon,
-        color: "text-amber-400",
-        bgUrl: "from-amber-500/10 to-transparent",
-        borderColor: "border-amber-500/30"
+        title: 'Revenue pressure',
+        message: 'The first-half revenue pace is behind plan. Rebalance toward moves that can create demand without exhausting the quarter reserve.',
+        priority: 'High',
+        tone: 'warning',
+        icon: TrendingDown,
       };
     }
 
-    if (currentQuarter === 'Q3') {
-      if (lowMarketShare) {
-        return {
-          title: "Critical Warning",
-          message: "Our market penetration is stalling. If we don't break through the noise this quarter, we risk irrelevance next year. Deploy the war chest.",
-          urgency: "critical",
-          icon: MessageSquareWarning,
-          color: "text-red-500",
-          bgUrl: "from-red-600/20 to-transparent",
-          borderColor: "border-red-500/50"
-        };
-      }
+    if (currentQuarter === 'Q3' && lowMarketShare) {
       return {
-        title: "Scaling Pressure",
-        message: "You've proven the model. Now the board demands scale. We need explosive growth going into Q4 to hit our annual targets.",
-        urgency: "high",
-        icon: AlertOctagon,
-        color: "text-rose-400",
-        bgUrl: "from-rose-500/10 to-transparent",
-        borderColor: "border-rose-500/30"
+        title: 'Market position risk',
+        message: 'Market share is still thin. Decide whether to concentrate spend for a breakthrough or preserve cash for the final quarter.',
+        priority: 'High',
+        tone: 'warning',
+        icon: AlertCircle,
       };
     }
 
-    // Q4
+    if (currentQuarter === 'Q4') {
+      return {
+        title: 'Final board review',
+        message: 'This quarter determines the annual story. Prioritize moves that improve the final scorecard and make the debrief defensible.',
+        priority: 'High',
+        tone: 'critical',
+        icon: AlertCircle,
+      };
+    }
+
     return {
-      title: "Final Push",
-      message: "This is it. The quarter that defines the fiscal year. Exhaust every viable channel. Leave nothing on the table.",
-      urgency: "high",
-      icon: MessageSquareWarning,
-      color: "text-red-400",
-      bgUrl: "from-red-500/10 to-transparent",
-      borderColor: "border-red-500/30"
+      title: 'Growth mandate',
+      message: 'Performance is moving, but the mix still needs discipline. Use the forecast to balance acquisition, brand carryover, and budget reserve.',
+      priority: 'Medium',
+      tone: 'neutral',
+      icon: Eye,
     };
+  }, [context.kpis.marketShare, context.kpis.revenue, context.strategy.timeHorizon, currentQuarter]);
 
-  }, [currentQuarter, context.kpis, context.strategy.timeHorizon]);
-
-  const Icon = pressureMessage.icon;
+  const Icon = pressure.icon;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-    >
-      <GlassCard className={`relative overflow-hidden bg-gradient-to-br ${pressureMessage.bgUrl} border ${pressureMessage.borderColor} shadow-lg backdrop-blur-md`}>
-        {/* Animated pulse for high urgency */}
-        {pressureMessage.urgency === 'critical' && (
-          <div className="absolute inset-0 bg-red-500/5 animate-pulse pointer-events-none" />
-        )}
-        
-        <div className="p-5 flex items-start gap-4">
-          <div className={`p-3 rounded-xl bg-slate-900/50 border ${pressureMessage.borderColor} shrink-0`}>
-            <Icon className={`w-6 h-6 ${pressureMessage.color} ${pressureMessage.urgency === 'critical' ? 'animate-bounce' : ''}`} />
+    <section className={cn(
+      'rounded-lg border p-5 shadow-sm',
+      pressure.tone === 'warning' && 'border-amber-200 bg-amber-50',
+      pressure.tone === 'critical' && 'border-red-200 bg-red-50',
+      pressure.tone === 'neutral' && 'border-slate-200 bg-white',
+    )}>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex gap-3">
+          <div className={cn(
+            'rounded-md border p-2',
+            pressure.tone === 'warning' && 'border-amber-200 bg-white text-amber-800',
+            pressure.tone === 'critical' && 'border-red-200 bg-white text-red-800',
+            pressure.tone === 'neutral' && 'border-slate-200 bg-slate-50 text-slate-700',
+          )}>
+            <Icon className="h-5 w-5" />
           </div>
-          
-          <div className="space-y-1">
-            <h3 className={`text-sm font-black uppercase tracking-widest flex items-center gap-2 ${pressureMessage.color}`}>
-              {pressureMessage.title}
-              <InfoTooltip iconOnly position="right" content="Contextual mandates from the Executive Board based on your current KPI performance." />
-            </h3>
-            <p className="text-sm font-medium leading-relaxed text-slate-300">
-              {pressureMessage.message}
-            </p>
-            <div className="pt-2">
-              <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border tracking-widest
-                ${pressureMessage.urgency === 'critical' ? 'bg-red-500/20 text-red-400 border-red-500/50' : 
-                  pressureMessage.urgency === 'high' ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' : 
-                  'bg-blue-500/20 text-blue-400 border-blue-500/50'}`}
-              >
-                Board Level Priority: {pressureMessage.urgency}
-              </span>
-            </div>
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-600">{pressure.title}</h2>
+            <p className="mt-1 max-w-4xl text-sm leading-6 text-slate-800">{pressure.message}</p>
           </div>
         </div>
-      </GlassCard>
-    </motion.div>
+        <span className="w-fit rounded-sm border border-slate-300 bg-white px-2 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+          {pressure.priority} priority
+        </span>
+      </div>
+    </section>
   );
 }
+
