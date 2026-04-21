@@ -46,7 +46,7 @@ export const SCENARIOS = [
     icon: Target,
     color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
     timeHorizon: '1-year' as TimeHorizon,
-    industry: 'retail' as Industry,
+    industry: 'ecommerce' as Industry,
     companyProfile: 'enterprise' as CompanyProfile,
     marketLandscape: 'disruptor' as MarketLandscape,
     difficulty: 'Hard',
@@ -179,6 +179,7 @@ export default function SetupPage() {
         strategy: {
           companyName: data.companyName.trim(),
           guidedDemo: false,
+          industry: scenario.industry,
           targetAudience: '',
           brandPositioning: '',
           primaryChannels: [],
@@ -217,6 +218,7 @@ export default function SetupPage() {
       strategy: {
         companyName: 'Guided Demo Co.',
         guidedDemo: true,
+        industry: demoScenario.industry,
         targetAudience: 'Young Professionals (25-35)',
         brandPositioning: 'Innovation & Technology',
         primaryChannels: ['digital', 'social', 'content'],

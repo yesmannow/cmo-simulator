@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useMachine } from '@xstate/react';
-import { simulationMachine, SimulationContext, SimulationEvent } from '@/lib/simMachine';
+import { simulationMachine, SimulationEvent, HydrationPatch } from '@/lib/simMachine';
 import { StateFrom } from 'xstate';
 import { logger } from '@/lib/logger';
 
@@ -18,7 +18,7 @@ const SimulationReactContext = createContext<SimulationContextValue | null>(null
 
 export function SimulationProvider({ children }: { children: React.ReactNode }) {
   // Use a state to hold the hydrated context
-  const [hydratedContext, setHydratedContext] = useState<Partial<SimulationContext> | null>(null);
+  const [hydratedContext, setHydratedContext] = useState<HydrationPatch | null>(null);
   const [hydrationError, setHydrationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -86,7 +86,7 @@ function SimulationMachineProvider({
   hydratedContext
 }: {
   children: React.ReactNode;
-  hydratedContext: Partial<SimulationContext>;
+  hydratedContext: HydrationPatch;
 }) {
   const [state, send] = useMachine(simulationMachine);
 

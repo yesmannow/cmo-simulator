@@ -1,4 +1,5 @@
 import { SimulationState, PlayerInput, MarketConditions, Channel } from '../types/engine';
+import type { Industry } from '@/types';
 import { calculateAdstockAll } from './adstock';
 import { applyHillTransformAll } from './saturation';
 import { applySynergy } from './synergy';
@@ -144,11 +145,11 @@ export function runSimulationTick(
   const leads = Math.floor(totalTraffic * leadRate);
   const conversions = Math.floor(leads * baseConversionRate);
 
-  // Get industry data for realistic revenue calculation
-  // Default to healthcare if industry is not available in state
-  // TODO: Add industry to SimulationState if needed for different industries
-  const industry = 'healthcare'; // Default industry
-  const industryData = INDUSTRY_DATA[industry];
+  // Get industry data for realistic revenue calculation.
+  // Persisted runs may predate the `industry` field, so keep a safe fallback.
+  const configuredIndustry = previousState.industry ?? ("healthcare" as Industry);
+  const industryData =
+    INDUSTRY_DATA[configuredIndustry] ?? INDUSTRY_DATA["healthcare"];
   const customerValue = industryData.avgCustomerValue;
 
   // Calculate base revenue
@@ -246,6 +247,7 @@ export function runSimulationTick(
   // Return new state
   return {
     tick: previousState.tick + 1,
+    industry: previousState.industry ?? configuredIndustry,
     marketConditions,
     adstock: newAdstock,
     results,
@@ -259,7 +261,7 @@ export function runSimulationTick(
 /**
  * Initialize simulation state
  */
-export function initializeSimulationState(): SimulationState {
+export function initializeSimulationState(options?: { industry?: Industry }): SimulationState {
   const initialAdstock: Record<Channel, number> = {
     tv: 0, radio: 0, print: 0, digital: 0, social: 0, seo: 0, events: 0, pr: 0
   };
@@ -272,6 +274,7 @@ export function initializeSimulationState(): SimulationState {
 
   return {
     tick: 0,
+    industry: options?.industry ?? ("healthcare" as Industry),
     marketConditions: initialMarketConditions,
     adstock: initialAdstock,
     stressMeters: {

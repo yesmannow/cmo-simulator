@@ -3,7 +3,9 @@ import { TalentCandidate, BigBetOption } from './talentMarket';
 
 import { runSimulationTick, initializeSimulationState } from '../engine';
 import { SimulationState, Channel, PlayerInput, MarketConditions } from '../types/engine';
-import type { TimeHorizon, MarketLandscape } from '@/types';
+import type { TimeHorizon, MarketLandscape, Industry } from '@/types';
+import { mergeSimulationContext } from "@/lib/simulationHydration";
+import { buildQuarterMarketConditions } from "@/lib/marketConditions";
 
 // Types for simulation context and events
 export interface SimulationContext {
@@ -16,6 +18,7 @@ export interface SimulationContext {
   strategy: {
     companyName?: string;
     guidedDemo?: boolean;
+    industry?: Industry;
     targetAudience?: string;
     brandPositioning?: string;
     primaryChannels?: string[];
@@ -167,9 +170,15 @@ export interface SimulationResults {
   grade: 'A' | 'B' | 'C' | 'D' | 'F';
 }
 
+export type HydrationPatch =
+  Omit<Partial<SimulationContext>, "startedAt" | "engineState"> & {
+    startedAt?: Date | string;
+    engineState?: unknown;
+  };
+
 // Event types
 export type SimulationEvent =
-  | { type: 'HYDRATE_CONTEXT'; context: Partial<SimulationContext> }
+  | { type: 'HYDRATE_CONTEXT'; context: HydrationPatch }
   | { type: 'START_SIMULATION' }
   | { type: 'SET_STRATEGY'; strategy: Partial<SimulationContext['strategy']> }
   | { type: 'COMPLETE_STRATEGY_SESSION' }
@@ -272,8 +281,18 @@ const initialContext: SimulationContext = {
   hiredTalent: [],
   morale: 75,
   brandEquity: 50,
-  engineState: initializeSimulationState(),
+  engineState: initializeSimulationState({ industry: "healthcare" }),
 };
+
+export function createInitialSimulationContext(): SimulationContext {
+  // We want a fresh object per run to avoid accidental cross-run mutation.
+  // `structuredClone` exists in modern browsers + Node; fallback is safe for our plain data.
+  try {
+    return structuredClone(initialContext);
+  } catch {
+    return JSON.parse(JSON.stringify(initialContext)) as SimulationContext;
+  }
+}
 
 // Simulation state machine
 export const simulationMachine = createMachine({
@@ -284,7 +303,9 @@ export const simulationMachine = createMachine({
     idle: {
       on: {
         HYDRATE_CONTEXT: {
-          actions: assign(({ event }) => event.type === 'HYDRATE_CONTEXT' ? event.context : {}),
+          actions: assign(({ context, event }) =>
+            event.type === "HYDRATE_CONTEXT" ? mergeSimulationContext(context, event.context) : {},
+          ),
         },
         START_SIMULATION: {
           target: 'strategySession',
@@ -835,7 +856,7 @@ export const simulationMachine = createMachine({
       on: {
         RESTART_SIMULATION: {
           target: 'idle',
-          actions: assign(() => initialContext),
+          actions: assign(() => createInitialSimulationContext()),
         },
       },
     },
@@ -884,22 +905,21 @@ export function processQuarterAdvance(
     promotions: []
   };
 
-  // 2. Generate Market Conditions (derive from game state)
-  const marketConditions: MarketConditions = {
-    seasonalityIndex: 1.0, // Could be varied by quarter
-    economicIndex: 1.0, // Could be affected by MarketLandscape
-    competitorSpend: { tv: 50000, radio: 30000, print: 20000, digital: 80000, social: 40000, seo: 20000, events: 10000, pr: 15000 }
-  };
-
-  if (context.strategy.marketLandscape === 'disruptor') marketConditions.economicIndex = 0.8;
-  if (context.strategy.marketLandscape === 'crowded') {
-    Object.keys(marketConditions.competitorSpend).forEach(k => {
-      marketConditions.competitorSpend[k as Channel] *= 1.5;
-    });
-  }
+  // 2. Generate Market Conditions (scenario + industry + quarter driven; deterministic)
+  const marketConditions: MarketConditions = buildQuarterMarketConditions({
+    scenarioId: context.scenarioId,
+    quarter: quarterKey,
+    industry: context.strategy.industry ?? oldEngineState.industry,
+    marketLandscape: context.strategy.marketLandscape,
+    previous: oldEngineState.marketConditions,
+  });
 
   // 3. Run Simulation Tick (calculates Adstock, Synergy, Hill Transform)
-  const newEngineState = runSimulationTick(oldEngineState, playerInputs, marketConditions);
+  const newEngineState = runSimulationTick(
+    { ...oldEngineState, industry: context.strategy.industry ?? oldEngineState.industry },
+    playerInputs,
+    marketConditions,
+  );
 
   // 4. Calculate Wildcard Impacts
   let wildcardRevenueImpact = 0;

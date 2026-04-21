@@ -1,3 +1,5 @@
+import type { Industry } from "./index";
+
 export type Channel = 'tv' | 'radio' | 'print' | 'digital' | 'social' | 'seo' | 'events' | 'pr';
 
 export interface PlayerInput {
@@ -19,6 +21,7 @@ export interface MarketConditions {
 
 export interface SimulationState {
   tick: number;
+  industry?: Industry;
   marketConditions: MarketConditions;
   adstock: Record<Channel, number>;
   results: SimulationOutput;
