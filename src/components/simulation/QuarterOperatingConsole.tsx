@@ -5,6 +5,7 @@ import type React from 'react';
 import { AlertTriangle, ArrowRight, BarChart3, Check, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Drawer } from '@/components/ui/Drawer';
 import { CMOMentor } from '@/components/simulation/CMOMentor';
 import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
 import { buildSimulationForecast, formatForecastValue, getTacticBusinessProfile, type QuarterKey } from '@/lib/simulationForecast';
@@ -103,11 +104,32 @@ export function QuarterOperatingConsole({
                         <Badge className="w-fit bg-slate-900 text-white hover:bg-slate-900">{profile.businessRole}</Badge>
                       </div>
 
-                      <dl className="grid gap-3 text-sm md:grid-cols-3">
-                        <Detail label="Best used when" value={profile.bestUsedWhen} />
-                        <Detail label="Tradeoff" value={profile.primaryTradeoff} />
-                        <Detail label="Watch out for" value={profile.watchOutFor} />
-                      </dl>
+                      <Drawer
+                        className="shadow-sm"
+                        summary={
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Decision drawer</span>
+                            <span className="inline-flex items-center gap-1 text-xs text-slate-600">
+                              <Target className="h-3.5 w-3.5 text-slate-500" />
+                              Best use
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs text-slate-600">
+                              <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
+                              Tradeoff
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-xs text-slate-600">
+                              <AlertTriangle className="h-3.5 w-3.5 text-slate-500" />
+                              Watch outs
+                            </span>
+                          </div>
+                        }
+                      >
+                        <dl className="grid gap-3 text-sm md:grid-cols-3">
+                          <Detail label="Best used when" value={profile.bestUsedWhen} />
+                          <Detail label="Tradeoff" value={profile.primaryTradeoff} />
+                          <Detail label="Watch out for" value={profile.watchOutFor} />
+                        </dl>
+                      </Drawer>
 
                       <div className="flex flex-wrap gap-2">
                         <span className="rounded-sm bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
@@ -319,7 +341,7 @@ function MetricTile({ metric }: { metric: ReturnType<typeof buildSimulationForec
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
       <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className="mt-1 leading-6 text-slate-700">{value}</dd>
     </div>
