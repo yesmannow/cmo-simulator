@@ -144,12 +144,12 @@ export function CrmShell({ children }: { children: ReactNode }) {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/88 backdrop-blur">
-            <div className="hidden h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:flex">
-              <div className="flex items-center gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-slate-950">{titleForPath(pathname)}</div>
-                  <div className="text-xs text-slate-500">CMO Simulator · {companyName}</div>
+          <header className="sticky top-0 z-40 overflow-x-clip border-b border-slate-200/80 bg-white/88 backdrop-blur">
+            <div className="hidden h-16 min-w-0 items-center justify-between gap-3 px-4 sm:px-6 lg:flex">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-slate-950">{titleForPath(pathname)}</div>
+                  <div className="truncate text-xs text-slate-500">CMO Simulator · {companyName}</div>
                 </div>
               </div>
 
@@ -200,9 +200,9 @@ export function CrmShell({ children }: { children: ReactNode }) {
           </header>
 
           <main className="px-4 pb-[calc(env(safe-area-inset-bottom)+92px)] pt-4 sm:px-6 lg:px-6 lg:py-6 lg:pb-6">
-            <div className="mb-5 hidden rounded-lg border border-slate-200 bg-white/80 px-4 py-3 shadow-sm lg:block">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <div className="mb-5 hidden min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white/80 px-4 py-3 shadow-sm lg:block">
+              <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex min-w-0 items-center gap-2 break-words text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <CircleDot className="h-3.5 w-3.5 text-emerald-600" />
                   {runStatus} operating year
                 </div>
@@ -289,13 +289,13 @@ function SidebarGroup({
             key={item.href}
             href={item.href}
             className={cn(
-              'mt-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              'mt-1 flex min-w-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               isActive ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
             )}
             aria-current={isActive ? 'page' : undefined}
           >
-            <Icon className={cn('h-4 w-4', isActive ? 'text-slate-900' : 'text-slate-500')} />
-            <span>{item.label}</span>
+            <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-slate-900' : 'text-slate-500')} />
+            <span className="min-w-0 break-words">{item.label}</span>
           </Link>
         );
       })}
@@ -360,13 +360,13 @@ function NavSheetSection({
                   : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-white',
               )}
             >
-              <div className="flex items-center gap-3">
-                <span className={cn('flex h-10 w-10 items-center justify-center rounded-2xl', isActive ? 'bg-white/10' : 'bg-white')}>
+              <div className="flex min-w-0 items-center gap-3">
+                <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl', isActive ? 'bg-white/10' : 'bg-white')}>
                   <Icon className="h-4 w-4" />
                 </span>
-                <div>
-                  <div className="text-sm font-semibold">{item.label}</div>
-                  <div className={cn('text-xs', isActive ? 'text-slate-300' : 'text-slate-500')}>
+                <div className="min-w-0">
+                  <div className="break-words text-sm font-semibold">{item.label}</div>
+                  <div className={cn('break-words text-xs', isActive ? 'text-slate-300' : 'text-slate-500')}>
                     {isTarget ? 'Current phase target' : isActive ? 'Open now' : 'Open view'}
                   </div>
                 </div>
@@ -386,18 +386,18 @@ function NavSheetSection({
 
 function SidebarMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white px-3 py-2">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-slate-950">{value}</div>
+    <div className="min-w-0 overflow-hidden rounded-md border border-slate-200 bg-white px-3 py-2">
+      <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-1 truncate text-sm font-semibold text-slate-950">{value}</div>
     </div>
   );
 }
 
 function CompactMetric({ label, value, mobile = false }: { label: string; value: string; mobile?: boolean }) {
   return (
-    <div className={cn('rounded-2xl bg-slate-50 px-3 py-2 text-right', mobile && 'px-2.5 py-2')}>
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className={cn('font-semibold tracking-tight text-slate-950', mobile ? 'text-xs' : 'text-sm')}>{value}</div>
+    <div className={cn('min-w-0 overflow-hidden rounded-2xl bg-slate-50 px-3 py-2 text-right', mobile && 'px-2.5 py-2')}>
+      <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      <div className={cn('truncate font-semibold tracking-tight text-slate-950', mobile ? 'text-xs' : 'text-sm')}>{value}</div>
     </div>
   );
 }

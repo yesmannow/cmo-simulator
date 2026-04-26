@@ -158,15 +158,15 @@ export default function CampaignsPage() {
                   onClick={() => setSelected(row)}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{row.quarter}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-950">{row.tactic.name}</p>
+                      <p className="mt-1 break-all text-sm font-semibold text-slate-950">{row.tactic.name}</p>
                     </div>
                     <Badge className="border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50">
                       {getStatus(row.quarter)}
                     </Badge>
                   </div>
-                  {row.tactic.description && <p className="mt-2 text-sm leading-6 text-slate-600">{row.tactic.description}</p>}
+                  {row.tactic.description && <p className="mt-2 break-all text-sm leading-6 text-slate-600">{row.tactic.description}</p>}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Badge className="border border-slate-200 bg-white text-slate-700 hover:bg-white">
                       {categoryLabel(row.tactic.category)}
@@ -184,7 +184,7 @@ export default function CampaignsPage() {
           </div>
 
           <div className="hidden overflow-auto md:block">
-            <table className="w-full min-w-[860px] border-separate border-spacing-0">
+            <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0">
               <thead>
                 <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   <th className="sticky top-0 bg-white py-3 pr-4">Quarter</th>
@@ -211,9 +211,15 @@ export default function CampaignsPage() {
                       onClick={() => setSelected(row)}
                     >
                       <td className="whitespace-nowrap py-4 pr-4 text-sm font-semibold text-slate-900">{row.quarter}</td>
-                      <td className="py-4 pr-4">
-                        <div className="text-sm font-semibold text-slate-950">{row.tactic.name}</div>
-                        {row.tactic.description && <div className="mt-1 text-xs text-slate-600">{row.tactic.description}</div>}
+                      <td className="min-w-0 py-4 pr-4">
+                        <div className="truncate text-sm font-semibold text-slate-950" title={row.tactic.name}>
+                          {row.tactic.name}
+                        </div>
+                        {row.tactic.description && (
+                          <div className="mt-1 truncate text-xs text-slate-600" title={row.tactic.description}>
+                            {row.tactic.description}
+                          </div>
+                        )}
                       </td>
                       <td className="whitespace-nowrap py-4 pr-4">
                         <Badge className="border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
@@ -227,7 +233,7 @@ export default function CampaignsPage() {
                       </td>
                       <td className="whitespace-nowrap py-4 pr-4 text-sm text-slate-700">{formatCurrency(row.tactic.cost)}</td>
                       <td className="whitespace-nowrap py-4 pr-4 text-sm text-slate-700">{row.tactic.timeRequired}h</td>
-                      <td className="py-4 pr-4 text-xs text-slate-600">
+                      <td className="break-all py-4 pr-4 text-xs text-slate-600">
                         Revenue {formatCurrency(row.tactic.expectedImpact.revenue)} · Share {row.tactic.expectedImpact.marketShare.toFixed(1)}% ·
                         Awareness {row.tactic.expectedImpact.brandAwareness.toFixed(1)}%
                       </td>
