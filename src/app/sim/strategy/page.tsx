@@ -63,13 +63,12 @@ export default function StrategySessionPage() {
   });
 
   const handleChannelToggle = (channelId: string) => {
-    setFormData((current) => {
-      const nextChannels = current.primaryChannels.includes(channelId)
-        ? current.primaryChannels.filter((id) => id !== channelId)
-        : [...current.primaryChannels, channelId];
-      setStrategy({ primaryChannels: nextChannels });
-      return { ...current, primaryChannels: nextChannels };
-    });
+    const nextChannels = formData.primaryChannels.includes(channelId)
+      ? formData.primaryChannels.filter((id) => id !== channelId)
+      : [...formData.primaryChannels, channelId];
+
+    setFormData((current) => ({ ...current, primaryChannels: nextChannels }));
+    setStrategy({ primaryChannels: nextChannels });
   };
 
   const handleAudienceSelect = (audience: string) => {

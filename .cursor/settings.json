@@ -1,0 +1,22 @@
+{
+  "plugins": {
+    "firecrawl": {
+      "enabled": true
+    },
+    "vercel": {
+      "enabled": true
+    },
+    "supabase": {
+      "enabled": true
+    },
+    "browse": {
+      "enabled": true
+    },
+    "gsap-skills": {
+      "enabled": true
+    },
+    "browserstack": {
+      "enabled": true
+    }
+  }
+}

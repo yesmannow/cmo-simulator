@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useMachine } from '@xstate/react';
 import { simulationMachine, SimulationEvent, HydrationPatch } from '@/lib/simMachine';
 import { StateFrom } from 'xstate';
@@ -89,10 +89,16 @@ function SimulationMachineProvider({
   hydratedContext: HydrationPatch;
 }) {
   const [state, send] = useMachine(simulationMachine);
+  const hasAppliedHydration = useRef(false);
 
-  // Hydrate context on mount if the machine is still in 'idle'
+  // Hydrate once; machine remains in idle after hydration so we must guard repeats.
   useEffect(() => {
-    if (Object.keys(hydratedContext).length > 0 && state.matches('idle')) {
+    if (
+      !hasAppliedHydration.current &&
+      Object.keys(hydratedContext).length > 0 &&
+      state.matches('idle')
+    ) {
+      hasAppliedHydration.current = true;
       send({ type: 'HYDRATE_CONTEXT', context: hydratedContext });
     }
   }, [hydratedContext, send, state]);

@@ -122,6 +122,11 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
       `Growth leader takeaway: ${report.growthLeaderTakeaway}`,
     ].join("\n");
 
+    if (!window.isSecureContext || !navigator.clipboard?.writeText) {
+      setCopyStatus("Clipboard access is unavailable here. Export the briefing instead.");
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(briefing);
       setCopyStatus("Briefing copied.");
