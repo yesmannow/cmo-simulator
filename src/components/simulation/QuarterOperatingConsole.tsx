@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type React from 'react';
-import { AlertTriangle, ArrowRight, BarChart3, Check, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BarChart3, Check, Circle, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp, WalletCards } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Drawer } from '@/components/ui/Drawer';
@@ -46,32 +46,89 @@ export function QuarterOperatingConsole({
     () => buildSimulationForecast(context, quarter, selectedTactics),
     [context, quarter, selectedTactics],
   );
-  const selectedIds = new Set(selectedTactics.map((tactic) => tactic.id));
+  const selectedIds = useMemo(() => new Set(selectedTactics.map((tactic) => tactic.id)), [selectedTactics]);
   const { budgetSummary } = forecast;
+  const budgetIsOver = budgetSummary.remainingBudget < 0;
+  const planReadiness = selectedTactics.length === 0
+    ? 'No moves selected'
+    : budgetIsOver
+      ? 'Budget needs review'
+      : 'Ready to review';
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-16">
-      <header className="space-y-3 border-b border-slate-200 pb-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 bg-slate-950 px-5 py-5 text-white md:px-6">
+          <QuarterTrack activeQuarter={quarter} />
+        </div>
+        <div className="grid gap-5 p-5 md:grid-cols-[minmax(0,1fr)_320px] md:p-6">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">{quarter} Operating Console</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
             <p className="mt-2 max-w-3xl text-base leading-7 text-slate-600">{subtitle}</p>
           </div>
-          <div className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-            <span className="font-semibold text-slate-950">${budgetSummary.usedBudget.toLocaleString()}</span>
-            <span> used of </span>
-            <span className="font-semibold text-slate-950">${budgetSummary.quarterBudget.toLocaleString()}</span>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Quarter budget</p>
+                <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+                  ${budgetSummary.usedBudget.toLocaleString()}
+                </p>
+              </div>
+              <WalletCards className="h-6 w-6 text-slate-500" />
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
+              <div
+                className={cn('h-full rounded-full', budgetIsOver ? 'bg-red-600' : 'bg-slate-950')}
+                style={{ width: `${Math.min(budgetSummary.utilization * 100, 100)}%` }}
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs font-medium text-slate-600">
+              <span>{Math.round(budgetSummary.utilization * 100)}% used</span>
+              <span className={cn(budgetIsOver && 'text-red-700')}>
+                ${budgetSummary.remainingBudget.toLocaleString()} reserve
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
       <ExecutivePressure currentQuarter={quarter} context={context} />
 
-      <section className="grid gap-3 md:grid-cols-5">
-        {forecast.deltaFromCurrent.map((metric) => (
-          <MetricTile key={metric.label} metric={metric} />
-        ))}
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Panel className="p-0">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">Operating pulse</h2>
+                <p className="text-sm leading-6 text-slate-600">Forecasted movement if the selected plan is finalized.</p>
+              </div>
+              <span className={cn(
+                'w-fit rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wide',
+                budgetIsOver ? 'bg-red-50 text-red-700' : selectedTactics.length > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600',
+              )}>
+                {planReadiness}
+              </span>
+            </div>
+          </div>
+          <div className="grid gap-px bg-slate-200 sm:grid-cols-2 lg:grid-cols-5">
+            {forecast.deltaFromCurrent.map((metric) => (
+              <MetricTile key={metric.label} metric={metric} />
+            ))}
+          </div>
+        </Panel>
+
+        <Panel>
+          <div className="flex items-center gap-2">
+            <LineChart className="h-5 w-5 text-slate-700" />
+            <h2 className="text-lg font-semibold text-slate-950">Decision brief</h2>
+          </div>
+          <div className="mt-4 space-y-3">
+            <PlanSignal label="Moves selected" value={selectedTactics.length.toString()} />
+            <PlanSignal label="Forecast notes" value={forecast.explanationBullets.length.toString()} />
+            <PlanSignal label="Open risks" value={forecast.riskWarnings.length.toString()} tone={forecast.riskWarnings.length > 0 ? 'warning' : 'neutral'} />
+          </div>
+        </Panel>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -214,7 +271,7 @@ export function QuarterOperatingConsole({
           </Panel>
         </main>
 
-        <aside className="space-y-6">
+        <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
           <Panel>
             <h2 className="text-lg font-semibold text-slate-950">Budget status</h2>
             <div className="mt-4 space-y-3">
@@ -304,9 +361,9 @@ export function QuarterOperatingConsole({
   );
 }
 
-function Panel({ children }: { children: React.ReactNode }) {
+function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <section className={cn('rounded-lg border border-slate-200 bg-white p-5 shadow-sm', className)}>
       {children}
     </section>
   );
@@ -324,7 +381,7 @@ function MetricTile({ metric }: { metric: ReturnType<typeof buildSimulationForec
   const isPositive = metric.delta >= 0;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="bg-white p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-slate-500">{metric.label}</p>
         <Icon className="h-4 w-4 text-slate-500" />
@@ -335,6 +392,40 @@ function MetricTile({ metric }: { metric: ReturnType<typeof buildSimulationForec
       <p className={cn('mt-1 text-sm font-medium', isPositive ? 'text-emerald-700' : 'text-red-700')}>
         {isPositive ? '+' : ''}{formatForecastValue(metric.delta, metric.format)}
       </p>
+    </div>
+  );
+}
+
+function PlanSignal({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'neutral' | 'warning' }) {
+  return (
+    <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+      <span className="text-sm text-slate-600">{label}</span>
+      <span className={cn('text-sm font-semibold', tone === 'warning' ? 'text-amber-700' : 'text-slate-950')}>{value}</span>
+    </div>
+  );
+}
+
+function QuarterTrack({ activeQuarter }: { activeQuarter: QuarterKey }) {
+  const quarters: QuarterKey[] = ['Q1', 'Q2', 'Q3', 'Q4'];
+  const activeIndex = quarters.indexOf(activeQuarter);
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-4">
+      {quarters.map((item, index) => {
+        const isActive = item === activeQuarter;
+        const isComplete = index < activeIndex;
+        return (
+          <div key={item} className={cn('rounded-lg border px-3 py-2', isActive ? 'border-white/40 bg-white/12' : 'border-white/10 bg-white/5')}>
+            <div className="flex items-center gap-2">
+              {isComplete ? <Check className="h-4 w-4 text-emerald-300" /> : <Circle className={cn('h-4 w-4', isActive ? 'text-white' : 'text-slate-500')} />}
+              <span className={cn('text-sm font-semibold', isActive ? 'text-white' : 'text-slate-400')}>{item}</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-400">
+              {isComplete ? 'Finalized' : isActive ? 'Active plan' : 'Upcoming'}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }

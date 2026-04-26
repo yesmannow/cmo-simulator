@@ -2,161 +2,238 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowRight,
+  BarChart3,
+  BriefcaseBusiness,
+  CheckCircle2,
+  ClipboardList,
+  LineChart,
+  Play,
+  ShieldCheck,
+  Target,
+  Users,
+  X,
+} from "lucide-react";
 import HeroVisual from "@/components/ui/HeroVisual";
-import { ArrowRight, BarChart3, Users, Zap, GraduationCap, Play, X } from "lucide-react";
+
+const proofPoints = [
+  {
+    icon: BriefcaseBusiness,
+    title: "Executive Pressure",
+    text: "Players balance CEO urgency, CFO scrutiny, sales alignment, brand health, and market share in one quarterly operating loop.",
+  },
+  {
+    icon: BarChart3,
+    title: "Decision Consequences",
+    text: "Every move changes revenue, profit, customer satisfaction, team morale, and future quarter flexibility.",
+  },
+  {
+    icon: ClipboardList,
+    title: "Useful Debrief",
+    text: "Each run ends with a teaching report, leadership archetype, turning point, and recommended next experiment.",
+  },
+];
+
+const operatorUses = [
+  "Warm up a founder or owner before a real marketing strategy conversation.",
+  "Show how Darling MarTech thinks through tradeoffs, budget, and execution risk.",
+  "Create a shareable assessment moment that feels more valuable than a static lead magnet.",
+];
+
+const previewRows = [
+  ["Q1", "Positioning reset", "+8.4% trust", "Board confidence stable"],
+  ["Q2", "Demand capture", "+$186k revenue", "CAC pressure rising"],
+  ["Q3", "Retention sprint", "+5.2% margin", "Team load elevated"],
+  ["Q4", "Category push", "+3.1% share", "High replay value"],
+];
 
 export default function LandingPage() {
-  const [showDemo, setShowDemo] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   return (
-    <main className="relative min-h-screen bg-slate-950 text-white overflow-hidden">
-      {/* 3D Background */}
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <HeroVisual />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.72),rgba(2,6,23,0.94)_62%,#f8fafc_62%)]" />
 
-      {/* Hero Content */}
-      <section className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-20 text-center max-w-6xl mx-auto">
+      <section className="relative z-10 mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="space-y-6"
+          transition={{ duration: 0.65, ease: "easeOut" }}
+          className="max-w-4xl"
         >
-          <div className="inline-flex items-center px-3 py-1 text-sm font-medium border border-blue-500/30 rounded-full bg-blue-500/10 text-blue-400 backdrop-blur-md mb-4">
-            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse" />
-            2026 Executive Edition
+          <div className="mb-6 inline-flex items-center gap-2 rounded-md border border-white/15 bg-white/8 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200 backdrop-blur">
+            <ShieldCheck className="h-4 w-4 text-emerald-300" />
+            Executive marketing simulation
           </div>
-          
-          <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight leading-tight">
-            Master the Art of <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-indigo-600 drop-shadow-sm">
-              Marketing Strategy
-            </span>
+
+          <h1 className="max-w-4xl text-5xl font-semibold leading-[0.98] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            CMO Simulator
           </h1>
-          
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-slate-400 leading-relaxed">
-            Step into the boardroom of a high-growth enterprise. Launch campaigns, manage 
-            budgets, and navigate market crises in a world-class CMO simulation engine.
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 sm:text-xl">
+            A playable marketing strategy lab for business owners and growth leaders. Run a simulated year, make budget calls under pressure, and leave with a briefing that explains what your decisions reveal.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-10 justify-center">
-            <Link 
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <Link
               href="/sim/setup"
-              className="group relative px-8 py-4 bg-white text-slate-950 font-bold rounded-xl transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)] overflow-hidden"
+              className="inline-flex items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition hover:bg-slate-100"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="relative flex items-center">
-                Launch Simulation <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </span>
+              Start the simulation
+              <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
-            
-            <button 
-              onClick={() => setShowDemo(true)}
-              className="flex items-center justify-center gap-3 px-8 py-4 bg-slate-900/50 text-white font-bold rounded-xl border border-slate-700 hover:bg-slate-800 transition-all backdrop-blur-md hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] group"
+            <button
+              type="button"
+              onClick={() => setShowPreview(true)}
+              className="inline-flex items-center justify-center rounded-md border border-white/15 bg-slate-950/55 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-slate-900"
             >
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 group-hover:bg-blue-500 transition-colors">
-                <Play className="w-4 h-4 text-white group-hover:translate-x-[1px] transition-transform" />
-              </div>
-              Watch Demo
+              <Play className="mr-2 h-4 w-4" />
+              View sample debrief
             </button>
           </div>
         </motion.div>
 
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-32 w-full text-left">
-          {[
-            { 
-              icon: BarChart3, 
-              title: "Proprietary Scoring", 
-              desc: "23 advanced metrics tracking every decision impact.",
-              color: "text-blue-400"
-            },
-            { 
-              icon: Users, 
-              title: "Market Dynamics", 
-              desc: "Real-time Bass Diffusion and competitive response models.",
-              color: "text-indigo-400"
-            },
-            { 
-              icon: Zap, 
-              title: "Crisis Handling", 
-              desc: "Navigate wildcards and internal corporate events.",
-              color: "text-amber-400"
-            },
-            { 
-              icon: GraduationCap, 
-              title: "EdTech First", 
-              desc: "Designed to train the next generation of marketing leaders.",
-              color: "text-emerald-400"
-            }
-          ].map((feature, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
+        <div className="mt-14 grid max-w-5xl grid-cols-1 gap-3 md:grid-cols-3">
+          {proofPoints.map((point, index) => (
+            <motion.article
+              key={point.title}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * i + 0.5, duration: 0.6 }}
-              className="p-6 bg-slate-900/40 border border-white/5 rounded-2xl backdrop-blur-xl hover:bg-slate-800/60 transition-colors group"
+              transition={{ delay: 0.1 * index + 0.35, duration: 0.5 }}
+              className="rounded-lg border border-white/10 bg-slate-950/58 p-5 backdrop-blur"
             >
-              <feature.icon className={`w-10 h-10 mb-4 ${feature.color} group-hover:scale-110 transition-transform`} />
-              <h3 className="text-lg font-bold mb-2 group-hover:text-blue-400 transition-colors">{feature.title}</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
-            </motion.div>
+              <point.icon className="h-5 w-5 text-emerald-300" />
+              <h2 className="mt-4 text-base font-semibold text-white">{point.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{point.text}</p>
+            </motion.article>
           ))}
         </div>
       </section>
 
-      {/* Decorative Blur Orbs */}
-      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none" />
+      <section className="relative z-10 bg-slate-50 px-4 py-14 text-slate-950 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Built to drive better conversations</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">The next step is making the tool prove expertise before a sales call.</h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              The simulator should function as both a valuable visitor experience and a diagnostic entry point. It demonstrates strategic judgment, creates a reason to share contact details, and gives Darling MarTech a stronger follow-up artifact than a generic consultation request.
+            </p>
+            <div className="mt-8 space-y-3">
+              {operatorUses.map((use) => (
+                <div key={use} className="flex gap-3 text-sm leading-6 text-slate-700">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                  <span>{use}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-      {/* Watch Demo Modal */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sample output</p>
+                <h3 className="mt-1 text-xl font-semibold">Executive debrief snapshot</h3>
+              </div>
+              <span className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">Lead asset ready</span>
+            </div>
+            <div className="mt-5 overflow-hidden rounded-lg border border-slate-200">
+              <div className="grid grid-cols-[64px_1fr_1fr_1fr] bg-slate-100 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span>Qtr</span>
+                <span>Move</span>
+                <span>Signal</span>
+                <span>Risk</span>
+              </div>
+              {previewRows.map((row) => (
+                <div key={row[0]} className="grid grid-cols-[64px_1fr_1fr_1fr] border-t border-slate-200 px-4 py-4 text-sm text-slate-700">
+                  <span className="font-semibold text-slate-950">{row[0]}</span>
+                  <span>{row[1]}</span>
+                  <span>{row[2]}</span>
+                  <span>{row[3]}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <Metric icon={Target} label="Strategic fit" value="86/100" />
+              <Metric icon={LineChart} label="Market lift" value="+14.2%" />
+              <Metric icon={Users} label="Follow-up hook" value="Report" />
+            </div>
+          </div>
+        </div>
+      </section>
+
       <AnimatePresence>
-        {showDemo && (
+        {showPreview && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl transition-opacity"
-              onClick={() => setShowDemo(false)}
+            <button
+              type="button"
+              aria-label="Close sample debrief"
+              className="absolute inset-0 bg-slate-950/82 backdrop-blur-md"
+              onClick={() => setShowPreview(false)}
             />
-            
-            {/* Modal Content */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-5xl aspect-video bg-slate-900 rounded-2xl sm:rounded-[32px] border border-slate-700 shadow-[0_0_50px_rgba(59,130,246,0.2)] overflow-hidden flex flex-col items-center justify-center"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ duration: 0.25 }}
+              className="relative w-full max-w-3xl rounded-lg border border-white/10 bg-slate-950 p-6 shadow-2xl"
             >
               <button
-                onClick={() => setShowDemo(false)}
-                className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors z-10"
+                type="button"
+                aria-label="Close sample debrief"
+                onClick={() => setShowPreview(false)}
+                className="absolute right-4 top-4 rounded-md border border-white/10 bg-white/5 p-2 text-slate-300 hover:bg-white/10 hover:text-white"
               >
-                <X className="w-6 h-6 sm:w-8 sm:h-8" />
+                <X className="h-4 w-4" />
               </button>
-
-              {/* Placeholder for actual video - You can replace this with an iframe */}
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-950 flex flex-col items-center justify-center">
-                <div className="relative group cursor-pointer" onClick={() => {/* Handle actual play logic if needed */}}>
-                   <div className="absolute -inset-4 bg-blue-500/20 rounded-full blur-xl group-hover:bg-blue-500/40 transition-colors duration-500" />
-                   <div className="relative w-24 h-24 rounded-full bg-blue-500 flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)] group-hover:scale-110 transition-transform duration-500">
-                     <Play className="w-10 h-10 text-white ml-2" />
-                   </div>
-                </div>
-                <h3 className="mt-8 text-2xl font-bold text-white tracking-tight">CMO Simulator Overview</h3>
-                <p className="mt-2 text-slate-400">Interactive simulation engine demonstration video goes here.</p>
-                <div className="mt-6 inline-flex items-center px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-mono text-slate-400">
-                  src/app/landing/page.tsx: Replace with an iframe to connect.
-                </div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">Sample debrief</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">What a completed run gives the visitor</h2>
+              <div className="mt-6 grid gap-3 md:grid-cols-2">
+                {[
+                  ["Outcome", "Finished with 21.6% market share and a profitable Q4 after pressure from rising acquisition costs."],
+                  ["Why", "Brand and retention investments made late-quarter revenue more durable than pure paid demand capture."],
+                  ["Tradeoff", "The plan created stronger trust, but left less budget flexibility when competitive pressure increased."],
+                  ["Next move", "Replay with a tighter Q2 demand plan and reserve 15% for retention before scaling acquisition."],
+                ].map(([label, text]) => (
+                  <div key={label} className="rounded-lg border border-white/10 bg-white/5 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-100">{text}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link href="/sim/setup" className="inline-flex items-center justify-center rounded-md bg-white px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-slate-100">
+                  Run your version
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10"
+                >
+                  Back to overview
+                </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </main>
+  );
+}
+
+function Metric({ icon: Icon, label, value }: { icon: typeof Target; label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <Icon className="h-4 w-4 text-slate-500" />
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-slate-950">{value}</p>
+    </div>
   );
 }

@@ -4,9 +4,9 @@ import '@/lib/env'; // Validate environment variables on startup
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 
 export const metadata: Metadata = {
-  title: "CMO Simulator - Marketing Strategy Game",
-  description: "Learn marketing strategy by running a simulated company for 12 months. Make real decisions with real consequences—except they're not real. Perfect for marketing students, career switchers, and entrepreneurs.",
-  keywords: ["marketing simulator", "marketing strategy game", "CMO training", "marketing education", "business simulation", "marketing learning"],
+  title: "CMO Simulator - Executive Marketing Strategy Lab",
+  description: "Run a simulated year as a CMO, make budget decisions under executive pressure, and leave with a useful growth strategy debrief.",
+  keywords: ["CMO simulator", "marketing strategy simulator", "executive marketing training", "growth strategy assessment", "marketing leadership simulation", "business simulation"],
   authors: [{ name: "CMO Simulator Team" }],
   creator: "CMO Simulator",
   publisher: "CMO Simulator",
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "CMO Simulator - Marketing Strategy Game",
-    description: "Learn marketing strategy by running a simulated company. Make real decisions with real consequences—except they're not real.",
+    title: "CMO Simulator - Executive Marketing Strategy Lab",
+    description: "A playable marketing strategy lab for business owners and growth leaders.",
     url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
     siteName: "CMO Simulator",
     images: [
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "CMO Simulator - Marketing Strategy Game",
-    description: "Learn marketing strategy by running a simulated company. Make real decisions with real consequences—except they're not real.",
+    title: "CMO Simulator - Executive Marketing Strategy Lab",
+    description: "Run a simulated year as a CMO and leave with a useful growth strategy debrief.",
     images: ['/og-image.png'],
   },
   robots: {

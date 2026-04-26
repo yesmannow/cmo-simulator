@@ -17,6 +17,7 @@ import {
 import {
   Download,
   Save,
+  Clipboard,
   TrendingUp,
   Target,
   Users,
@@ -30,6 +31,8 @@ import {
   Crosshair,
   Compass,
   AlertTriangle,
+  CalendarCheck,
+  Mail,
   Megaphone
 } from "lucide-react";
 import { SimulationContext } from "@/lib/simMachine";
@@ -47,6 +50,7 @@ interface EnhancedDebriefProps {
 
 export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled = false, onRestart }: EnhancedDebriefProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   // Calculate metrics
   const quarterlyData = [
@@ -69,6 +73,7 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
   const overallScore = Math.round((totalRevenue / 2000000) * 50 + finalMarketShare * 2);
   const gradeInfo = getGrade(overallScore);
   const report = buildTeachingReport(context);
+  const contactUrl = process.env.NEXT_PUBLIC_COMPANY_CONTACT_URL || "https://darlingmartech.com/contact?source=cmo-simulator";
 
   // Phase 3 Calculations
   // 1. Archetype Assignment
@@ -102,6 +107,28 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
   };
 
   const archetype = getArchetype();
+
+  const handleCopyBriefing = async () => {
+    const briefing = [
+      "CMO Simulator Growth Briefing",
+      "",
+      `Strategic score: ${overallScore}`,
+      `Leadership archetype: ${archetype.name}`,
+      "",
+      `Outcome: ${report.outcome}`,
+      `Why: ${report.why}`,
+      `Tradeoff: ${report.tradeoff}`,
+      `Recommended next move: ${report.nextMove}`,
+      `Growth leader takeaway: ${report.growthLeaderTakeaway}`,
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(briefing);
+      setCopyStatus("Briefing copied.");
+    } catch {
+      setCopyStatus("Copy failed. Export the briefing instead.");
+    }
+  };
 
   // 2. Turning Points
   const getTurningPoint = () => {
@@ -400,7 +427,7 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
           </div>
 
           {/* Controls */}
-          <div className="flex items-center justify-between mt-12 pt-8 border-t border-white/5">
+          <div className="flex flex-col gap-5 mt-12 pt-8 border-t border-white/5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex gap-3">
               <Button 
                 variant="ghost" 
@@ -418,7 +445,7 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
               </Button>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3">
                <Button
                 onClick={onSaveRun}
                 disabled={saveDisabled}
@@ -430,6 +457,9 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
                <Button onClick={onExportPDF} variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2">
                 <Download className="w-4 h-4" /> Export Briefing
                </Button>
+               <Button onClick={handleCopyBriefing} variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2">
+                <Clipboard className="w-4 h-4" /> Copy Summary
+               </Button>
                {currentSlide === slides.length - 1 && (
                  <Button onClick={onRestart} className="bg-white text-slate-950 hover:bg-slate-200 rounded-xl px-8 h-12 font-black transition-transform active:scale-95 shadow-xl shadow-white/10">
                    RESTART CAMPAIGN
@@ -437,12 +467,39 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
                )}
             </div>
           </div>
+          {copyStatus && (
+            <p className="mt-4 text-sm font-medium text-blue-200">{copyStatus}</p>
+          )}
         </div>
-        
-        {/* Subtle decorative elements */}
-        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none z-[-1]" />
-        <div className="absolute -top-20 -right-20 w-60 h-60 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none z-[-1]" />
       </motion.div>
+
+      <section className="mt-6 w-full max-w-5xl rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-white">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-300">Turn the run into a real growth conversation</p>
+            <h2 className="mt-2 text-2xl font-black tracking-tight">Use this debrief as the starting point for a strategy review.</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Bring the briefing into a real conversation about budget allocation, positioning, channel risk, and the next 90 days of execution.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <a
+              href={contactUrl}
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-5 text-sm font-black text-slate-950 hover:bg-slate-200"
+            >
+              <CalendarCheck className="mr-2 h-4 w-4" />
+              Request Review
+            </a>
+            <a
+              href={`mailto:?subject=${encodeURIComponent("CMO Simulator Growth Briefing")}&body=${encodeURIComponent(report.growthLeaderTakeaway)}`}
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 text-sm font-bold text-white hover:bg-white/10"
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Email Takeaway
+            </a>
+          </div>
+        </div>
+      </section>
 
       {/* Footer Branding */}
       <div className="mt-8 flex items-center gap-3 opacity-20 hover:opacity-100 transition-opacity">
