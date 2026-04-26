@@ -16,6 +16,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { MobileInstallPrompt } from "@/components/simulation/MobileInstallPrompt";
 import HeroVisual from "@/components/ui/HeroVisual";
 
 const proofPoints = [
@@ -93,6 +94,8 @@ export default function LandingPage() {
               View sample debrief
             </button>
           </div>
+
+          <MobileInstallPrompt className="mt-4 max-w-md md:hidden" />
         </motion.div>
 
         <div className="mt-14 grid max-w-5xl grid-cols-1 gap-3 md:grid-cols-3">

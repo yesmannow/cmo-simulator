@@ -144,7 +144,46 @@ export default function CampaignsPage() {
             </div>
           }
         >
-          <div className="overflow-auto">
+          <div className="space-y-3 md:hidden">
+            {rows.length === 0 ? (
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
+                No campaigns yet. Add tactics in a quarter to populate this view.
+              </div>
+            ) : (
+              rows.map((row) => (
+                <button
+                  key={`${row.quarter}:${row.tactic.id}`}
+                  type="button"
+                  className="w-full rounded-[24px] border border-slate-200 bg-white p-4 text-left"
+                  onClick={() => setSelected(row)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{row.quarter}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-950">{row.tactic.name}</p>
+                    </div>
+                    <Badge className="border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50">
+                      {getStatus(row.quarter)}
+                    </Badge>
+                  </div>
+                  {row.tactic.description && <p className="mt-2 text-sm leading-6 text-slate-600">{row.tactic.description}</p>}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge className="border border-slate-200 bg-white text-slate-700 hover:bg-white">
+                      {categoryLabel(row.tactic.category)}
+                    </Badge>
+                    <Badge className="border border-slate-200 bg-white text-slate-700 hover:bg-white">
+                      {formatCurrency(row.tactic.cost)}
+                    </Badge>
+                    <Badge className="border border-slate-200 bg-white text-slate-700 hover:bg-white">
+                      {row.tactic.timeRequired}h
+                    </Badge>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          <div className="hidden overflow-auto md:block">
             <table className="w-full min-w-[860px] border-separate border-spacing-0">
               <thead>
                 <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">

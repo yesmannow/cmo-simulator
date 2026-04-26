@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import '@/lib/env'; // Validate environment variables on startup
+import { PwaRegistrar } from '@/components/PwaRegistrar';
 import { ThemeProvider } from '@/components/ui/ThemeProvider';
 
 export const metadata: Metadata = {
@@ -10,6 +11,11 @@ export const metadata: Metadata = {
   authors: [{ name: "CMO Simulator Team" }],
   creator: "CMO Simulator",
   publisher: "CMO Simulator",
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/app-icon.svg',
+    apple: '/app-icon.svg',
+  },
   formatDetection: {
     email: false,
     address: false,
@@ -41,6 +47,11 @@ export const metadata: Metadata = {
     description: "Run a simulated year as a CMO and leave with a useful growth strategy debrief.",
     images: ['/og-image.png'],
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'CMO Simulator',
+  },
   robots: {
     index: true,
     follow: true,
@@ -52,6 +63,14 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#f4f7fb',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -68,6 +87,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <PwaRegistrar />
           {children}
         </ThemeProvider>
       </body>

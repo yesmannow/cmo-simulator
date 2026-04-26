@@ -1,12 +1,20 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type React from 'react';
 import { AlertTriangle, ArrowRight, BarChart3, Check, Circle, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp, WalletCards } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Drawer } from '@/components/ui/Drawer';
+import {
+  MobileSheet,
+  MobileSheetContent,
+  MobileSheetDescription,
+  MobileSheetDismissButton,
+  MobileSheetHeader,
+  MobileSheetTitle,
+} from '@/components/ui/mobile-sheet';
 import { CMOMentor } from '@/components/simulation/CMOMentor';
 import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
 import { buildSimulationForecast, formatForecastValue, getTacticBusinessProfile, type QuarterKey } from '@/lib/simulationForecast';
@@ -47,6 +55,8 @@ export function QuarterOperatingConsole({
     () => buildSimulationForecast(context, quarter, selectedTactics),
     [context, quarter, selectedTactics],
   );
+  const [activeSheet, setActiveSheet] = useState<null | 'forecast' | 'logic' | 'channels'>(null);
+  const [briefTactic, setBriefTactic] = useState<EnrichedTactic | null>(null);
   const selectedIds = useMemo(() => new Set(selectedTactics.map((tactic) => tactic.id)), [selectedTactics]);
   const { budgetSummary } = forecast;
   const budgetIsOver = budgetSummary.remainingBudget < 0;
@@ -57,21 +67,21 @@ export function QuarterOperatingConsole({
       : 'Ready to review';
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-16">
-      <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 bg-slate-950 px-5 py-5 text-white md:px-6">
+    <div className="mx-auto max-w-7xl space-y-5 pb-10 lg:space-y-6 lg:pb-16">
+      <header className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm lg:rounded-xl">
+        <div className="border-b border-slate-200 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] px-4 py-4 text-slate-950 md:px-6 lg:bg-slate-950 lg:px-5 lg:py-5 lg:text-white">
           <QuarterTrack activeQuarter={quarter} />
         </div>
-        <div className="grid gap-5 p-5 md:grid-cols-[minmax(0,1fr)_320px] md:p-6">
+        <div className="grid gap-4 p-4 md:grid-cols-[minmax(0,1fr)_320px] md:p-6">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">{quarter} Operating Console</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
-            <p className="mt-2 max-w-3xl text-base leading-7 text-slate-600">{subtitle}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{quarter} Operating Console</p>
+            <h1 className="mt-2 text-[1.75rem] font-semibold tracking-tight text-slate-950 md:text-4xl">{title}</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 md:text-base md:leading-7">{subtitle}</p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Quarter budget</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Quarter budget</p>
                 <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
                   ${budgetSummary.usedBudget.toLocaleString()}
                 </p>
@@ -92,11 +102,54 @@ export function QuarterOperatingConsole({
             </div>
           </div>
         </div>
+
+        <div className="border-t border-slate-200 px-4 pb-4 pt-2 lg:hidden">
+          <div className="grid grid-cols-4 gap-2">
+            {forecast.deltaFromCurrent.slice(0, 4).map((metric) => (
+              <div key={metric.label} className="rounded-2xl bg-slate-50 px-2.5 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{metric.label}</p>
+                <p className="mt-1 text-sm font-semibold tracking-tight text-slate-950">
+                  {formatForecastValue(metric.value, metric.format)}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 h-[92px] overflow-hidden rounded-[22px] border border-slate-200 bg-white px-2 py-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={forecast.confidenceBand} margin={{ top: 6, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="mobileForecast" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0f172a" stopOpacity={0.24} />
+                    <stop offset="100%" stopColor="#0f172a" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="expected" stroke="#0f172a" strokeWidth={2} fill="url(#mobileForecast)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <MobileActionButton
+              label="Forecast"
+              meta={planReadiness}
+              onClick={() => setActiveSheet('forecast')}
+            />
+            <MobileActionButton
+              label="Risks + logic"
+              meta={`${forecast.riskWarnings.length} warnings`}
+              onClick={() => setActiveSheet('logic')}
+            />
+            <MobileActionButton
+              label="Channel readout"
+              meta={`${forecast.channelBreakdown.length} channels`}
+              onClick={() => setActiveSheet('channels')}
+            />
+          </div>
+        </div>
       </header>
 
       <ExecutivePressure currentQuarter={quarter} context={context} />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="hidden gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_360px]">
         <Panel className="p-0">
           <div className="border-b border-slate-200 px-5 py-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -164,7 +217,7 @@ export function QuarterOperatingConsole({
         </Panel>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
+      <section className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
         <Panel>
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -263,11 +316,14 @@ export function QuarterOperatingConsole({
                         <Badge className="w-fit bg-slate-900 text-white hover:bg-slate-900">{profile.businessRole}</Badge>
                       </div>
 
-                      <Drawer
-                        className="shadow-sm"
-                        summary={
+                      <div className="lg:hidden">
+                        <button
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-left"
+                          onClick={() => setBriefTactic(tactic)}
+                        >
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Decision drawer</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Decision brief</span>
                             <span className="inline-flex items-center gap-1 text-xs text-slate-600">
                               <Target className="h-3.5 w-3.5 text-slate-500" />
                               Best use
@@ -276,19 +332,39 @@ export function QuarterOperatingConsole({
                               <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
                               Tradeoff
                             </span>
-                            <span className="inline-flex items-center gap-1 text-xs text-slate-600">
-                              <AlertTriangle className="h-3.5 w-3.5 text-slate-500" />
-                              Watch outs
-                            </span>
                           </div>
-                        }
-                      >
-                        <dl className="grid gap-3 text-sm md:grid-cols-3">
-                          <Detail label="Best used when" value={profile.bestUsedWhen} />
-                          <Detail label="Tradeoff" value={profile.primaryTradeoff} />
-                          <Detail label="Watch out for" value={profile.watchOutFor} />
-                        </dl>
-                      </Drawer>
+                          <span className="text-xs font-semibold text-slate-500">Open</span>
+                        </button>
+                      </div>
+
+                      <div className="hidden lg:block">
+                        <Drawer
+                          className="shadow-sm"
+                          summary={
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Decision drawer</span>
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-600">
+                                <Target className="h-3.5 w-3.5 text-slate-500" />
+                                Best use
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-600">
+                                <ArrowRight className="h-3.5 w-3.5 text-slate-500" />
+                                Tradeoff
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-xs text-slate-600">
+                                <AlertTriangle className="h-3.5 w-3.5 text-slate-500" />
+                                Watch outs
+                              </span>
+                            </div>
+                          }
+                        >
+                          <dl className="grid gap-3 text-sm md:grid-cols-3">
+                            <Detail label="Best used when" value={profile.bestUsedWhen} />
+                            <Detail label="Tradeoff" value={profile.primaryTradeoff} />
+                            <Detail label="Watch out for" value={profile.watchOutFor} />
+                          </dl>
+                        </Drawer>
+                      </div>
 
                       <div className="flex flex-wrap gap-2">
                         <span className="rounded-sm bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
@@ -371,9 +447,44 @@ export function QuarterOperatingConsole({
               </div>
             )}
           </Panel>
+
+          <div className="space-y-4 lg:hidden">
+            <Panel>
+              <h2 className="text-lg font-semibold text-slate-950">Budget status</h2>
+              <div className="mt-4 space-y-3">
+                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={cn('h-full rounded-full', budgetSummary.remainingBudget < 0 ? 'bg-red-600' : 'bg-slate-950')}
+                    style={{ width: `${Math.min(budgetSummary.utilization * 100, 100)}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <BudgetFact label="Used" value={`$${budgetSummary.usedBudget.toLocaleString()}`} />
+                  <BudgetFact label="Reserve" value={`$${budgetSummary.remainingBudget.toLocaleString()}`} isWarning={budgetSummary.remainingBudget < 0} />
+                </div>
+              </div>
+            </Panel>
+
+            <CMOMentor selectedTactics={selectedTactics} remainingBudget={budgetSummary.remainingBudget} currentQuarter={quarter} context={context} />
+
+            {specialActions}
+
+            <Button
+              type="button"
+              onClick={onCompleteQuarter}
+              disabled={!canComplete}
+              className={cn(
+                'w-full rounded-[22px] py-6 text-base font-semibold',
+                canComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-200 text-slate-400',
+              )}
+            >
+              {completeLabel}
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
         </main>
 
-        <aside className="space-y-6 lg:sticky lg:top-28 lg:self-start">
+        <aside className="hidden space-y-6 lg:sticky lg:top-28 lg:block lg:self-start">
           <Panel>
             <h2 className="text-lg font-semibold text-slate-950">Budget status</h2>
             <div className="mt-4 space-y-3">
@@ -459,6 +570,152 @@ export function QuarterOperatingConsole({
           </Button>
         </aside>
       </section>
+
+      <MobileSheet open={activeSheet === 'forecast'} onOpenChange={(open) => setActiveSheet(open ? 'forecast' : null)}>
+        <MobileSheetContent className="max-h-[86vh]">
+          <MobileSheetHeader>
+            <div>
+              <MobileSheetTitle>Forecast readout</MobileSheetTitle>
+              <MobileSheetDescription>Downside, base, and upside quarter outcomes for the current plan.</MobileSheetDescription>
+            </div>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <div className="h-[220px] rounded-[24px] border border-slate-200 bg-slate-50 p-3">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={forecast.confidenceBand} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="forecastSheetFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0f172a" stopOpacity={0.28} />
+                      <stop offset="100%" stopColor="#0f172a" stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <Tooltip
+                    cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }}
+                    contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10 }}
+                    formatter={(value: number, key: string) => [
+                      formatForecastValue(value, 'currency'),
+                      key === 'lower' ? 'Downside' : key === 'upper' ? 'Upside' : 'Base',
+                    ]}
+                  />
+                  <Area type="monotone" dataKey="upper" stroke="#cbd5e1" fill="#e2e8f0" fillOpacity={0.35} />
+                  <Area type="monotone" dataKey="lower" stroke="#cbd5e1" fill="#ffffff" fillOpacity={1} />
+                  <Area type="monotone" dataKey="expected" stroke="#0f172a" fill="url(#forecastSheetFill)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-3">
+              {forecast.scenarios.map((scenario) => (
+                <div key={scenario.key} className="rounded-[24px] border border-slate-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">{scenario.label}</p>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">{scenario.confidenceLabel}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-950">{formatForecastValue(scenario.projectedKpis.revenue, 'currency')}</p>
+                      <p className="text-xs text-slate-500">Revenue</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-2 text-sm text-slate-700">
+                    {scenario.drivers.map((driver) => (
+                      <p key={driver}>{driver}</p>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </MobileSheetContent>
+      </MobileSheet>
+
+      <MobileSheet open={activeSheet === 'logic'} onOpenChange={(open) => setActiveSheet(open ? 'logic' : null)}>
+        <MobileSheetContent className="max-h-[86vh]">
+          <MobileSheetHeader>
+            <div>
+              <MobileSheetTitle>Risks and decision logic</MobileSheetTitle>
+              <MobileSheetDescription>Why the current plan shifts the modeled outcome and what it puts at risk.</MobileSheetDescription>
+            </div>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+              {forecast.topRisk}
+            </div>
+            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-950">Forecast logic</h3>
+              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-700">
+                {forecast.explanationBullets.map((bullet) => (
+                  <li key={bullet} className="flex gap-2">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-950">Warnings</h3>
+              <div className="mt-3 space-y-3">
+                {forecast.riskWarnings.map((warning) => (
+                  <div key={warning} className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+                    {warning}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </MobileSheetContent>
+      </MobileSheet>
+
+      <MobileSheet open={activeSheet === 'channels'} onOpenChange={(open) => setActiveSheet(open ? 'channels' : null)}>
+        <MobileSheetContent className="max-h-[86vh]">
+          <MobileSheetHeader>
+            <div>
+              <MobileSheetTitle>Channel readout</MobileSheetTitle>
+              <MobileSheetDescription>Contribution, ROI, and adstock signal from the selected plan.</MobileSheetDescription>
+            </div>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-3 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            {forecast.channelBreakdown.length === 0 ? (
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-600">
+                Add moves to generate a channel forecast.
+              </div>
+            ) : (
+              forecast.channelBreakdown.map((channel) => (
+                <div key={channel.channel} className="rounded-[24px] border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold uppercase text-slate-800">{channel.channel}</p>
+                    <p className="text-sm font-semibold text-slate-950">${Math.round(channel.contribution).toLocaleString()}</p>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Projected ROI {channel.roi.toFixed(0)}% · adstock ${Math.round(channel.adstock).toLocaleString()}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </MobileSheetContent>
+      </MobileSheet>
+
+      <MobileSheet open={Boolean(briefTactic)} onOpenChange={(open) => (!open ? setBriefTactic(null) : null)}>
+        <MobileSheetContent className="max-h-[84vh]">
+          {briefTactic && (
+            <>
+              <MobileSheetHeader>
+                <div>
+                  <MobileSheetTitle>{briefTactic.name}</MobileSheetTitle>
+                  <MobileSheetDescription>{briefTactic.description || briefTactic.strategicRationale}</MobileSheetDescription>
+                </div>
+                <MobileSheetDismissButton />
+              </MobileSheetHeader>
+              <div className="space-y-3 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+                <Detail label="Best used when" value={getTacticBusinessProfile(briefTactic).bestUsedWhen} />
+                <Detail label="Tradeoff" value={getTacticBusinessProfile(briefTactic).primaryTradeoff} />
+                <Detail label="Watch out for" value={getTacticBusinessProfile(briefTactic).watchOutFor} />
+              </div>
+            </>
+          )}
+        </MobileSheetContent>
+      </MobileSheet>
     </div>
   );
 }
@@ -512,18 +769,28 @@ function QuarterTrack({ activeQuarter }: { activeQuarter: QuarterKey }) {
   const activeIndex = quarters.indexOf(activeQuarter);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-4 gap-2 sm:gap-3">
       {quarters.map((item, index) => {
         const isActive = item === activeQuarter;
         const isComplete = index < activeIndex;
         return (
-          <div key={item} className={cn('rounded-lg border px-3 py-2', isActive ? 'border-white/40 bg-white/12' : 'border-white/10 bg-white/5')}>
+          <div
+            key={item}
+            className={cn(
+              'rounded-2xl border px-2.5 py-2 sm:px-3',
+              isActive ? 'border-white/40 bg-white/12 lg:border-white/40 lg:bg-white/12' : 'border-slate-200 bg-white/70 lg:border-white/10 lg:bg-white/5',
+            )}
+          >
             <div className="flex items-center gap-2">
-              {isComplete ? <Check className="h-4 w-4 text-emerald-300" /> : <Circle className={cn('h-4 w-4', isActive ? 'text-white' : 'text-slate-500')} />}
-              <span className={cn('text-sm font-semibold', isActive ? 'text-white' : 'text-slate-400')}>{item}</span>
+              {isComplete ? (
+                <Check className="h-4 w-4 text-emerald-500 lg:text-emerald-300" />
+              ) : (
+                <Circle className={cn('h-4 w-4', isActive ? 'text-slate-950 lg:text-white' : 'text-slate-500')} />
+              )}
+              <span className={cn('text-sm font-semibold', isActive ? 'text-slate-950 lg:text-white' : 'text-slate-500 lg:text-slate-400')}>{item}</span>
             </div>
-            <p className="mt-1 text-xs text-slate-400">
-              {isComplete ? 'Finalized' : isActive ? 'Active plan' : 'Upcoming'}
+            <p className={cn('mt-1 text-[10px] uppercase tracking-wide', isActive ? 'text-slate-600 lg:text-slate-300' : 'text-slate-400')}>
+              {isComplete ? 'Done' : isActive ? 'Active' : 'Next'}
             </p>
           </div>
         );
@@ -547,6 +814,27 @@ function BudgetFact({ label, value, isWarning = false }: { label: string; value:
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <p className={cn('mt-1 font-semibold', isWarning ? 'text-red-700' : 'text-slate-950')}>{value}</p>
     </div>
+  );
+}
+
+function MobileActionButton({
+  label,
+  meta,
+  onClick,
+}: {
+  label: string;
+  meta: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-[22px] border border-slate-200 bg-white px-3 py-3 text-left shadow-sm"
+    >
+      <p className="text-xs font-semibold text-slate-950">{label}</p>
+      <p className="mt-1 text-[11px] leading-5 text-slate-500">{meta}</p>
+    </button>
   );
 }
 

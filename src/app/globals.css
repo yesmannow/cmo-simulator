@@ -307,8 +307,31 @@
   * {
     border-color: hsl(var(--border));
   }
+  html {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    min-height: 100dvh;
+  }
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mobile-app-shell {
+  min-height: 100dvh;
+}
+
+@media (max-width: 1023px) {
+  .mobile-app-shell {
+    overscroll-behavior-y: none;
   }
 }

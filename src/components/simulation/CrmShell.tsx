@@ -1,34 +1,33 @@
 'use client';
 
-import type React from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { CircleDot, MoreHorizontal, Sparkles, Wrench } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { BarChart3, CircleDot, Flag, GitBranch, Layers3, LayoutDashboard, LineChart, Megaphone, Sparkles, Wrench } from 'lucide-react';
 import { CompanyMark } from '@/components/simulation/CompanyMark';
+import { MobileInstallPrompt } from '@/components/simulation/MobileInstallPrompt';
+import {
+  ALL_NAV_ITEMS,
+  CORE_NAV_ITEMS,
+  CRM_NAV_ITEMS,
+  QUARTER_NAV_ITEMS,
+  activeHref,
+  primaryNavItemForPath,
+  quarterNavItemForPhase,
+  titleForPath,
+  type NavItem,
+} from '@/components/simulation/navConfig';
+import {
+  MobileSheet,
+  MobileSheetContent,
+  MobileSheetDescription,
+  MobileSheetDismissButton,
+  MobileSheetHeader,
+  MobileSheetTitle,
+} from '@/components/ui/mobile-sheet';
 import { useSimulation } from '@/hooks/useSimulation';
 import { cn } from '@/lib/utils';
-
-type NavItem = {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Overview', href: '/sim', icon: LayoutDashboard },
-  { label: 'Strategy', href: '/sim/strategy', icon: Flag },
-  { label: 'Quarter 1', href: '/sim/q1', icon: Layers3 },
-  { label: 'Quarter 2', href: '/sim/q2', icon: Layers3 },
-  { label: 'Quarter 3', href: '/sim/q3', icon: Layers3 },
-  { label: 'Quarter 4', href: '/sim/q4', icon: Layers3 },
-  { label: 'Debrief', href: '/sim/debrief', icon: BarChart3 },
-];
-
-const CRM_ITEMS: NavItem[] = [
-  { label: 'Campaigns', href: '/sim/campaigns', icon: Megaphone },
-  { label: 'Pipeline', href: '/sim/pipeline', icon: GitBranch },
-  { label: 'Analytics', href: '/sim/analytics', icon: LineChart },
-];
 
 function formatCurrency(value: number) {
   if (!Number.isFinite(value)) return '$0';
@@ -42,35 +41,71 @@ function formatPercent(value: number) {
   return `${value.toFixed(1)}%`;
 }
 
-function titleForPath(pathname: string) {
-  if (pathname.startsWith('/sim/setup')) return 'Setup';
-  if (pathname.startsWith('/sim/strategy')) return 'Strategy Session';
-  if (pathname.startsWith('/sim/campaigns')) return 'Campaigns';
-  if (pathname.startsWith('/sim/pipeline')) return 'Pipeline';
-  if (pathname.startsWith('/sim/analytics')) return 'Analytics';
-  if (pathname.startsWith('/sim/q1')) return 'Q1 Operating Plan';
-  if (pathname.startsWith('/sim/q2')) return 'Q2 Operating Plan';
-  if (pathname.startsWith('/sim/q3')) return 'Q3 Operating Plan';
-  if (pathname.startsWith('/sim/q4')) return 'Q4 Operating Plan';
-  if (pathname.startsWith('/sim/debrief')) return 'Debrief';
-  return 'Overview';
-}
-
-function activeHref(pathname: string, href: string) {
-  return href === '/sim' ? pathname === '/sim' : pathname.startsWith(href);
-}
-
-export function CrmShell({ children }: { children: React.ReactNode }) {
+export function CrmShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { context } = useSimulation();
+  const { context, currentPhase } = useSimulation();
+  const [mobileNavVisible, setMobileNavVisible] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const companyName = context.strategy.companyName?.trim() || 'New Workspace';
   const industry = context.strategy.industry || 'saas';
   const logoStyle = context.strategy.logoStyle || 'orb';
   const runStatus = context.finalResults ? 'Completed' : 'In progress';
 
+  const primaryItem = useMemo(() => primaryNavItemForPath(pathname), [pathname]);
+  const quarterItem = useMemo(() => quarterNavItemForPhase(currentPhase), [currentPhase]);
+
+  useEffect(() => {
+    setMobileNavVisible(true);
+  }, [pathname]);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+
+    const handleScroll = () => {
+      if (window.innerWidth >= 1024) return;
+      if (document.body.dataset.mobileOverlay === 'open') {
+        setMobileNavVisible(true);
+        return;
+      }
+
+      const currentY = window.scrollY;
+      const delta = currentY - lastY;
+      const nearBottom = window.innerHeight + currentY >= document.documentElement.scrollHeight - 72;
+
+      if (currentY < 40 || nearBottom) {
+        setMobileNavVisible(true);
+      } else if (delta > 10) {
+        setMobileNavVisible(false);
+      } else if (delta < -8) {
+        setMobileNavVisible(true);
+      }
+
+      lastY = currentY;
+    };
+
+    const showNav = () => setMobileNavVisible(true);
+    const observer = new MutationObserver(() => {
+      if (document.body.dataset.mobileOverlay === 'open') {
+        setMobileNavVisible(true);
+      }
+    });
+
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-mobile-overlay'] });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('focusin', showNav);
+    window.addEventListener('touchstart', showNav, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('focusin', showNav);
+      window.removeEventListener('touchstart', showNav);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-950">
+    <div className="mobile-app-shell min-h-screen bg-[linear-gradient(180deg,#f7f9fc_0%,#eef3f8_34%,#f6f8fb_100%)] text-slate-950">
       <div className="mx-auto flex min-h-screen w-full max-w-[1480px] gap-0">
         <aside className="hidden w-[288px] shrink-0 flex-col border-r border-slate-200 bg-white/95 lg:flex">
           <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
@@ -82,53 +117,8 @@ export function CrmShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="px-3 py-4">
-            <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              CMO Simulator
-            </div>
-            {NAV_ITEMS.map((item) => {
-              const isActive = activeHref(pathname, item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'mt-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-slate-100 text-slate-950'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
-                  )}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <Icon className={cn('h-4 w-4', isActive ? 'text-slate-900' : 'text-slate-500')} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-
-            <div className="mt-5 px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              CRM Views
-            </div>
-            {CRM_ITEMS.map((item) => {
-              const isActive = activeHref(pathname, item.href);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'mt-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-slate-100 text-slate-950'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
-                  )}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <Icon className={cn('h-4 w-4', isActive ? 'text-slate-900' : 'text-slate-500')} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+            <SidebarGroup label="CMO Simulator" items={[{ label: 'Setup', href: '/sim/setup', icon: Wrench }, ...CORE_NAV_ITEMS, ...QUARTER_NAV_ITEMS]} pathname={pathname} />
+            <SidebarGroup label="CRM Views" items={CRM_NAV_ITEMS} pathname={pathname} className="mt-5" />
           </nav>
 
           <div className="mt-auto px-4 pb-5">
@@ -154,13 +144,10 @@ export function CrmShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-            <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+          <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/88 backdrop-blur">
+            <div className="hidden h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:flex">
               <div className="flex items-center gap-3">
-                <div className="lg:hidden">
-                  <CompanyMark companyName={companyName} industry={industry} size={34} style={logoStyle} />
-                </div>
-              <div>
+                <div>
                   <div className="text-sm font-semibold text-slate-950">{titleForPath(pathname)}</div>
                   <div className="text-xs text-slate-500">CMO Simulator · {companyName}</div>
                 </div>
@@ -176,34 +163,44 @@ export function CrmShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </div>
             </div>
-            <div className="border-t border-slate-100 px-4 py-2 lg:hidden">
-              <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Simulation sections">
-                {[...NAV_ITEMS, ...CRM_ITEMS].map((item) => {
-                  const isActive = activeHref(pathname, item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        'inline-flex shrink-0 items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold',
-                        isActive
-                          ? 'border-slate-900 bg-slate-900 text-white'
-                          : 'border-slate-200 bg-white text-slate-600',
-                      )}
-                      aria-current={isActive ? 'page' : undefined}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
+
+            <div className="lg:hidden">
+              <div className="safe-top px-4 pb-3 pt-3">
+                <div className="rounded-[28px] border border-white/80 bg-white/86 px-4 py-3 shadow-[0_16px_38px_rgba(15,23,42,0.08)] backdrop-blur">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <CompanyMark companyName={companyName} industry={industry} size={32} style={logoStyle} />
+                      <div className="min-w-0">
+                        <div className="truncate text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                          {runStatus} operating year
+                        </div>
+                        <div className="truncate text-base font-semibold tracking-tight text-slate-950">
+                          {titleForPath(pathname)}
+                        </div>
+                        <div className="truncate text-xs text-slate-500">{companyName}</div>
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                      <CircleDot className="h-3.5 w-3.5" />
+                      {runStatus}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    <CompactMetric label="Revenue" value={formatCurrency(context.kpis.revenue)} mobile />
+                    <CompactMetric label="Profit" value={formatCurrency(context.kpis.profit)} mobile />
+                    <CompactMetric label="Market" value={formatPercent(context.kpis.marketShare)} mobile />
+                    <CompactMetric label="Brand" value={formatPercent(context.kpis.brandAwareness)} mobile />
+                  </div>
+
+                  <MobileInstallPrompt className="mt-3" compact />
+                </div>
+              </div>
             </div>
           </header>
 
-          <main className="px-4 py-6 sm:px-6">
-            <div className="mb-5 rounded-lg border border-slate-200 bg-white/80 px-4 py-3 shadow-sm">
+          <main className="px-4 pb-[calc(env(safe-area-inset-bottom)+92px)] pt-4 sm:px-6 lg:px-6 lg:py-6 lg:pb-6">
+            <div className="mb-5 hidden rounded-lg border border-slate-200 bg-white/80 px-4 py-3 shadow-sm lg:block">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <CircleDot className="h-3.5 w-3.5 text-emerald-600" />
@@ -221,7 +218,169 @@ export function CrmShell({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+
+      <nav
+        className={cn(
+          'safe-bottom fixed inset-x-0 bottom-0 z-50 mx-auto block w-full px-4 pb-3 transition-transform duration-300 lg:hidden',
+          mobileNavVisible ? 'translate-y-0' : 'translate-y-[calc(100%+32px)]',
+        )}
+        aria-label="Mobile simulator navigation"
+      >
+        <div className="mx-auto flex max-w-md items-center justify-between rounded-[28px] border border-white/80 bg-white/88 px-3 py-2 shadow-[0_20px_45px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+          <MobileNavLink item={{ label: 'Home', href: '/sim', icon: ALL_NAV_ITEMS[0].icon }} pathname={pathname} />
+          <MobileNavLink item={primaryItem} pathname={pathname} />
+          <MobileNavLink item={quarterItem} pathname={pathname} />
+          <button
+            type="button"
+            className="flex min-w-[68px] flex-col items-center gap-1 rounded-2xl px-2 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+            onClick={() => setMoreOpen(true)}
+          >
+            <motion.div whileTap={{ scale: 0.95 }} className="flex flex-col items-center gap-1">
+              <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+                <MoreHorizontal className="h-4 w-4" />
+              </span>
+              <span>More</span>
+            </motion.div>
+          </button>
+        </div>
+      </nav>
+
+      <MobileSheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <MobileSheetContent className="max-h-[84vh]">
+          <MobileSheetHeader>
+            <div>
+              <MobileSheetTitle>Simulator navigation</MobileSheetTitle>
+              <MobileSheetDescription>
+                Core routes stay in the thumb zone. Everything else remains one sheet away.
+              </MobileSheetDescription>
+            </div>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-5 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <NavSheetSection title="Core" items={[{ label: 'Setup', href: '/sim/setup', icon: Wrench }, ...CORE_NAV_ITEMS]} pathname={pathname} targetHref={primaryItem.href} />
+            <NavSheetSection title="Quarter Views" items={QUARTER_NAV_ITEMS} pathname={pathname} targetHref={quarterItem.href} />
+            <NavSheetSection title="CRM Views" items={CRM_NAV_ITEMS} pathname={pathname} targetHref={primaryItem.href} />
+          </div>
+        </MobileSheetContent>
+      </MobileSheet>
     </div>
+  );
+}
+
+function SidebarGroup({
+  label,
+  items,
+  pathname,
+  className,
+}: {
+  label: string;
+  items: NavItem[];
+  pathname: string;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      {items.map((item) => {
+        const isActive = activeHref(pathname, item.href);
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              'mt-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              isActive ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
+            )}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            <Icon className={cn('h-4 w-4', isActive ? 'text-slate-900' : 'text-slate-500')} />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function MobileNavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+  const Icon = item.icon;
+  const isActive = activeHref(pathname, item.href);
+
+  return (
+    <Link href={item.href} className="flex min-w-[68px] justify-center">
+      <motion.div
+        whileTap={{ scale: 0.95 }}
+        className={cn(
+          'flex w-full flex-col items-center gap-1 rounded-2xl px-2 py-1.5 text-[11px] font-semibold transition',
+          isActive ? 'text-slate-950' : 'text-slate-500',
+        )}
+      >
+        <span
+          className={cn(
+            'flex h-9 w-9 items-center justify-center rounded-2xl',
+            isActive ? 'bg-slate-950 text-white shadow-sm' : 'bg-slate-100 text-slate-600',
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <span className="truncate">{item.label}</span>
+      </motion.div>
+    </Link>
+  );
+}
+
+function NavSheetSection({
+  title,
+  items,
+  pathname,
+  targetHref,
+}: {
+  title: string;
+  items: NavItem[];
+  pathname: string;
+  targetHref: string;
+}) {
+  return (
+    <section>
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{title}</h3>
+      <div className="mt-3 space-y-2">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeHref(pathname, item.href);
+          const isTarget = item.href === targetHref;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex items-center justify-between rounded-[22px] border px-4 py-3 transition',
+                isActive
+                  ? 'border-slate-950 bg-slate-950 text-white'
+                  : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-white',
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <span className={cn('flex h-10 w-10 items-center justify-center rounded-2xl', isActive ? 'bg-white/10' : 'bg-white')}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div>
+                  <div className="text-sm font-semibold">{item.label}</div>
+                  <div className={cn('text-xs', isActive ? 'text-slate-300' : 'text-slate-500')}>
+                    {isTarget ? 'Current phase target' : isActive ? 'Open now' : 'Open view'}
+                  </div>
+                </div>
+              </div>
+              {isTarget && !isActive && (
+                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                  Next
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -234,11 +393,11 @@ function SidebarMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CompactMetric({ label, value }: { label: string; value: string }) {
+function CompactMetric({ label, value, mobile = false }: { label: string; value: string; mobile?: boolean }) {
   return (
-    <div className="rounded-md bg-slate-50 px-3 py-2 text-right">
+    <div className={cn('rounded-2xl bg-slate-50 px-3 py-2 text-right', mobile && 'px-2.5 py-2')}>
       <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="text-sm font-semibold text-slate-950">{value}</div>
+      <div className={cn('font-semibold tracking-tight text-slate-950', mobile ? 'text-xs' : 'text-sm')}>{value}</div>
     </div>
   );
 }
