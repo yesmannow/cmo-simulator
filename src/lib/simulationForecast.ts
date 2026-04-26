@@ -46,6 +46,42 @@ export interface SimulationForecast {
   budgetSummary: BudgetSummary;
   riskWarnings: string[];
   explanationBullets: string[];
+  scenarios: ForecastScenario[];
+  comparisonRows: ForecastComparisonRow[];
+  confidenceBand: ForecastBandPoint[];
+  topRisk: string;
+  scenarioSpread: {
+    revenue: number;
+    profit: number;
+    marketShare: number;
+  };
+}
+
+export type ForecastScenarioKey = 'downside' | 'base' | 'upside';
+
+export interface ForecastScenario {
+  key: ForecastScenarioKey;
+  label: string;
+  confidenceLabel: string;
+  projectedKpis: SimulationForecast['projectedKpis'];
+  deltaFromCurrent: ForecastMetric[];
+  channelBreakdown: ChannelForecast[];
+  drivers: string[];
+  riskWarnings: string[];
+  topRisk: string;
+}
+
+export interface ForecastComparisonRow {
+  label: string;
+  currentValue: string;
+  plannedValue: string;
+}
+
+export interface ForecastBandPoint {
+  label: string;
+  lower: number;
+  expected: number;
+  upper: number;
 }
 
 const CHANNEL_LABELS: Record<Channel, string> = {
@@ -157,8 +193,45 @@ export function buildSimulationForecast(
     .filter((entry) => entry.contribution > 0 || entry.roi > 0 || entry.adstock > 0)
     .sort((a, b) => b.contribution - a.contribution);
 
-  const riskWarnings = buildRiskWarnings(selectedTactics, budgetSummary, projected.newQuarterData.results.profit, channelBreakdown);
-  const explanationBullets = buildExplanationBullets(selectedTactics, budgetSummary, channelBreakdown, projectedKpis.adstock);
+  const exposure = calculateExposureProfile(selectedTactics, budgetSummary, context);
+  const scenarios = buildForecastScenarios({
+    context,
+    quarter,
+    selectedTactics,
+    budgetSummary,
+    exposure,
+    baseProjection: projected,
+  });
+  const baseScenario = scenarios.find((scenario) => scenario.key === 'base') ?? scenarios[1];
+  const riskWarnings = baseScenario.riskWarnings;
+  const explanationBullets = buildExplanationBullets(
+    selectedTactics,
+    budgetSummary,
+    channelBreakdown,
+    projectedKpis.adstock,
+    scenarios,
+    exposure,
+  );
+  const comparisonRows = buildComparisonRows(context, projected, budgetSummary);
+  const confidenceBand = [
+    {
+      label: 'Revenue',
+      lower: scenarios[0]?.projectedKpis.revenue ?? 0,
+      expected: baseScenario?.projectedKpis.revenue ?? 0,
+      upper: scenarios[2]?.projectedKpis.revenue ?? 0,
+    },
+    {
+      label: 'Profit',
+      lower: scenarios[0]?.projectedKpis.profit ?? 0,
+      expected: baseScenario?.projectedKpis.profit ?? 0,
+      upper: scenarios[2]?.projectedKpis.profit ?? 0,
+    },
+  ];
+  const scenarioSpread = {
+    revenue: (scenarios[2]?.projectedKpis.revenue ?? 0) - (scenarios[0]?.projectedKpis.revenue ?? 0),
+    profit: (scenarios[2]?.projectedKpis.profit ?? 0) - (scenarios[0]?.projectedKpis.profit ?? 0),
+    marketShare: (scenarios[2]?.projectedKpis.marketShare ?? 0) - (scenarios[0]?.projectedKpis.marketShare ?? 0),
+  };
 
   return {
     projectedKpis,
@@ -167,7 +240,320 @@ export function buildSimulationForecast(
     budgetSummary,
     riskWarnings,
     explanationBullets,
+    scenarios,
+    comparisonRows,
+    confidenceBand,
+    topRisk: baseScenario?.topRisk ?? riskWarnings[0] ?? 'No major execution risk detected.',
+    scenarioSpread,
   };
+}
+
+interface ExposureProfile {
+  reservePressure: number;
+  concentrationPressure: number;
+  wildcardExposure: number;
+  competitorPressure: number;
+}
+
+function calculateExposureProfile(
+  selectedTactics: Tactic[],
+  budget: BudgetSummary,
+  context: SimulationContext,
+): ExposureProfile {
+  const categoryTotals = selectedTactics.reduce<Record<string, number>>((totals, tactic) => {
+    totals[tactic.category] = (totals[tactic.category] || 0) + tactic.cost;
+    return totals;
+  }, {});
+  const largestCategorySpend = Math.max(0, ...Object.values(categoryTotals));
+  const concentrationPressure = budget.usedBudget > 0
+    ? clampNumber(largestCategorySpend / budget.usedBudget, 0, 1)
+    : 0;
+  const reservePressure = budget.remainingBudget < 0
+    ? 1
+    : clampNumber(1 - Math.max(budget.remainingBudget, 0) / Math.max(budget.quarterBudget, 1), 0, 1);
+  const competitorSpend = Object.values(context.engineState.marketConditions.competitorSpend || {}).reduce((sum, value) => sum + value, 0);
+  const competitorPressure = clampNumber(competitorSpend / Math.max(budget.quarterBudget, 1), 0.25, 2.5);
+  const wildcardExposure = clampNumber(
+    reservePressure * 0.45 + concentrationPressure * 0.35 + Math.max(0, competitorPressure - 1) * 0.2,
+    0,
+    1,
+  );
+
+  return {
+    reservePressure,
+    concentrationPressure,
+    wildcardExposure,
+    competitorPressure,
+  };
+}
+
+function buildForecastScenarios(options: {
+  context: SimulationContext;
+  quarter: QuarterKey;
+  selectedTactics: Tactic[];
+  budgetSummary: BudgetSummary;
+  exposure: ExposureProfile;
+  baseProjection: ReturnType<typeof processQuarterAdvance>;
+}): ForecastScenario[] {
+  const { context, quarter, selectedTactics, budgetSummary, exposure, baseProjection } = options;
+  const scenarioConfigs: Array<{
+    key: ForecastScenarioKey;
+    label: string;
+    confidenceLabel: string;
+    economicMultiplier: number;
+    competitorMultiplier: number;
+    riskBias: number;
+  }> = [
+    {
+      key: 'downside',
+      label: 'Downside',
+      confidenceLabel: 'Stress case',
+      economicMultiplier: 0.9,
+      competitorMultiplier: 1.25 + exposure.wildcardExposure * 0.1,
+      riskBias: 0.18,
+    },
+    {
+      key: 'base',
+      label: 'Base',
+      confidenceLabel: 'Most likely',
+      economicMultiplier: 1,
+      competitorMultiplier: 1,
+      riskBias: 0.08,
+    },
+    {
+      key: 'upside',
+      label: 'Upside',
+      confidenceLabel: 'Stretch case',
+      economicMultiplier: 1.08,
+      competitorMultiplier: 0.9,
+      riskBias: -0.04,
+    },
+  ];
+
+  return scenarioConfigs.map((config) => {
+    const scenarioProjection = config.key === 'base'
+      ? baseProjection
+      : processQuarterAdvance(
+          buildScenarioContext(context, quarter, selectedTactics, config.economicMultiplier, config.competitorMultiplier),
+          quarter,
+        );
+
+    const adjusted = adjustProjectionForScenario(
+      scenarioProjection,
+      context,
+      budgetSummary,
+      exposure,
+      config,
+    );
+
+    const channelBreakdown = (Object.keys(adjusted.newEngineState.results.channelRoi) as Channel[])
+      .map((channel) => ({
+        channel,
+        contribution: adjusted.newEngineState.results.channelContributions[channel] || 0,
+        roi: adjusted.newEngineState.results.channelRoi[channel] || 0,
+        adstock: adjusted.newEngineState.adstock[channel] || 0,
+      }))
+      .filter((entry) => entry.contribution > 0 || entry.roi > 0 || entry.adstock > 0)
+      .sort((a, b) => b.contribution - a.contribution);
+
+    const projectedKpis = {
+      ...adjusted.newKpis,
+      adstock: Object.values(adjusted.newEngineState.adstock).reduce((sum, value) => sum + value, 0),
+    };
+    const deltaFromCurrent: ForecastMetric[] = [
+      { label: 'Revenue', value: adjusted.newQuarterData.results.revenue, delta: adjusted.newQuarterData.results.revenue, format: 'currency' },
+      { label: 'Profit', value: adjusted.newQuarterData.results.profit, delta: adjusted.newQuarterData.results.profit, format: 'currency' },
+      { label: 'Market Share', value: projectedKpis.marketShare, delta: projectedKpis.marketShare - context.kpis.marketShare, format: 'percent' },
+      { label: 'Awareness', value: projectedKpis.brandAwareness, delta: projectedKpis.brandAwareness - context.kpis.brandAwareness, format: 'percent' },
+      { label: 'Satisfaction', value: projectedKpis.customerSatisfaction, delta: projectedKpis.customerSatisfaction - context.kpis.customerSatisfaction, format: 'percent' },
+    ];
+    const riskWarnings = buildRiskWarnings(selectedTactics, budgetSummary, adjusted.newQuarterData.results.profit, channelBreakdown, config.key, exposure);
+
+    return {
+      key: config.key,
+      label: config.label,
+      confidenceLabel: config.confidenceLabel,
+      projectedKpis,
+      deltaFromCurrent,
+      channelBreakdown,
+      drivers: buildScenarioDrivers(config.key, exposure, budgetSummary),
+      riskWarnings,
+      topRisk: riskWarnings[0] ?? 'No major execution risk detected.',
+    };
+  });
+}
+
+function buildScenarioContext(
+  context: SimulationContext,
+  quarter: QuarterKey,
+  selectedTactics: Tactic[],
+  economicMultiplier: number,
+  competitorMultiplier: number,
+): SimulationContext {
+  const previousMarket = context.engineState.marketConditions;
+  return {
+    ...context,
+    quarters: {
+      ...context.quarters,
+      [quarter]: {
+        ...context.quarters[quarter],
+        tactics: selectedTactics,
+      },
+    },
+    engineState: {
+      ...context.engineState,
+      marketConditions: {
+        ...previousMarket,
+        economicIndex: previousMarket.economicIndex * economicMultiplier,
+        competitorSpend: scaleCompetitorSpend(previousMarket.competitorSpend, competitorMultiplier),
+      },
+    },
+  };
+}
+
+function adjustProjectionForScenario(
+  projection: ReturnType<typeof processQuarterAdvance>,
+  context: SimulationContext,
+  budget: BudgetSummary,
+  exposure: ExposureProfile,
+  config: {
+    key: ForecastScenarioKey;
+    economicMultiplier: number;
+    competitorMultiplier: number;
+    riskBias: number;
+  },
+) {
+  const baseRevenue = projection.newQuarterData.results.revenue;
+  const baseProfit = projection.newQuarterData.results.profit;
+  const marketShareDelta = projection.newKpis.marketShare - context.kpis.marketShare;
+  const awarenessDelta = projection.newKpis.brandAwareness - context.kpis.brandAwareness;
+  const satisfactionDelta = projection.newKpis.customerSatisfaction - context.kpis.customerSatisfaction;
+  const competitorDrag = Math.max(0, exposure.competitorPressure * config.competitorMultiplier - 1);
+  const revenueFactor = clampNumber(
+    1 + (config.economicMultiplier - 1) * 1.05 - competitorDrag * 0.06 - exposure.wildcardExposure * config.riskBias,
+    0.72,
+    1.2,
+  );
+  const profitFactor = clampNumber(
+    1 + (config.economicMultiplier - 1) * 1.15 - competitorDrag * 0.08 - (exposure.wildcardExposure + exposure.reservePressure * 0.25) * config.riskBias,
+    0.58,
+    1.22,
+  );
+  const marketShareFactor = clampNumber(
+    1 + (config.economicMultiplier - 1) * 0.55 - competitorDrag * 0.1 - exposure.concentrationPressure * config.riskBias,
+    0.68,
+    1.18,
+  );
+  const awarenessFactor = clampNumber(
+    1 + (config.key === 'upside' ? 0.06 : config.key === 'downside' ? -0.05 : 0),
+    0.82,
+    1.08,
+  );
+  const satisfactionFactor = clampNumber(
+    1 + (config.key === 'downside' ? -0.06 : config.key === 'upside' ? 0.03 : 0) - exposure.reservePressure * 0.04,
+    0.8,
+    1.06,
+  );
+
+  const adjustedRevenue = Math.round(baseRevenue * revenueFactor);
+  const adjustedProfit = Math.round(baseProfit * profitFactor);
+  const adjustedMarketShare = clampNumber(
+    context.kpis.marketShare + marketShareDelta * marketShareFactor,
+    0,
+    100,
+  );
+  const adjustedAwareness = clampNumber(
+    context.kpis.brandAwareness + awarenessDelta * awarenessFactor,
+    0,
+    100,
+  );
+  const adjustedSatisfaction = clampNumber(
+    context.kpis.customerSatisfaction + satisfactionDelta * satisfactionFactor,
+    0,
+    100,
+  );
+
+  return {
+    ...projection,
+    newQuarterData: {
+      ...projection.newQuarterData,
+      results: {
+        ...projection.newQuarterData.results,
+        revenue: adjustedRevenue,
+        profit: adjustedProfit,
+        marketShare: adjustedMarketShare,
+        customerSatisfaction: adjustedSatisfaction,
+        brandAwareness: adjustedAwareness,
+      },
+    },
+    newKpis: {
+      ...projection.newKpis,
+      revenue: context.kpis.revenue + adjustedRevenue,
+      profit: context.kpis.profit + adjustedProfit,
+      marketShare: adjustedMarketShare,
+      customerSatisfaction: adjustedSatisfaction,
+      brandAwareness: adjustedAwareness,
+    },
+  };
+}
+
+function buildScenarioDrivers(
+  key: ForecastScenarioKey,
+  exposure: ExposureProfile,
+  budget: BudgetSummary,
+) {
+  const drivers: string[] = [];
+  if (key === 'downside') {
+    drivers.push('Assumes softer demand and heavier competitive response during the quarter.');
+    if (exposure.wildcardExposure > 0.55) {
+      drivers.push('Thin reserve or concentrated spend leaves less room to absorb a crisis response.');
+    }
+  }
+
+  if (key === 'base') {
+    drivers.push('Uses the current engine forecast with moderate competitive drag.');
+    if (budget.remainingBudget >= 0) {
+      drivers.push('Preserves the current quarter reserve instead of assuming late reactive spend.');
+    }
+  }
+
+  if (key === 'upside') {
+    drivers.push('Assumes demand stays supportive and the channel mix compounds cleanly.');
+    if (exposure.concentrationPressure < 0.6) {
+      drivers.push('A more balanced mix allows stronger carryover and less saturation pressure.');
+    }
+  }
+
+  return drivers;
+}
+
+function buildComparisonRows(
+  context: SimulationContext,
+  projection: ReturnType<typeof processQuarterAdvance>,
+  budgetSummary: BudgetSummary,
+): ForecastComparisonRow[] {
+  return [
+    {
+      label: 'Revenue',
+      currentValue: '$0',
+      plannedValue: formatForecastValue(projection.newQuarterData.results.revenue, 'currency'),
+    },
+    {
+      label: 'Profit',
+      currentValue: '$0',
+      plannedValue: formatForecastValue(projection.newQuarterData.results.profit, 'currency'),
+    },
+    {
+      label: 'Market Share',
+      currentValue: formatForecastValue(context.kpis.marketShare, 'percent'),
+      plannedValue: formatForecastValue(projection.newKpis.marketShare, 'percent'),
+    },
+    {
+      label: 'Reserve',
+      currentValue: formatForecastValue(budgetSummary.quarterBudget, 'currency'),
+      plannedValue: formatForecastValue(budgetSummary.remainingBudget, 'currency'),
+    },
+  ];
 }
 
 function buildRiskWarnings(
@@ -175,6 +561,8 @@ function buildRiskWarnings(
   budget: BudgetSummary,
   projectedProfit: number,
   channelBreakdown: ChannelForecast[],
+  scenarioKey: ForecastScenarioKey = 'base',
+  exposure?: ExposureProfile,
 ) {
   const warnings: string[] = [];
 
@@ -204,6 +592,14 @@ function buildRiskWarnings(
     warnings.push(`${CHANNEL_LABELS[weakRoiChannel.channel]} is showing low projected efficiency. Review whether that channel is serving awareness or direct demand.`);
   }
 
+  if (exposure && exposure.competitorPressure > 1.15 && scenarioKey !== 'upside') {
+    warnings.push('Competitor pressure is elevated relative to the quarter budget. Protect core channels before stretching into low-conviction moves.');
+  }
+
+  if (exposure && exposure.wildcardExposure > 0.55 && scenarioKey === 'downside') {
+    warnings.push('This mix is exposed to a downside shock. Keep reserve or reduce concentration before finalizing.');
+  }
+
   if (projectedProfit < 0 && selectedTactics.length > 0) {
     warnings.push('Projected profit is negative this quarter. Make sure the brand or market-share gain is worth the cash burn.');
   }
@@ -216,6 +612,8 @@ function buildExplanationBullets(
   budget: BudgetSummary,
   channelBreakdown: ChannelForecast[],
   totalAdstock: number,
+  scenarios: ForecastScenario[],
+  exposure: ExposureProfile,
 ) {
   if (selectedTactics.length === 0) {
     return ['Choose tactics to see how budget, channel efficiency, and brand carryover change the quarter forecast.'];
@@ -237,6 +635,34 @@ function buildExplanationBullets(
     bullets.push('The plan preserves optionality; use the remaining budget intentionally rather than letting it sit idle.');
   }
 
+  const spread = (scenarios[2]?.projectedKpis.revenue ?? 0) - (scenarios[0]?.projectedKpis.revenue ?? 0);
+  if (spread > 0) {
+    bullets.push(`The confidence band spans ${formatForecastValue(spread, 'currency')} in quarter revenue between downside and upside cases.`);
+  }
+
+  if (exposure.wildcardExposure > 0.55) {
+    bullets.push('Wildcard exposure is elevated. Concentration and thin reserve matter more than raw headline revenue in this setup.');
+  }
+
   return bullets;
 }
 
+function scaleCompetitorSpend(
+  spend: Record<Channel, number>,
+  multiplier: number,
+): Record<Channel, number> {
+  return {
+    tv: spend.tv * multiplier,
+    radio: spend.radio * multiplier,
+    print: spend.print * multiplier,
+    digital: spend.digital * multiplier,
+    social: spend.social * multiplier,
+    seo: spend.seo * multiplier,
+    events: spend.events * multiplier,
+    pr: spend.pr * multiplier,
+  };
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}

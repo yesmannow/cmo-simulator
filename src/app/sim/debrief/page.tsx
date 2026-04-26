@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { pdf } from '@react-pdf/renderer';
 import { logger } from '@/lib/logger';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { EnhancedDebrief } from '@/components/simulation/EnhancedDebrief';
+import { SimulationDebriefPdf } from '@/components/simulation/SimulationDebriefPdf';
 import { useSimulation } from '@/hooks/useSimulation';
 import { getSimAuthSession, setSimAuthSession, type SimAuthSession } from '@/lib/simAuth';
 import { toPersistedRunPayload } from '@/lib/simulationPersistence';
-import { buildTeachingReport, calculateGrade, calculateOverallScore } from '@/lib/simulationInsights';
+import { buildSimulationDebriefReport } from '@/lib/simulationReport';
 
 export default function DebriefPage() {
   const router = useRouter();
@@ -85,46 +87,21 @@ export default function DebriefPage() {
       const session = requireAuth();
       if (!session) return;
 
-      const score = calculateOverallScore(context);
-      const grade = calculateGrade(score);
-      const report = buildTeachingReport(context);
-
-      const content = [
-        '# CMO Simulator Debrief Report',
-        '',
-        `Generated: ${new Date().toISOString()}`,
-        `User: ${session.email}`,
-        '',
-        '## Outcome',
-        report.outcome,
-        '',
-        '## Why',
-        report.why,
-        '',
-        '## Tradeoff',
-        report.tradeoff,
-        '',
-        '## Recommended Next Move',
-        report.nextMove,
-        '',
-        '## Growth Leader Takeaway',
-        report.growthLeaderTakeaway,
-        '',
-        `Overall Score: ${score}`,
-        `Grade: ${grade}`,
-      ].join('\n');
-
-      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+      const report = buildSimulationDebriefReport(context, {
+        email: session.email,
+        name: session.name,
+      });
+      const blob = await pdf(<SimulationDebriefPdf report={report} />).toBlob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `cmo-simulation-report-${Date.now()}.md`;
+      a.download = `cmo-simulation-report-${Date.now()}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      setStatusMessage('Report exported successfully.');
+      setStatusMessage('PDF report exported successfully.');
     } catch (error) {
       logger.error('Error exporting PDF', error);
       setStatusMessage('Failed to export report.');

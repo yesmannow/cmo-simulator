@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type React from 'react';
 import { AlertTriangle, ArrowRight, BarChart3, Check, Circle, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp, WalletCards } from 'lucide-react';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Drawer } from '@/components/ui/Drawer';
@@ -116,6 +117,37 @@ export function QuarterOperatingConsole({
               <MetricTile key={metric.label} metric={metric} />
             ))}
           </div>
+          <div className="border-t border-slate-200 px-5 py-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-950">Confidence band</h3>
+                <p className="text-sm text-slate-600">Downside, base, and upside quarter outcomes for the current plan.</p>
+              </div>
+              <Badge variant="outline" className="w-fit border-slate-300 bg-slate-50 text-slate-700">
+                Revenue spread {formatForecastValue(forecast.scenarioSpread.revenue, 'currency')}
+              </Badge>
+            </div>
+            <div className="mt-4 h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={forecast.confidenceBand} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} stroke="#64748b" />
+                  <YAxis tickLine={false} axisLine={false} fontSize={12} stroke="#64748b" tickFormatter={formatCompactCurrency} />
+                  <Tooltip
+                    cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }}
+                    contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10 }}
+                    formatter={(value: number, key: string) => [
+                      formatForecastValue(value, 'currency'),
+                      key === 'lower' ? 'Downside' : key === 'upper' ? 'Upside' : 'Base',
+                    ]}
+                  />
+                  <Area type="monotone" dataKey="upper" stroke="#cbd5e1" fill="#e2e8f0" fillOpacity={0.35} />
+                  <Area type="monotone" dataKey="lower" stroke="#cbd5e1" fill="#ffffff" fillOpacity={1} />
+                  <Area type="monotone" dataKey="expected" stroke="#0f172a" fill="#0f172a" fillOpacity={0.1} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </Panel>
 
         <Panel>
@@ -127,6 +159,76 @@ export function QuarterOperatingConsole({
             <PlanSignal label="Moves selected" value={selectedTactics.length.toString()} />
             <PlanSignal label="Forecast notes" value={forecast.explanationBullets.length.toString()} />
             <PlanSignal label="Open risks" value={forecast.riskWarnings.length.toString()} tone={forecast.riskWarnings.length > 0 ? 'warning' : 'neutral'} />
+            <PlanSignal label="Scenario spread" value={formatForecastValue(forecast.scenarioSpread.profit, 'currency')} tone={forecast.scenarioSpread.profit > 0 ? 'warning' : 'neutral'} />
+          </div>
+        </Panel>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
+        <Panel>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">Baseline vs selected plan</h2>
+              <p className="text-sm leading-6 text-slate-600">Current position compared with the modeled quarter outcome.</p>
+            </div>
+            <Badge variant="outline" className="border-slate-300 bg-slate-50 text-slate-700">
+              {forecast.topRisk}
+            </Badge>
+          </div>
+          <div className="mt-4 divide-y divide-slate-200">
+            {forecast.comparisonRows.map((row) => (
+              <div key={row.label} className="grid grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 py-3 text-sm">
+                <span className="font-semibold text-slate-950">{row.label}</span>
+                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Current baseline</p>
+                  <p className="mt-1 font-semibold text-slate-700">{row.currentValue}</p>
+                </div>
+                <div className="rounded-md border border-slate-950 bg-slate-950 px-3 py-2 text-white">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Selected plan</p>
+                  <p className="mt-1 font-semibold">{row.plannedValue}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel>
+          <h2 className="text-lg font-semibold text-slate-950">Scenario readout</h2>
+          <div className="mt-4 space-y-3">
+            {forecast.scenarios.map((scenario) => (
+              <div key={scenario.key} className="rounded-md border border-slate-200 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">{scenario.label}</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">{scenario.confidenceLabel}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-950">{formatForecastValue(scenario.projectedKpis.revenue, 'currency')}</p>
+                    <p className="text-xs text-slate-500">Revenue</p>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2 text-sm text-slate-700">
+                  {scenario.drivers.map((driver) => (
+                    <p key={driver}>{driver}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+
+        <Panel>
+          <h2 className="text-lg font-semibold text-slate-950">Top risk</h2>
+          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">
+            {forecast.topRisk}
+          </p>
+          <div className="mt-4 space-y-3">
+            {forecast.scenarios.map((scenario) => (
+              <div key={scenario.key} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{scenario.label}</p>
+                <p className="mt-1 text-sm text-slate-700">{scenario.topRisk}</p>
+              </div>
+            ))}
           </div>
         </Panel>
       </section>
@@ -446,4 +548,10 @@ function BudgetFact({ label, value, isWarning = false }: { label: string; value:
       <p className={cn('mt-1 font-semibold', isWarning ? 'text-red-700' : 'text-slate-950')}>{value}</p>
     </div>
   );
+}
+
+function formatCompactCurrency(value: number) {
+  if (Math.abs(value) >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(value) >= 1_000) return `$${Math.round(value / 1000)}k`;
+  return `$${Math.round(value)}`;
 }
