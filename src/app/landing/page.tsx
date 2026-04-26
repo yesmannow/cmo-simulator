@@ -56,7 +56,7 @@ export default function LandingPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <HeroVisual />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.72),rgba(2,6,23,0.94)_62%,#f8fafc_62%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.72),rgba(2,6,23,0.94)_62%,#f8fafc_62%)]" />
 
       <section className="relative z-10 mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-center px-4 py-16 sm:px-6 lg:px-8">
         <motion.div

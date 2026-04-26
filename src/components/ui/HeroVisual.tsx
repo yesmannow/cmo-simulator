@@ -71,7 +71,7 @@ function OrbitingNodes() {
 
 export default function HeroVisual() {
   return (
-    <div className="absolute inset-0 z-0 bg-slate-950">
+    <div className="pointer-events-none absolute inset-0 z-0 bg-slate-950">
       <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
@@ -80,7 +80,7 @@ export default function HeroVisual() {
         <DataParticles count={3000} />
         <OrbitingNodes />
       </Canvas>
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/20 to-slate-950" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/20 to-slate-950" />
     </div>
   );
 }
