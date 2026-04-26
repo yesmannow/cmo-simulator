@@ -19,7 +19,7 @@ export interface SimulationContext {
     companyName?: string;
     guidedDemo?: boolean;
     industry?: Industry;
-    logoStyle?: 'orb' | 'badge';
+    logoStyle?: 'orb' | 'badge' | 'monogram';
     targetAudience?: string;
     brandPositioning?: string;
     primaryChannels?: string[];

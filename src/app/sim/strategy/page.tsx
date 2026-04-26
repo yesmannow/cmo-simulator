@@ -3,7 +3,20 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { useSimulation } from '@/hooks/useSimulation';
-import { ArrowRight, Target, Users, Megaphone, DollarSign } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import {
+  ArrowRight,
+  Compass,
+  DollarSign,
+  Globe,
+  Handshake,
+  Megaphone,
+  Newspaper,
+  Presentation,
+  Target,
+  Tv,
+  Users,
+} from 'lucide-react';
 
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -11,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -23,12 +37,12 @@ type StrategyFormData = {
 };
 
 const CHANNEL_OPTIONS = [
-  { id: 'digital', name: 'Digital Marketing', icon: '💻' },
-  { id: 'social', name: 'Social Media', icon: '📱' },
-  { id: 'traditional', name: 'Traditional Media', icon: '📺' },
-  { id: 'content', name: 'Content Marketing', icon: '📝' },
-  { id: 'events', name: 'Events & Experiences', icon: '🎪' },
-  { id: 'partnerships', name: 'Partnerships', icon: '🤝' },
+  { id: 'digital', name: 'Digital Marketing', icon: Globe, description: 'Paid digital, web acquisition, and measurable demand capture.' },
+  { id: 'social', name: 'Social Media', icon: Megaphone, description: 'Organic and paid social momentum, community, and visibility.' },
+  { id: 'traditional', name: 'Traditional Media', icon: Tv, description: 'Broadcast and broad-reach brand investment.' },
+  { id: 'content', name: 'Content Marketing', icon: Newspaper, description: 'Thought leadership, education, and long-tail audience capture.' },
+  { id: 'events', name: 'Events & Experiences', icon: Presentation, description: 'Field marketing, launches, activations, and in-person demand.' },
+  { id: 'partnerships', name: 'Partnerships', icon: Handshake, description: 'Distribution leverage, channel relationships, and co-marketing.' },
 ];
 
 const AUDIENCE_OPTIONS = [
@@ -118,11 +132,40 @@ export default function StrategySessionPage() {
 
   return (
     <ImmersiveLayout
-      title="Build Your Company"
-      subtitle="Define your strategic foundation for the next 12 months. Your choices here will influence the tactics available and their effectiveness throughout the simulation."
+      title="Strategic Foundation"
+      subtitle="Define the audience, market stance, and go-to-market channels that the operating console will carry into Q1."
       quarter="Strategy Session"
     >
       <div className="max-w-5xl mx-auto space-y-10 pb-20">
+        <GlassCard className="border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#172554_42%,#1e293b_100%)] text-white">
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-100">
+                  <Compass className="h-3.5 w-3.5" />
+                  Strategy Controls
+                </div>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight">Translate setup into an operating plan</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-200">
+                  This page now acts like a control layer rather than a playful chooser. Once complete, the simulator launches the CRM-style Q1 console with your audience, positioning, and channels preloaded.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:w-[340px]">
+                <div className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">What unlocks next</div>
+                  <div className="mt-2 text-sm font-semibold text-white">Q1 Operating Console</div>
+                  <div className="mt-1 text-sm text-slate-200">Budget, readiness, and tactical deployment open after strategy is complete.</div>
+                </div>
+                <div className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">Required</div>
+                  <div className="mt-2 text-sm font-semibold text-white">Audience, Positioning, Channels</div>
+                  <div className="mt-1 text-sm text-slate-200">These fields shape which tactics make sense in the simulation.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+
         {/* Budget Overview */}
         <GlassCard className="border-slate-200 bg-white">
           <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -149,6 +192,7 @@ export default function StrategySessionPage() {
                 <div className="flex items-center gap-2 text-slate-950">
                   <Users className="h-6 w-6 text-primary" />
                   <h3 className="text-xl font-semibold">Target Audience</h3>
+                  <InfoTooltip iconOnly content="Your audience focus informs tactic selection, market response, and how efficiently different channels convert." />
                 </div>
                 <p className="text-slate-600 text-sm">
                   Who is your primary customer segment?
@@ -215,6 +259,7 @@ export default function StrategySessionPage() {
                 <div className="flex items-center gap-2 text-slate-950">
                   <Target className="h-6 w-6 text-primary" />
                   <h3 className="text-xl font-semibold">Brand Positioning</h3>
+                  <InfoTooltip iconOnly content="Positioning frames your market stance and influences how brand and demand investments are interpreted later in the simulation." />
                 </div>
                 <p className="text-slate-600 text-sm">
                   How do you want to be perceived in the market?
@@ -282,6 +327,7 @@ export default function StrategySessionPage() {
               <div className="flex items-center gap-2 text-slate-950">
                 <Megaphone className="h-6 w-6 text-primary" />
                 <h3 className="text-xl font-semibold">Primary Marketing Channels</h3>
+                <InfoTooltip iconOnly content="These are the operating lanes you expect to emphasize first. They provide the starting logic for tactical planning in Q1." />
               </div>
               <p className="text-slate-600 text-sm">
                 Select 2-4 channels that align with your strategy (minimum 1 required)
@@ -294,15 +340,20 @@ export default function StrategySessionPage() {
                   key={channel.id}
                   variant="outline"
                   className={cn(
-                    "h-auto p-6 flex flex-col items-center gap-3 transition-all duration-300",
+                    "h-auto p-4 flex flex-col items-start gap-3 text-left transition-all duration-300",
                     formData.primaryChannels.includes(channel.id)
                       ? "border-slate-900 bg-slate-900 text-white shadow-sm scale-[1.02]"
                       : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                   )}
                   onClick={() => handleChannelToggle(channel.id)}
                 >
-                  <span className="text-4xl">{channel.icon}</span>
-                  <span className="text-xs font-black uppercase tracking-widest">{channel.name}</span>
+                  <ChannelIcon icon={channel.icon} selected={formData.primaryChannels.includes(channel.id)} />
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.18em]">{channel.name}</div>
+                    <div className={cn("mt-2 text-xs leading-5", formData.primaryChannels.includes(channel.id) ? "text-slate-200" : "text-slate-500")}>
+                      {channel.description}
+                    </div>
+                  </div>
                 </Button>
               ))}
             </div>
@@ -319,7 +370,7 @@ export default function StrategySessionPage() {
                     const channel = CHANNEL_OPTIONS.find(c => c.id === channelId);
                     return (
                       <Badge key={channelId} variant="secondary" className="bg-white text-slate-700 border-slate-200 px-3 py-1 text-sm font-semibold">
-                        {channel?.icon} {channel?.name}
+                        {channel?.name}
                       </Badge>
                     );
                   })}
@@ -358,5 +409,13 @@ export default function StrategySessionPage() {
         </div>
       </div>
     </ImmersiveLayout>
+  );
+}
+
+function ChannelIcon({ icon: Icon, selected }: { icon: LucideIcon; selected: boolean }) {
+  return (
+    <div className={cn("rounded-xl border p-2.5", selected ? "border-white/10 bg-white/10" : "border-slate-200 bg-slate-50")}>
+      <Icon className="h-5 w-5" />
+    </div>
   );
 }
