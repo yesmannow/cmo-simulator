@@ -157,7 +157,7 @@ npm run dev
 
 ### Step 3: Navigate to Dashboard
 
-Visit: `http://localhost:3000/dashboard`
+Visit: `http://localhost:3002/dashboard`
 
 ---
 

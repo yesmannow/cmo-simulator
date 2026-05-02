@@ -75,6 +75,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
   const handleSignOut = async () => {
     await signOut();
     router.replace('/landing');
+    router.refresh();
   };
 
   useEffect(() => {
@@ -218,6 +219,9 @@ export function CrmShell({ children }: { children: ReactNode }) {
                     </div>
                     <Link className="mt-2 block rounded-md px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100" href="/sim/simulations">
                       My simulations
+                    </Link>
+                    <Link className="mt-0.5 block rounded-md px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100" href="/sim/setup">
+                      New simulation
                     </Link>
                     <button
                       type="button"

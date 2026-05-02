@@ -21,14 +21,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: "CMO Simulator - Executive Marketing Strategy Lab",
     description: "A playable marketing strategy lab for business owners and growth leaders.",
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3002',
     siteName: "CMO Simulator",
     images: [
       {

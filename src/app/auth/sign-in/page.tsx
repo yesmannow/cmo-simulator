@@ -1,10 +1,10 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signInSimAuth, signUpSimAuth } from '@/lib/simAuth';
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get('next') || '/sim/setup';
@@ -80,5 +80,13 @@ export default function SignInPage() {
         {status ? <p className="mt-3 text-sm text-slate-700">{status}</p> : null}
       </section>
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   );
 }

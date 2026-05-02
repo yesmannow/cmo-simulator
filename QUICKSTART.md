@@ -48,7 +48,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3002](http://localhost:3002)
 
 ## Step 5: Test the Flow (3 minutes)
 

@@ -12,8 +12,11 @@
 const requiredEnvVars = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
+
+// SUPABASE_SERVICE_ROLE_KEY is optional — only required for future admin/server-side
+// operations. Normal user persistence uses the SSR client with the anon key + RLS.
+// Never expose this key to the browser (do NOT use NEXT_PUBLIC_ prefix).
 
 /**
  * Check if we're in a build context (not runtime)
@@ -69,6 +72,7 @@ export function validateEnv() {
     throw new Error(
       `Missing required environment variables: ${missing.join(', ')}\n` +
       'Please check your .env.local file and ensure all required variables are set.\n' +
+      'Required: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY\n' +
       'See .env.example for reference.'
     );
   }
