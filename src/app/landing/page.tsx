@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -52,6 +53,15 @@ const previewRows = [
 
 export default function LandingPage() {
   const [showPreview, setShowPreview] = useState(false);
+  const router = useRouter();
+
+  const handleStartSimulator = () => {
+    try {
+      router.push("/sim/setup");
+    } catch {
+      window.location.assign("/sim/setup");
+    }
+  };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
@@ -78,13 +88,14 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/sim/setup"
+            <button
+              type="button"
+              onClick={handleStartSimulator}
               className="inline-flex items-center justify-center rounded-md bg-white px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition hover:bg-slate-100"
             >
               Start the simulation
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
+            </button>
             <button
               type="button"
               onClick={() => setShowPreview(true)}
