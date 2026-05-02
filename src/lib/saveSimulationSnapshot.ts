@@ -7,12 +7,12 @@ export async function saveSimulationSnapshot(
   phase: string,
   status: "in_progress" | "completed",
 ): Promise<void> {
-  const session = getSimAuthSession();
+  const session = await getSimAuthSession();
   if (!session) return;
 
   const payload = toPersistedRunPayload(
     context,
-    { userId: session.userId, email: session.email, name: session.name },
+    { userId: session.userId, email: session.email },
     { phase, status },
   );
 
@@ -22,4 +22,3 @@ export async function saveSimulationSnapshot(
     body: JSON.stringify(payload),
   });
 }
-

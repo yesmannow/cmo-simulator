@@ -1,42 +1,49 @@
+import { createClient } from "@/lib/supabase/client";
+
 export interface SimAuthSession {
   userId: string;
   email: string;
-  name?: string;
   signedInAt: string;
 }
 
-const STORAGE_KEY = "cmo-sim-auth-v1";
-
-export function getSimAuthSession(): SimAuthSession | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-
-  try {
-    const parsed = JSON.parse(raw) as SimAuthSession;
-    if (!parsed?.userId || !parsed?.email) {
-      return null;
-    }
-    return parsed;
-  } catch {
+function toSession(
+  session: Awaited<ReturnType<ReturnType<typeof createClient>["auth"]["getSession"]>>["data"]["session"],
+): SimAuthSession | null {
+  const user = session?.user;
+  if (!user?.id || !user.email) {
     return null;
   }
+
+  return {
+    userId: user.id,
+    email: user.email,
+    signedInAt: user.last_sign_in_at ?? new Date().toISOString(),
+  };
 }
 
-export function setSimAuthSession(email: string, name?: string): SimAuthSession {
-  const session: SimAuthSession = {
-    userId: crypto.randomUUID(),
-    email: email.trim().toLowerCase(),
-    name: name?.trim() || undefined,
-    signedInAt: new Date().toISOString(),
-  };
+export async function getSimAuthSession(): Promise<SimAuthSession | null> {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getSession();
+  return toSession(data.session);
+}
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+export async function signInSimAuth(email: string, password: string): Promise<SimAuthSession> {
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+
+  const session = toSession(data.session);
+  if (!session) throw new Error("Failed to create Supabase session.");
   return session;
 }
 
-export function clearSimAuthSession(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY);
+export async function signUpSimAuth(email: string, password: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
 }
 
+export async function clearSimAuthSession(): Promise<void> {
+  const supabase = createClient();
+  await supabase.auth.signOut();
+}

@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, CircleDot, MoreHorizontal, Sparkles, Wrench } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { CompanyMark } from '@/components/simulation/CompanyMark';
 import { MobileInstallPrompt } from '@/components/simulation/MobileInstallPrompt';
 import {
@@ -43,6 +44,8 @@ function formatPercent(value: number) {
 
 export function CrmShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut, isLoading } = useAuth();
   const { context, currentPhase } = useSimulation();
   const [mobileNavVisible, setMobileNavVisible] = useState(true);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -52,6 +55,8 @@ export function CrmShell({ children }: { children: ReactNode }) {
   const industry = context.strategy.industry || 'saas';
   const logoStyle = context.strategy.logoStyle || 'orb';
   const runStatus = context.finalResults ? 'Completed' : 'In progress';
+  const userLabel = user?.email ?? 'Signed in user';
+  const roleLabel = user?.role ?? 'user';
 
   const primaryItem = useMemo(() => primaryNavItemForPath(pathname), [pathname]);
   const quarterItem = useMemo(() => quarterNavItemForPhase(currentPhase), [currentPhase]);
@@ -66,6 +71,11 @@ export function CrmShell({ children }: { children: ReactNode }) {
       setSidebarCollapsed(true);
     }
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace('/landing');
+  };
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -197,6 +207,28 @@ export function CrmShell({ children }: { children: ReactNode }) {
                   <Wrench className="h-4 w-4 text-slate-500" />
                   Workspace
                 </Link>
+                <details className="relative">
+                  <summary className="list-none cursor-pointer rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50">
+                    {userLabel}
+                  </summary>
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-64 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+                    <div className="rounded-md bg-slate-50 p-2">
+                      <div className="truncate text-xs font-semibold text-slate-900">{userLabel}</div>
+                      <div className="mt-0.5 text-[11px] uppercase tracking-wide text-slate-500">{roleLabel}</div>
+                    </div>
+                    <Link className="mt-2 block rounded-md px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100" href="/sim/simulations">
+                      My simulations
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      disabled={isLoading}
+                      className="mt-1 w-full rounded-md px-2 py-2 text-left text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                    >
+                      {isLoading ? 'Signing out…' : 'Sign out'}
+                    </button>
+                  </div>
+                </details>
               </div>
             </div>
 

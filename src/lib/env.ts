@@ -9,7 +9,11 @@
  * as environment variables are injected at runtime.
  */
 
-const requiredEnvVars = [] as const;
+const requiredEnvVars = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+] as const;
 
 /**
  * Check if we're in a build context (not runtime)

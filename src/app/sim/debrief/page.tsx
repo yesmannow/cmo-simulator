@@ -8,7 +8,7 @@ import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { EnhancedDebrief } from '@/components/simulation/EnhancedDebrief';
 import { SimulationDebriefPdf } from '@/components/simulation/SimulationDebriefPdf';
 import { useSimulation } from '@/hooks/useSimulation';
-import { getSimAuthSession, setSimAuthSession, type SimAuthSession } from '@/lib/simAuth';
+import { getSimAuthSession, signInSimAuth, signUpSimAuth, type SimAuthSession } from '@/lib/simAuth';
 import { toPersistedRunPayload } from '@/lib/simulationPersistence';
 import { buildSimulationDebriefReport } from '@/lib/simulationReport';
 
@@ -18,18 +18,22 @@ export default function DebriefPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [authSession, setAuthSession] = useState<SimAuthSession | null>(null);
   const [emailInput, setEmailInput] = useState('');
-  const [nameInput, setNameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     setShowConfetti(true);
     completeDebrief();
-    setAuthSession(getSimAuthSession());
+    void (async () => {
+      const session = await getSimAuthSession();
+      setAuthSession(session);
+    })();
   }, [completeDebrief]);
 
-  const requireAuth = (): SimAuthSession | null => {
-    const session = getSimAuthSession();
+  const requireAuth = async (): Promise<SimAuthSession | null> => {
+    const session = await getSimAuthSession();
     if (!session) {
       setStatusMessage('Sign in with your email to unlock save/export.');
       return null;
@@ -37,20 +41,37 @@ export default function DebriefPage() {
     return session;
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     const email = emailInput.trim().toLowerCase();
     if (!email || !email.includes('@')) {
       setStatusMessage('Enter a valid email to continue.');
       return;
     }
+    if (passwordInput.trim().length < 8) {
+      setStatusMessage('Enter a password with at least 8 characters.');
+      return;
+    }
 
-    const session = setSimAuthSession(email, nameInput.trim() || undefined);
-    setAuthSession(session);
-    setStatusMessage('Save/export access enabled for this browser session.');
+    setIsSigningIn(true);
+    setStatusMessage(null);
+    try {
+      const session = await signInSimAuth(email, passwordInput);
+      setAuthSession(session);
+      setStatusMessage('Signed in. Save/export access enabled.');
+    } catch {
+      try {
+        await signUpSimAuth(email, passwordInput);
+        setStatusMessage('Account created. Check your inbox to confirm, then sign in.');
+      } catch (error) {
+        setStatusMessage(error instanceof Error ? error.message : 'Authentication failed.');
+      }
+    } finally {
+      setIsSigningIn(false);
+    }
   };
 
   const handleSaveRun = async () => {
-    const session = requireAuth();
+    const session = await requireAuth();
     if (!session) return;
 
     setIsSaving(true);
@@ -59,7 +80,6 @@ export default function DebriefPage() {
       const payload = toPersistedRunPayload(context, {
         userId: session.userId,
         email: session.email,
-        name: session.name,
       });
 
       const response = await fetch('/api/simulations/save', {
@@ -84,12 +104,11 @@ export default function DebriefPage() {
 
   const handleExportPDF = async () => {
     try {
-      const session = requireAuth();
+      const session = await requireAuth();
       if (!session) return;
 
       const report = buildSimulationDebriefReport(context, {
         email: session.email,
-        name: session.name,
       });
       const blob = await pdf(<SimulationDebriefPdf report={report} />).toBlob();
       const url = window.URL.createObjectURL(blob);
@@ -131,27 +150,31 @@ export default function DebriefPage() {
         <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-950">Unlock Save + Export</h2>
           <p className="mt-2 text-sm text-slate-600">
-            Keep simulation play open for everyone; require email sign-in for persistence and report exports.
+            Keep simulation play open for everyone; require Supabase sign-in for persistence and report exports.
           </p>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <input
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
-              placeholder="Name (optional)"
-              value={nameInput}
-              onChange={(event) => setNameInput(event.target.value)}
-            />
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
             <input
               className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
               placeholder="Work email"
               value={emailInput}
               onChange={(event) => setEmailInput(event.target.value)}
             />
+            <input
+              type="password"
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+              placeholder="Password (min 8 chars)"
+              value={passwordInput}
+              onChange={(event) => setPasswordInput(event.target.value)}
+            />
+          </div>
+          <div className="mt-3">
             <button
               type="button"
               className="rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800"
-              onClick={handleSignIn}
+              onClick={() => void handleSignIn()}
+              disabled={isSigningIn}
             >
-              Sign In For Save/Export
+              {isSigningIn ? 'Working...' : 'Sign In / Sign Up For Save/Export'}
             </button>
           </div>
         </div>

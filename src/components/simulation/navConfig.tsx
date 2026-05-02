@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LineChart,
   Megaphone,
+  FolderOpenDot,
   Sparkles,
   Wrench,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ export type NavItem = {
 
 export const CORE_NAV_ITEMS: NavItem[] = [
   { label: 'Overview', href: '/sim', icon: LayoutDashboard },
+  { label: 'My Simulations', href: '/sim/simulations', icon: FolderOpenDot },
   { label: 'Strategy', href: '/sim/strategy', icon: Flag },
   { label: 'Debrief', href: '/sim/debrief', icon: BarChart3 },
 ];
@@ -48,6 +50,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
 
 export function titleForPath(pathname: string) {
   if (pathname.startsWith('/sim/setup')) return 'Setup';
+  if (pathname.startsWith('/sim/simulations')) return 'My Simulations';
   if (pathname.startsWith('/sim/strategy')) return 'Strategy Session';
   if (pathname.startsWith('/sim/campaigns')) return 'Campaigns';
   if (pathname.startsWith('/sim/pipeline')) return 'Pipeline';
@@ -66,6 +69,7 @@ export function activeHref(pathname: string, href: string) {
 
 export function primaryNavItemForPath(pathname: string): NavItem {
   if (pathname.startsWith('/sim/setup')) return { label: 'Setup', href: '/sim/setup', icon: Wrench };
+  if (pathname.startsWith('/sim/simulations')) return { label: 'Runs', href: '/sim/simulations', icon: FolderOpenDot };
   if (pathname.startsWith('/sim/strategy')) return { label: 'Strategy', href: '/sim/strategy', icon: Flag };
   if (pathname.startsWith('/sim/q1')) return { label: 'Q1', href: '/sim/q1', icon: Layers3 };
   if (pathname.startsWith('/sim/q2')) return { label: 'Q2', href: '/sim/q2', icon: Layers3 };

@@ -18,9 +18,9 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { LogoGenerator, type CompanyLogoStyle } from '@/components/LogoGenerator';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
 import { logger } from '@/lib/logger';
-import { getSimAuthSession } from '@/lib/simAuth';
 import { SimulationContext } from '@/lib/simMachine';
 import { resolveSimulationPath } from '@/lib/simulationRouting';
 import { cn } from '@/lib/utils';
@@ -257,6 +257,7 @@ function formatBudget(value: number) {
 
 export default function SetupPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [guideOpen, setGuideOpen] = useState(false);
   const [showAdvancedScenario, setShowAdvancedScenario] = useState(false);
@@ -291,12 +292,11 @@ export default function SetupPage() {
   const stepMeta = STEP_META[step - 1];
 
   useEffect(() => {
-    const session = getSimAuthSession();
-    if (!session) return;
+    if (!user) return;
 
-    const loadLatestRun = async () => {
+    void (async () => {
       try {
-        const response = await fetch(`/api/simulations/latest?userId=${encodeURIComponent(session.userId)}`);
+        const response = await fetch('/api/simulations/latest');
         if (!response.ok) return;
         const responseData = await response.json();
         if (responseData?.run?.context) {
@@ -307,10 +307,8 @@ export default function SetupPage() {
       } catch (error) {
         logger.error('Failed to load latest saved run', error);
       }
-    };
-
-    void loadLatestRun();
-  }, []);
+    })();
+  }, [user]);
 
   const handleNext = () => {
     if (step < totalSteps) {

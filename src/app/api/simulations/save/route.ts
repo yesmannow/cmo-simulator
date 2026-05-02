@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { supabaseRestRequest } from "@/lib/supabaseRest";
 import type { PersistedRunPayload } from "@/lib/simulationPersistence";
 
@@ -22,10 +23,20 @@ function toDatabaseRow(payload: PersistedRunPayload) {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id || !user.email) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
     const payload = (await request.json()) as PersistedRunPayload;
 
     if (!payload?.userId || !payload?.userEmail || !payload?.context) {
       return NextResponse.json({ error: "Missing required payload fields." }, { status: 400 });
+    }
+
+    if (payload.userId !== user.id || payload.userEmail !== user.email) {
+      return NextResponse.json({ error: "Payload identity mismatch." }, { status: 403 });
     }
 
     const response = await supabaseRestRequest(
@@ -54,4 +65,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
