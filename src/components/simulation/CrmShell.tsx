@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { CircleDot, MoreHorizontal, Sparkles, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleDot, MoreHorizontal, Sparkles, Wrench } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { CompanyMark } from '@/components/simulation/CompanyMark';
 import { MobileInstallPrompt } from '@/components/simulation/MobileInstallPrompt';
@@ -46,6 +46,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
   const { context, currentPhase } = useSimulation();
   const [mobileNavVisible, setMobileNavVisible] = useState(true);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const companyName = context.strategy.companyName?.trim() || 'New Workspace';
   const industry = context.strategy.industry || 'saas';
@@ -58,6 +59,13 @@ export function CrmShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMobileNavVisible(true);
   }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth < 1280) {
+      setSidebarCollapsed(true);
+    }
+  }, []);
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -107,46 +115,74 @@ export function CrmShell({ children }: { children: ReactNode }) {
   return (
     <div className="mobile-app-shell min-h-screen bg-[linear-gradient(180deg,#f7f9fc_0%,#eef3f8_34%,#f6f8fb_100%)] text-slate-950">
       <div className="mx-auto flex min-h-screen w-full max-w-[1480px] gap-0">
-        <aside className="hidden w-[288px] shrink-0 flex-col border-r border-slate-200 bg-white/95 lg:flex">
-          <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+        <aside
+          className={cn(
+            'hidden shrink-0 flex-col border-r border-slate-200 bg-white/95 transition-[width] duration-200 md:flex',
+            sidebarCollapsed ? 'w-[96px]' : 'w-[288px]',
+          )}
+        >
+          <div className={cn('flex h-16 items-center gap-3 border-b border-slate-200', sidebarCollapsed ? 'justify-center px-2' : 'px-5')}>
             <CompanyMark companyName={companyName} industry={industry} size={34} style={logoStyle} />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-slate-950">{companyName}</div>
-              <div className="truncate text-xs text-slate-500">Workspace · {industry.replace('-', ' ')}</div>
-            </div>
+            {!sidebarCollapsed ? (
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold text-slate-950">{companyName}</div>
+                <div className="truncate text-xs text-slate-500">Workspace · {industry.replace('-', ' ')}</div>
+              </div>
+            ) : null}
           </div>
 
-          <nav className="px-3 py-4">
-            <SidebarGroup label="CMO Simulator" items={[{ label: 'Setup', href: '/sim/setup', icon: Wrench }, ...CORE_NAV_ITEMS, ...QUARTER_NAV_ITEMS]} pathname={pathname} />
-            <SidebarGroup label="CRM Views" items={CRM_NAV_ITEMS} pathname={pathname} className="mt-5" />
+          <nav className={cn('py-4', sidebarCollapsed ? 'px-2' : 'px-3')}>
+            <SidebarGroup
+              label="CMO Simulator"
+              items={[{ label: 'Setup', href: '/sim/setup', icon: Wrench }, ...CORE_NAV_ITEMS, ...QUARTER_NAV_ITEMS]}
+              pathname={pathname}
+              collapsed={sidebarCollapsed}
+            />
+            <SidebarGroup label="CRM Views" items={CRM_NAV_ITEMS} pathname={pathname} className="mt-5" collapsed={sidebarCollapsed} />
           </nav>
 
           <div className="mt-auto px-4 pb-5">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span className="inline-flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-slate-500" />
-                  Run state
-                </span>
-                <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 shadow-sm">
+            {!sidebarCollapsed ? (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span className="inline-flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-slate-500" />
+                    Run state
+                  </span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 shadow-sm">
+                    {runStatus}
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <SidebarMetric label="Revenue" value={formatCurrency(context.kpis.revenue)} />
+                  <SidebarMetric label="Market" value={formatPercent(context.kpis.marketShare)} />
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-slate-500">
+                  The workspace keeps score while each quarter adds another decision layer.
+                </p>
+              </div>
+            ) : (
+              <div className="flex justify-center">
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
                   {runStatus}
                 </span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <SidebarMetric label="Revenue" value={formatCurrency(context.kpis.revenue)} />
-                <SidebarMetric label="Market" value={formatPercent(context.kpis.marketShare)} />
-              </div>
-              <p className="mt-3 text-[11px] leading-5 text-slate-500">
-                The workspace keeps score while each quarter adds another decision layer.
-              </p>
-            </div>
+            )}
           </div>
         </aside>
 
         <div className="min-w-0 flex-1">
           <header className="sticky top-0 z-40 overflow-x-clip border-b border-slate-200/80 bg-white/88 backdrop-blur">
-            <div className="hidden h-16 min-w-0 items-center justify-between gap-3 px-4 sm:px-6 lg:flex">
+            <div className="hidden h-16 min-w-0 items-center justify-between gap-3 px-4 sm:px-6 md:flex">
               <div className="flex min-w-0 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSidebarCollapsed((prev) => !prev)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+                  aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                >
+                  {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                </button>
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold text-slate-950">{titleForPath(pathname)}</div>
                   <div className="truncate text-xs text-slate-500">CMO Simulator · {companyName}</div>
@@ -164,7 +200,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            <div className="lg:hidden">
+            <div className="md:hidden">
               <div className="safe-top px-4 pb-3 pt-3">
                 <div className="rounded-[28px] border border-white/80 bg-white/86 px-4 py-3 shadow-[0_16px_38px_rgba(15,23,42,0.08)] backdrop-blur">
                   <div className="flex items-start justify-between gap-3">
@@ -199,8 +235,8 @@ export function CrmShell({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="px-4 pb-[calc(env(safe-area-inset-bottom)+92px)] pt-4 sm:px-6 lg:px-6 lg:py-6 lg:pb-6">
-            <div className="mb-5 hidden min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white/80 px-4 py-3 shadow-sm lg:block">
+          <main className="px-4 pb-[calc(env(safe-area-inset-bottom)+92px)] pt-4 sm:px-6 md:px-6 md:py-6 md:pb-6">
+            <div className="mb-5 hidden min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white/80 px-4 py-3 shadow-sm md:block">
               <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="flex min-w-0 items-center gap-2 break-words text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <CircleDot className="h-3.5 w-3.5 text-emerald-600" />
@@ -221,7 +257,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
 
       <nav
         className={cn(
-          'safe-bottom fixed inset-x-0 bottom-0 z-50 mx-auto block w-full px-4 pb-3 transition-transform duration-300 lg:hidden',
+          'safe-bottom fixed inset-x-0 bottom-0 z-50 mx-auto block w-full px-4 pb-3 transition-transform duration-300 md:hidden',
           mobileNavVisible ? 'translate-y-0' : 'translate-y-[calc(100%+32px)]',
         )}
         aria-label="Mobile simulator navigation"
@@ -272,15 +308,17 @@ function SidebarGroup({
   items,
   pathname,
   className,
+  collapsed = false,
 }: {
   label: string;
   items: NavItem[];
   pathname: string;
   className?: string;
+  collapsed?: boolean;
 }) {
   return (
     <div className={className}>
-      <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
+      {!collapsed ? <div className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</div> : null}
       {items.map((item) => {
         const isActive = activeHref(pathname, item.href);
         const Icon = item.icon;
@@ -290,12 +328,14 @@ function SidebarGroup({
             href={item.href}
             className={cn(
               'mt-1 flex min-w-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              collapsed && 'h-10 justify-center gap-0 px-2',
               isActive ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
             )}
             aria-current={isActive ? 'page' : undefined}
+            title={collapsed ? item.label : undefined}
           >
             <Icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-slate-900' : 'text-slate-500')} />
-            <span className="min-w-0 break-words">{item.label}</span>
+            {!collapsed ? <span className="min-w-0 break-words">{item.label}</span> : null}
           </Link>
         );
       })}

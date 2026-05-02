@@ -17,6 +17,9 @@
     },
     "browserstack": {
       "enabled": true
+    },
+    "shadcn": {
+      "enabled": true
     }
   }
 }

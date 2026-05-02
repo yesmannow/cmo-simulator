@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -31,10 +31,8 @@ import {
   ArrowRight,
   Building2,
   CircleCheckBig,
-  Compass,
   DollarSign,
   LayoutGrid,
-  LineChart,
   Orbit,
   Rocket,
   Target,
@@ -261,6 +259,9 @@ export default function SetupPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [showAdvancedScenario, setShowAdvancedScenario] = useState(false);
+  const [showAdvancedIdentity, setShowAdvancedIdentity] = useState(false);
+  const [showAdvancedBudget, setShowAdvancedBudget] = useState(false);
   const [data, setData] = useState<SetupData>({
     scenarioId: null,
     companyName: '',
@@ -427,94 +428,41 @@ export default function SetupPage() {
   };
 
   const completedSteps = STEP_META.slice(0, step - 1);
+  const canShowLogoOptions = data.companyName.trim().length >= 2;
+  const budgetLeader = useMemo(() => {
+    return [...BUDGET_GUIDANCE].sort((a, b) => data.budgetAllocation[b.key] - data.budgetAllocation[a.key])[0];
+  }, [data.budgetAllocation]);
 
   return (
-    <div className="space-y-6">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.07)]">
-        <div className="border-b border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_34%),linear-gradient(135deg,#0f172a_0%,#172554_48%,#1e293b_100%)] px-6 py-6 text-white sm:px-8">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-100">
-                <Wrench className="h-3.5 w-3.5" />
-                Workspace Setup
-              </div>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Configure the operating workspace</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
-                This setup flow now mirrors the CRM-style simulator shell. Each decision becomes part of the executive context used by strategy and quarterly operations.
-              </p>
+    <div className="space-y-5">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
+              <Wrench className="h-3.5 w-3.5" />
+              Workspace Setup
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[420px]">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-white/20 bg-white/10 text-white hover:bg-white/16 hover:text-white"
-                onClick={launchGuidedDemo}
-              >
-                Start Guided Demo Run
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Focused setup flow</h1>
+            <p className="mt-2 text-sm text-slate-600">One decision at a time. Only the required inputs for this step are shown.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" className="border-slate-200 bg-white text-slate-700" onClick={launchGuidedDemo}>
+              Start Guided Demo Run
+            </Button>
+            {hasSavedRun ? (
+              <Button type="button" variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-900" onClick={resumeSavedRun}>
+                Resume Latest Saved Run
               </Button>
-              {hasSavedRun ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-emerald-300/30 bg-emerald-400/12 text-emerald-50 hover:bg-emerald-400/18 hover:text-white"
-                  onClick={resumeSavedRun}
-                >
-                  Resume Latest Saved Run
-                </Button>
-              ) : (
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs text-slate-200">
-                  Guided setup builds a fresh workspace if no prior run exists.
-                </div>
-              )}
-            </div>
+            ) : null}
           </div>
         </div>
-
-        <div className="grid gap-4 px-6 py-5 sm:px-8 lg:grid-cols-[minmax(0,1.5fr)_320px]">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-                  {stepMeta.label}
-                </div>
-                <div className="mt-1 flex items-center gap-2">
-                  <div className="text-lg font-semibold text-slate-950">
-                    Step {step} of {totalSteps}
-                  </div>
-                  <InfoTooltip iconOnly content={stepMeta.tooltip} />
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
-                onClick={() => setGuideOpen(true)}
-              >
-                What happens next?
-              </Button>
-            </div>
-            <div className="mt-4">
-              <Progress value={progress} className="h-2.5 bg-slate-200" />
-              <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
-                <span>{stepMeta.summary}</span>
-                <span>{Math.round(progress)}% complete</span>
-              </div>
-            </div>
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-center justify-between text-sm font-semibold text-slate-800">
+            <span>{stepMeta.label}</span>
+            <span>Step {step} of {totalSteps}</span>
           </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Next action</div>
-            <p className="mt-2 text-sm font-semibold text-slate-900">{stepMeta.nextAction}</p>
-            <div className="mt-3 space-y-2 text-sm text-slate-600">
-              {stepMeta.nextDetails.map((detail) => (
-                <div key={detail} className="flex items-start gap-2">
-                  <CircleCheckBig className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                  <span>{detail}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Progress value={progress} className="mt-3 h-2.5 bg-slate-200" />
+          <div className="mt-2 text-xs text-slate-500">{Math.round(progress)}% complete</div>
         </div>
       </section>
 
@@ -530,23 +478,28 @@ export default function SetupPage() {
             {step === 1 && (
               <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
                 <CardHeader className="border-b border-slate-200 bg-slate-50/80">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-2xl font-semibold tracking-tight text-slate-950">Select the operating scenario</CardTitle>
-                        <InfoTooltip iconOnly content="This selection sets your budget, time horizon, and the baseline level of pressure carried into the simulation." />
-                      </div>
-                      <CardDescription className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                        Choose the board context you want to run. The selected scenario drives the workspace brief, starting budget, and difficulty conditions.
-                      </CardDescription>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-                      Select one scenario to unlock identity setup.
-                    </div>
-                  </div>
+                  <CardTitle className="text-xl font-semibold tracking-tight text-slate-950">What operating context are you stepping into?</CardTitle>
+                  <CardDescription className="mt-2 text-sm leading-6 text-slate-600">Recommended default first, then advanced scenario options if needed.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
-                  <div className="grid gap-5 lg:grid-cols-3">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold text-slate-900">Recommended: The Challenger Brand</div>
+                    <p className="mt-2 text-sm text-slate-600">Balanced difficulty with a lean budget. Best default for first run-throughs.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        className="bg-slate-950 text-white hover:bg-slate-800"
+                        onClick={() => setData((current) => ({ ...current, scenarioId: 'challenger' }))}
+                      >
+                        Use recommended default
+                      </Button>
+                      <Button type="button" variant="outline" className="border-slate-200" onClick={() => setShowAdvancedScenario((prev) => !prev)}>
+                        {showAdvancedScenario ? 'Hide advanced choices' : 'Show advanced choices'}
+                      </Button>
+                    </div>
+                  </div>
+                  {showAdvancedScenario && (
+                    <div className="mt-5 grid gap-5 lg:grid-cols-3">
                     {SCENARIOS.map((scenario) => {
                       const Icon = scenario.icon;
                       const isSelected = data.scenarioId === scenario.id;
@@ -611,6 +564,7 @@ export default function SetupPage() {
                       );
                     })}
                   </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -618,102 +572,76 @@ export default function SetupPage() {
             {step === 2 && (
               <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
                 <CardHeader className="border-b border-slate-200 bg-slate-50/80">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                      <Building2 className="h-6 w-6 text-slate-700" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-2xl font-semibold tracking-tight text-slate-950">Name the workspace</CardTitle>
-                        <InfoTooltip iconOnly content="The approved identity becomes the persistent workspace label and company mark in the CRM-style simulator shell." />
-                      </div>
-                      <CardDescription className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                        Replace the placeholder feel with a cleaner corporate identity. The company mark previews exactly how the workspace will appear in the simulator shell.
-                      </CardDescription>
-                    </div>
-                  </div>
+                  <CardTitle className="text-xl font-semibold tracking-tight text-slate-950">What should this workspace be called?</CardTitle>
+                  <CardDescription className="mt-2 text-sm leading-6 text-slate-600">Use the recommended name, or enter your own and reveal advanced identity controls.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6 p-6">
-                  <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_280px]">
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="company-name" className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                          Official company name
-                        </Label>
-                        <Input
-                          id="company-name"
-                          placeholder="e.g., Apex Health, Marketline Systems, Northstar Legal"
-                          value={data.companyName}
-                          onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                            setData((current) => ({ ...current, companyName: event.target.value }))
-                          }
-                          className="h-14 border-slate-200 bg-white text-lg font-semibold text-slate-950 placeholder:text-slate-400"
-                          autoFocus
-                        />
-                        <p className="text-sm text-slate-500">
-                          Use the operating name leadership would expect to see in a CRM header or board summary.
-                        </p>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Mark treatment</div>
-                          <InfoTooltip iconOnly content="The generator now uses more restrained corporate treatments instead of playful default shapes." />
-                        </div>
-                        <div className="mt-3 grid gap-3 md:grid-cols-3">
-                          {LOGO_STYLE_OPTIONS.map((option) => {
-                            const Icon = option.icon;
-                            const isSelected = data.logoStyle === option.id;
-
-                            return (
-                              <button
-                                key={option.id}
-                                type="button"
-                                className={cn(
-                                  'rounded-2xl border p-4 text-left transition-all',
-                                  isSelected
-                                    ? 'border-slate-900 bg-slate-950 text-white shadow-[0_14px_30px_rgba(15,23,42,0.16)]'
-                                    : 'border-slate-200 bg-slate-50/70 text-slate-900 hover:border-slate-300 hover:bg-white',
-                                )}
-                                onClick={() => setData((current) => ({ ...current, logoStyle: option.id }))}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className={cn('rounded-xl border p-2.5', isSelected ? 'border-white/10 bg-white/10' : 'border-slate-200 bg-white')}>
-                                    <Icon className="h-5 w-5" />
-                                  </div>
-                                  <div className="text-sm font-semibold">{option.label}</div>
-                                </div>
-                                <p className={cn('mt-3 text-sm leading-6', isSelected ? 'text-slate-200' : 'text-slate-600')}>
-                                  {option.description}
-                                </p>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                        <div className="flex items-center gap-2">
-                          <Compass className="h-4 w-4 text-slate-500" />
-                          <div className="text-sm font-semibold text-slate-900">After identity approval</div>
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">
-                          The next step establishes the annual capital posture. That budget philosophy will appear in the executive brief and carry forward into strategy.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Workspace identity preview</div>
-                      <div className="mt-4 flex justify-center">
-                        <LogoGenerator
-                          companyName={data.companyName}
-                          industry={selectedScenario?.industry || 'saas'}
-                          style={data.logoStyle}
-                        />
-                      </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold text-slate-900">Recommended default name: Northstar Systems</div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        className="bg-slate-950 text-white hover:bg-slate-800"
+                        onClick={() => setData((current) => ({ ...current, companyName: 'Northstar Systems' }))}
+                      >
+                        Use recommended default
+                      </Button>
+                      <Button type="button" variant="outline" className="border-slate-200" onClick={() => setShowAdvancedIdentity((prev) => !prev)}>
+                        {showAdvancedIdentity ? 'Hide advanced choices' : 'Show advanced choices'}
+                      </Button>
                     </div>
                   </div>
+                  <div className="space-y-4">
+                    <Label htmlFor="company-name" className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                      Official company name
+                    </Label>
+                    <Input
+                      id="company-name"
+                      placeholder="e.g., Apex Health, Marketline Systems, Northstar Legal"
+                      value={data.companyName}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) => setData((current) => ({ ...current, companyName: event.target.value }))}
+                      className="h-14 border-slate-200 bg-white text-lg font-semibold text-slate-950 placeholder:text-slate-400"
+                      autoFocus
+                    />
+                  </div>
+                  {showAdvancedIdentity && canShowLogoOptions ? (
+                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+                      <div className="space-y-3">
+                        <div className="text-sm font-semibold text-slate-900">Now choose the mark treatment:</div>
+                        {LOGO_STYLE_OPTIONS.map((option) => {
+                          const Icon = option.icon;
+                          const isSelected = data.logoStyle === option.id;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              className={cn(
+                                'w-full rounded-2xl border p-4 text-left transition-all',
+                                isSelected ? 'border-slate-900 bg-slate-950 text-white' : 'border-slate-200 bg-slate-50/70 text-slate-900 hover:border-slate-300 hover:bg-white',
+                              )}
+                              onClick={() => setData((current) => ({ ...current, logoStyle: option.id }))}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Icon className="h-5 w-5" />
+                                <div className="text-sm font-semibold">{option.label}</div>
+                              </div>
+                              <p className={cn('mt-2 text-sm', isSelected ? 'text-slate-200' : 'text-slate-600')}>{option.description}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Identity preview</div>
+                        <div className="mt-4 flex justify-center">
+                          <LogoGenerator companyName={data.companyName} industry={selectedScenario?.industry || 'saas'} style={data.logoStyle} />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                      {showAdvancedIdentity ? 'Enter at least 2 characters to continue.' : 'Advanced identity controls are hidden.'}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -721,28 +649,35 @@ export default function SetupPage() {
             {step === 3 && (
               <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
                 <CardHeader className="border-b border-slate-200 bg-slate-50/80">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <CardTitle className="text-2xl font-semibold tracking-tight text-slate-950">Set the initial budget philosophy</CardTitle>
-                        <InfoTooltip iconOnly content="These allocations do not execute tactics yet. They establish the financial posture carried into strategy and quarterly planning." />
-                      </div>
-                      <CardDescription className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                        Distribute the starting {selectedScenario ? formatBudget(selectedScenario.budget) : '$0.0M'} annual budget across brand, demand, and conversion priorities.
-                      </CardDescription>
-                    </div>
-
-                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Allocation status</div>
-                      <div className="mt-1 text-2xl font-semibold text-slate-950">{budgetTotal}%</div>
-                      <div className={cn('mt-1 text-xs', budgetTotal === 100 ? 'text-emerald-600' : 'text-rose-600')}>
-                        {budgetTotal === 100 ? 'Balanced and ready for review' : 'Must total exactly 100%'}
-                      </div>
-                    </div>
-                  </div>
+                  <CardTitle className="text-xl font-semibold tracking-tight text-slate-950">How should capital be weighted right now?</CardTitle>
+                  <CardDescription className="mt-2 text-sm leading-6 text-slate-600">
+                    Start with the recommended split, then reveal advanced controls only if needed.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5 p-6">
-                  {BUDGET_GUIDANCE.map((item) => (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold text-slate-900">Recommended default split: 35% Brand / 40% Demand / 25% Conversion</div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        className="bg-slate-950 text-white hover:bg-slate-800"
+                        onClick={() =>
+                          setData((current) => ({
+                            ...current,
+                            budgetAllocation: { brandAwareness: 35, leadGeneration: 40, conversionOptimization: 25 },
+                          }))
+                        }
+                      >
+                        Use recommended default
+                      </Button>
+                      <Button type="button" variant="outline" className="border-slate-200" onClick={() => setShowAdvancedBudget((prev) => !prev)}>
+                        {showAdvancedBudget ? 'Hide advanced choices' : 'Show advanced choices'}
+                      </Button>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">Current leader: {budgetLeader.shortLabel}</p>
+                  </div>
+
+                  {showAdvancedBudget && BUDGET_GUIDANCE.map((item) => (
                     <div key={item.key} className="rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div className="max-w-2xl">
@@ -772,26 +707,11 @@ export default function SetupPage() {
                     </div>
                   ))}
 
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                      <div className="flex items-center gap-2">
-                        <LineChart className="h-4 w-4 text-slate-500" />
-                        <div className="text-sm font-semibold text-slate-900">Why this matters</div>
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        This capital posture becomes the frame for the executive brief. Strategy decisions and quarter-by-quarter tactics will inherit the orientation you set here.
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Current split</div>
-                      <div className="mt-3 space-y-2">
-                        {BUDGET_GUIDANCE.map((item) => (
-                          <div key={item.key} className="flex items-center justify-between text-sm text-slate-700">
-                            <span>{item.shortLabel}</span>
-                            <span className="font-semibold text-slate-950">{data.budgetAllocation[item.key]}%</span>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Allocation status</div>
+                    <div className="mt-1 text-2xl font-semibold text-slate-950">{budgetTotal}%</div>
+                    <div className={cn('mt-1 text-xs', budgetTotal === 100 ? 'text-emerald-600' : 'text-rose-600')}>
+                      {budgetTotal === 100 ? 'Balanced and ready for review' : 'Must total exactly 100%'}
                     </div>
                   </div>
                 </CardContent>
@@ -880,8 +800,8 @@ export default function SetupPage() {
         <aside className="space-y-5">
           <Card className="border-slate-200 bg-white shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold tracking-tight text-slate-950">Workspace summary</CardTitle>
-              <CardDescription>Live view of what the simulator will carry into strategy.</CardDescription>
+              <CardTitle className="text-lg font-semibold tracking-tight text-slate-950">Conversation Summary</CardTitle>
+              <CardDescription>Only committed answers from each step.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
@@ -920,8 +840,8 @@ export default function SetupPage() {
 
           <Card className="border-slate-200 bg-white shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-semibold tracking-tight text-slate-950">Completion rail</CardTitle>
-              <CardDescription>Clear status on what is done and what still follows.</CardDescription>
+              <CardTitle className="text-lg font-semibold tracking-tight text-slate-950">Step Rail</CardTitle>
+              <CardDescription>Focused on the active decision only.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {STEP_META.map((item, index) => {
@@ -994,7 +914,7 @@ export default function SetupPage() {
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                Continue
+                Save answer and continue
                 <ArrowRight className="h-4 w-4" />
               </span>
             )}

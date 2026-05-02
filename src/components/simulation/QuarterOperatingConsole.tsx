@@ -219,18 +219,23 @@ export function QuarterOperatingConsole({
 
       <section className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
         <Panel>
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <h2 className="text-lg font-semibold text-slate-950">Baseline vs selected plan</h2>
-              <p className="text-sm leading-6 text-slate-600">Current position compared with the modeled quarter outcome.</p>
+              <p className="text-sm leading-5 text-slate-600">Baseline now vs projected quarter-end after selected moves.</p>
             </div>
-            <Badge variant="outline" className="border-slate-300 bg-slate-50 text-slate-700">
+            <Badge variant="outline" className="w-fit border-slate-300 bg-slate-50 text-slate-700">
               {forecast.topRisk}
             </Badge>
           </div>
+          {selectedTactics.length === 0 && (
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-900">
+              No moves selected. Add one move to see a true plan projection.
+            </div>
+          )}
           <div className="mt-4 divide-y divide-slate-200">
             {forecast.comparisonRows.map((row) => (
-              <div key={row.label} className="grid grid-cols-[120px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 py-3 text-sm">
+              <div key={row.label} className="grid grid-cols-[108px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 py-3 text-sm">
                 <span className="font-semibold text-slate-950">{row.label}</span>
                 <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Current baseline</p>
