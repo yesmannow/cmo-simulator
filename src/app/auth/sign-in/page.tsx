@@ -31,11 +31,17 @@ function SignInForm() {
 
   const urlBanner =
     urlMessage === 'password_updated'
-      ? 'Your password was updated. Sign in with your new password.'
+      ? { text: 'Your password was updated. Sign in with your new password.', tone: 'success' as const }
       : urlMessage === 'confirm_link_invalid'
-        ? 'That confirmation link is invalid or expired. Request a new account or contact support.'
+        ? {
+            text: 'That confirmation link is invalid or expired. Request a new account or contact support.',
+            tone: 'error' as const,
+          }
         : urlMessage === 'missing_code'
-          ? 'Email confirmation did not complete. Open the full link from your confirmation email.'
+          ? {
+              text: 'Email confirmation did not complete. Open the full link from your confirmation email.',
+              tone: 'error' as const,
+            }
           : null;
 
   const handleSignIn = async () => {
@@ -137,7 +143,15 @@ function SignInForm() {
         </p>
 
         {urlBanner ? (
-          <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{urlBanner}</p>
+          <p
+            className={
+              urlBanner.tone === 'success'
+                ? 'mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900'
+                : 'mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-900'
+            }
+          >
+            {urlBanner.text}
+          </p>
         ) : null}
 
         <div className="mt-5 flex rounded-lg border border-slate-200 bg-slate-50 p-1 text-sm font-semibold">
