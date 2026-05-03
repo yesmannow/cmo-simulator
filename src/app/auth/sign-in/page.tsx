@@ -2,28 +2,50 @@
 
 import { FormEvent, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signInSimAuth, signUpSimAuth } from '@/lib/simAuth';
+import {
+  formatAuthErrorMessage,
+  requestPasswordResetEmail,
+  signInSimAuth,
+  signUpSimAuthWithOutcome,
+} from '@/lib/simAuth';
+
+type AuthMode = 'signin' | 'signup' | 'forgot';
 
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get('next') || '/sim/setup';
+  const urlMessage = searchParams.get('message');
 
+  const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<string | null>(null);
+  const [statusTone, setStatusTone] = useState<'neutral' | 'success' | 'error'>('neutral');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setStatus(null);
+  const setMessage = (message: string | null, tone: 'neutral' | 'success' | 'error' = 'neutral') => {
+    setStatus(message);
+    setStatusTone(tone);
+  };
 
+  const urlBanner =
+    urlMessage === 'password_updated'
+      ? 'Your password was updated. Sign in with your new password.'
+      : urlMessage === 'confirm_link_invalid'
+        ? 'That confirmation link is invalid or expired. Request a new account or contact support.'
+        : urlMessage === 'missing_code'
+          ? 'Email confirmation did not complete. Open the full link from your confirmation email.'
+          : null;
+
+  const handleSignIn = async () => {
+    setMessage(null);
     if (!email.includes('@')) {
-      setStatus('Enter a valid email address.');
+      setMessage('Enter a valid email address.', 'error');
       return;
     }
     if (password.length < 8) {
-      setStatus('Password must be at least 8 characters.');
+      setMessage('Password must be at least 8 characters.', 'error');
       return;
     }
 
@@ -31,61 +53,215 @@ function SignInForm() {
     try {
       await signInSimAuth(email.trim().toLowerCase(), password);
       router.replace(nextPath);
-    } catch {
-      try {
-        await signUpSimAuth(email.trim().toLowerCase(), password);
-        setStatus('Account created. Check your email to confirm, then sign in.');
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'Unable to authenticate.');
-      }
+    } catch (error) {
+      setMessage(formatAuthErrorMessage(error), 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSignUp = async () => {
+    setMessage(null);
+    if (!email.includes('@')) {
+      setMessage('Enter a valid email address.', 'error');
+      return;
+    }
+    if (password.length < 8) {
+      setMessage('Password must be at least 8 characters.', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const outcome = await signUpSimAuthWithOutcome(email.trim().toLowerCase(), password);
+      if (outcome.kind === 'signed_in') {
+        router.replace(nextPath);
+        return;
+      }
+      if (outcome.kind === 'confirm_email') {
+        setMessage(
+          'Account created. Check your email to confirm your address, then sign in here.',
+          'success',
+        );
+        setMode('signin');
+        setPassword('');
+        return;
+      }
+      setMessage(outcome.message, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async () => {
+    setMessage(null);
+    if (!email.includes('@')) {
+      setMessage('Enter the email for your account.', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await requestPasswordResetEmail(email);
+      setMessage(
+        'If an account exists for that email, you will receive a password reset link shortly.',
+        'success',
+      );
+    } catch (error) {
+      setMessage(formatAuthErrorMessage(error), 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (mode === 'signin') void handleSignIn();
+    else if (mode === 'signup') void handleSignUp();
+    else void handleForgotSubmit();
+  };
+
+  const statusClass =
+    statusTone === 'success'
+      ? 'text-emerald-800'
+      : statusTone === 'error'
+        ? 'text-rose-700'
+        : 'text-slate-700';
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
       <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-950">Sign in to CMO Simulator</h1>
+        <h1 className="text-2xl font-semibold text-slate-950">CMO Simulator</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Protected simulator routes require an authenticated Supabase account.
+          Sign in or create an account to access the simulator and saved runs.
         </p>
 
-        <form className="mt-6 space-y-3" onSubmit={handleSubmit}>
-          <input
-            type="email"
-            className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900"
-            placeholder="you@company.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-          <input
-            type="password"
-            className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900"
-            placeholder="Password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+        {urlBanner ? (
+          <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{urlBanner}</p>
+        ) : null}
+
+        <div className="mt-5 flex rounded-lg border border-slate-200 bg-slate-50 p-1 text-sm font-semibold">
+          <button
+            type="button"
+            className={`flex-1 rounded-md px-3 py-2 ${mode === 'signin' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600'}`}
+            onClick={() => {
+              setMode('signin');
+              setMessage(null);
+            }}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            className={`flex-1 rounded-md px-3 py-2 ${mode === 'signup' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600'}`}
+            onClick={() => {
+              setMode('signup');
+              setMessage(null);
+            }}
+          >
+            Create account
+          </button>
+        </div>
+
+        <form className="mt-5 space-y-3" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="auth-email" className="mb-1 block text-xs font-medium text-slate-600">
+              Email
+            </label>
+            <input
+              id="auth-email"
+              type="email"
+              autoComplete="email"
+              className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </div>
+
+          {mode !== 'forgot' ? (
+            <div>
+              <label htmlFor="auth-password" className="mb-1 block text-xs font-medium text-slate-600">
+                Password
+              </label>
+              <input
+                id="auth-password"
+                type="password"
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                className="w-full rounded-md border border-slate-200 px-3 py-2 text-slate-900"
+                placeholder="At least 8 characters"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+          ) : null}
+
           <button
             type="submit"
             className="w-full rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
             disabled={isLoading}
           >
-            {isLoading ? 'Working...' : 'Sign In / Sign Up'}
+            {isLoading
+              ? 'Please wait…'
+              : mode === 'signin'
+                ? 'Sign in'
+                : mode === 'signup'
+                  ? 'Create account'
+                  : 'Send reset link'}
           </button>
         </form>
 
-        {status ? <p className="mt-3 text-sm text-slate-700">{status}</p> : null}
+        {mode === 'signin' ? (
+          <div className="mt-3 flex flex-col gap-2 text-sm">
+            <button
+              type="button"
+              className="text-left font-medium text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-950"
+              onClick={() => {
+                setMode('forgot');
+                setMessage(null);
+              }}
+            >
+              Forgot password?
+            </button>
+          </div>
+        ) : mode === 'forgot' ? (
+          <button
+            type="button"
+            className="mt-3 text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-950"
+            onClick={() => {
+              setMode('signin');
+              setMessage(null);
+            }}
+          >
+            Back to sign in
+          </button>
+        ) : null}
+
+        {status ? <p className={`mt-3 text-sm ${statusClass}`}>{status}</p> : null}
+
+        <p className="mt-6 text-center text-xs text-slate-500">
+          After {mode === 'signup' ? 'creating an account' : 'signing in'}, you will continue to{' '}
+          <span className="font-mono text-slate-700">{nextPath}</span>
+        </p>
       </section>
+    </main>
+  );
+}
+
+function SignInFallback() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <p className="text-sm text-slate-600">Loading sign-in…</p>
     </main>
   );
 }
 
 export default function SignInPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<SignInFallback />}>
       <SignInForm />
     </Suspense>
   );

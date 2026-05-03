@@ -14,8 +14,8 @@ const requiredEnvVars = [
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
 ] as const;
 
-// SUPABASE_SERVICE_ROLE_KEY is optional — only required for future admin/server-side
-// operations. Normal user persistence uses the SSR client with the anon key + RLS.
+// SUPABASE_SERVICE_ROLE_KEY is optional for normal saves (RLS + anon key).
+// It is required on the server for Resend-powered sign-up confirmation (see /api/auth/sign-up).
 // Never expose this key to the browser (do NOT use NEXT_PUBLIC_ prefix).
 
 /**

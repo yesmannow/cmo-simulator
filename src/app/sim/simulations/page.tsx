@@ -25,6 +25,21 @@ function safeDate(value: string) {
   return date.toLocaleString();
 }
 
+/** Map PostgREST / Supabase errors to a short UI message when the table or schema is wrong. */
+function loadSimulationsUserMessage(apiError: string | undefined, details: unknown): string {
+  const d = typeof details === "string" ? details : "";
+  const combined = `${apiError ?? ""} ${d}`.toLowerCase();
+  if (
+    combined.includes("pgrst205")
+    || combined.includes("schema cache")
+    || combined.includes("could not find the table")
+    || combined.includes("relation \"public.cmo_simulation_runs\" does not exist")
+  ) {
+    return "Saved runs are unavailable: the database table is missing or not migrated. Ask an admin to apply supabase/migrations/20260502_create_cmo_simulation_runs.sql (see supabase/verification/cmo_simulation_runs.sql for checks).";
+  }
+  return apiError ?? "Unable to load simulations.";
+}
+
 function StatusBadge({ status }: { status: "in_progress" | "completed" }) {
   if (status === "completed") {
     return (
@@ -57,7 +72,7 @@ export default function SimulationsPage() {
       const data = await response.json();
       if (signal?.aborted) return;
       if (!response.ok) {
-        setError(data?.error ?? "Unable to load simulations.");
+        setError(loadSimulationsUserMessage(data?.error, data?.details));
         return;
       }
       setRuns(Array.isArray(data?.runs) ? data.runs : []);

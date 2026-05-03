@@ -8,7 +8,13 @@ import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { EnhancedDebrief } from '@/components/simulation/EnhancedDebrief';
 import { SimulationDebriefPdf } from '@/components/simulation/SimulationDebriefPdf';
 import { useSimulation } from '@/hooks/useSimulation';
-import { getSimAuthSession, signInSimAuth, signUpSimAuth, type SimAuthSession } from '@/lib/simAuth';
+import {
+  formatAuthErrorMessage,
+  getSimAuthSession,
+  signInSimAuth,
+  signUpSimAuth,
+  type SimAuthSession,
+} from '@/lib/simAuth';
 import { toPersistedRunPayload } from '@/lib/simulationPersistence';
 import { buildSimulationDebriefReport } from '@/lib/simulationReport';
 
@@ -62,8 +68,8 @@ export default function DebriefPage() {
       try {
         await signUpSimAuth(email, passwordInput);
         setStatusMessage('Account created. Check your inbox to confirm, then sign in.');
-      } catch (error) {
-        setStatusMessage(error instanceof Error ? error.message : 'Authentication failed.');
+      } catch (signUpErr) {
+        setStatusMessage(formatAuthErrorMessage(signUpErr));
       }
     } finally {
       setIsSigningIn(false);

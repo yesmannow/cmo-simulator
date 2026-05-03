@@ -16,9 +16,14 @@ export async function saveSimulationSnapshot(
     { phase, status },
   );
 
-  await fetch("/api/simulations/save", {
+  const response = await fetch("/api/simulations/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    console.error("[CMO Sim] Failed to save simulation run", response.status, body);
+  }
 }

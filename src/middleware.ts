@@ -17,8 +17,9 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+// Only run Supabase session refresh + auth checks where needed. A global matcher
+// would call getUser() on every page (including `/`), which blocks the UI on a
+// slow or unreachable Supabase host during local dev.
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/sim/:path*", "/api/simulations/:path*"],
 };
