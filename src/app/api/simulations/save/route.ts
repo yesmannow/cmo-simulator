@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { PersistedRunPayload } from "@/lib/simulationPersistence";
+import { buildSimulationScoreBreakdowns } from "@/lib/simulationIntelligence";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -58,7 +59,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ ok: true, run: data });
+    const scoreBreakdowns = buildSimulationScoreBreakdowns(payload.context);
+    const breakdownRows = scoreBreakdowns.map((breakdown) => ({
+      breakdown_id: crypto.randomUUID(),
+      run_id: payload.runId,
+      user_id: user.id,
+      phase: breakdown.phase,
+      category: breakdown.category,
+      score: breakdown.score,
+      max_score: breakdown.maxScore,
+      insight: breakdown.insight,
+      metadata: breakdown.metadata,
+    }));
+
+    const { error: breakdownError } = await supabase
+      .from("simulation_score_breakdowns")
+      .upsert(breakdownRows, { onConflict: "run_id,phase,category" });
+
+    if (breakdownError) {
+      return NextResponse.json(
+        { error: "Failed to persist score breakdowns.", details: breakdownError.message },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ ok: true, run: data, scoreBreakdowns });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown server error";
     return NextResponse.json({ error: message }, { status: 500 });

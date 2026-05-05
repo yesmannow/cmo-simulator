@@ -16,6 +16,7 @@ import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { BigBetModal } from '@/components/simulation/BigBetModal';
 import { Button } from '@/components/ui/button';
 import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
+import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
 export default function Q3Page() {
   const router = useRouter();
@@ -141,6 +142,18 @@ export default function Q3Page() {
         selectedTactics={selectedTactics}
         onConfirm={() => {
           void saveSimulationSnapshot(context, 'Q3', 'in_progress');
+          void recordSimulationEvent({
+            runId: context.simulationId ?? '',
+            eventType: 'quarter_completed',
+            phase: 'Q3',
+            payload: {
+              quarter: 'Q3',
+              tacticCount: selectedTactics.length,
+              usedBudget,
+              remainingBudget,
+              bigBetSelected: Boolean(context.quarters.Q3.bigBetMade),
+            },
+          });
           setShowDebrief(false);
           completeQuarter('Q3');
           router.push('/sim/q4');

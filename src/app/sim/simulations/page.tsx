@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { resumeSimulationRun } from "@/lib/resumeSimulationRun";
+import { buildSimulationScoreBreakdowns, deriveSimulationRecommendations } from "@/lib/simulationIntelligence";
 import type { SimulationContext } from "@/lib/simMachine";
 
 type PersistedRun = {
@@ -59,6 +60,7 @@ export default function SimulationsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [runs, setRuns] = useState<PersistedRun[]>([]);
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +92,27 @@ export default function SimulationsPage() {
     });
     return () => controller.abort();
   }, [loadRuns]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/profile", { signal: controller.signal });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!controller.signal.aborted) {
+          setProfile(data?.profile ?? null);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setProfile(null);
+        }
+      }
+    })();
+
+    return () => controller.abort();
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -132,6 +155,14 @@ export default function SimulationsPage() {
             <p className="mt-1 text-sm text-slate-600">
               {user?.email ? `Signed in as ${user.email}` : "Your saved runs are listed below."}
             </p>
+            {profile ? (
+              <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-slate-600">
+                {typeof profile.role === "string" ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">Role: {profile.role}</span> : null}
+                {typeof profile.marketing_maturity === "string" ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">Maturity: {profile.marketing_maturity}</span> : null}
+                {Array.isArray(profile.selected_goals) ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">Goals: {profile.selected_goals.length}</span> : null}
+                {typeof profile.preferred_difficulty === "string" ? <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">Difficulty: {profile.preferred_difficulty}</span> : null}
+              </div>
+            ) : null}
           </div>
           <button
             type="button"
@@ -178,21 +209,35 @@ export default function SimulationsPage() {
                 className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between"
               >
                 <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-slate-950">
-                      {run.company_name || "Untitled Company"}
-                    </p>
-                    <StatusBadge status={run.status} />
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {safeDate(run.saved_at)} · phase {run.current_phase}
-                  </p>
-                  {(run.overall_score !== null || run.grade) && (
-                    <p className="mt-1 text-xs text-slate-600">
-                      Score: {run.overall_score ?? "n/a"}
-                      {run.grade ? ` · Grade ${run.grade}` : ""}
-                    </p>
-                  )}
+                  {(() => {
+                    const context = run.context as SimulationContext | null;
+                    const scoreBreakdowns = context ? buildSimulationScoreBreakdowns(context) : [];
+                    const recommendation = context ? deriveSimulationRecommendations(context, scoreBreakdowns)[0] : null;
+                    return (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-slate-950">
+                            {run.company_name || "Untitled Company"}
+                          </p>
+                          <StatusBadge status={run.status} />
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {safeDate(run.saved_at)} · phase {run.current_phase}
+                        </p>
+                        {(run.overall_score !== null || run.grade) && (
+                          <p className="mt-1 text-xs text-slate-600">
+                            Score: {run.overall_score ?? "n/a"}
+                            {run.grade ? ` · Grade ${run.grade}` : ""}
+                          </p>
+                        )}
+                        {recommendation ? (
+                          <p className="mt-2 text-xs text-slate-600">
+                            Next best action: <span className="font-semibold text-slate-900">{recommendation.title}</span>
+                          </p>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center gap-2">
                   <button

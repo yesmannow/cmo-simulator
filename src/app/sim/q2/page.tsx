@@ -24,6 +24,7 @@ import {
   MobileSheetTitle,
 } from '@/components/ui/mobile-sheet';
 import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
+import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
 export default function Q2Page() {
   const router = useRouter();
@@ -154,6 +155,17 @@ export default function Q2Page() {
         selectedTactics={selectedTactics}
         onConfirm={() => {
           void saveSimulationSnapshot(context, 'Q2', 'in_progress');
+          void recordSimulationEvent({
+            runId: context.simulationId ?? '',
+            eventType: 'quarter_completed',
+            phase: 'Q2',
+            payload: {
+              quarter: 'Q2',
+              tacticCount: selectedTactics.length,
+              usedBudget,
+              remainingBudget,
+            },
+          });
           setShowDebrief(false);
           completeQuarter('Q2');
           router.push('/sim/q3');

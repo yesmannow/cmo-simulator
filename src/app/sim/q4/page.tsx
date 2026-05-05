@@ -14,6 +14,7 @@ import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { Button } from '@/components/ui/button';
 import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
+import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
 export default function Q4Page() {
   const router = useRouter();
@@ -105,6 +106,16 @@ export default function Q4Page() {
         selectedTactics={selectedTactics}
         onConfirm={() => {
           void saveSimulationSnapshot(context, 'Q4', 'completed');
+          void recordSimulationEvent({
+            runId: context.simulationId ?? '',
+            eventType: 'quarter_completed',
+            phase: 'Q4',
+            payload: {
+              quarter: 'Q4',
+              tacticCount: selectedTactics.length,
+              usedBudget,
+            },
+          });
           setShowDebrief(false);
           completeQuarter('Q4');
           router.push('/sim/debrief');

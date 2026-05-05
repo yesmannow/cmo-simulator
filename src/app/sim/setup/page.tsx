@@ -28,8 +28,19 @@ import { LogoGenerator, type CompanyLogoStyle } from '@/components/LogoGenerator
 import { useAuth } from '@/components/auth/AuthProvider';
 import { usePageTracking, useSimulationTracking } from '@/hooks/useAnalytics';
 import { logger } from '@/lib/logger';
-import { SimulationContext } from '@/lib/simMachine';
+import { createInitialSimulationContext, type HydrationPatch, type SimulationContext } from '@/lib/simMachine';
+import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
+import { recordSimulationEvent } from '@/lib/simulationTelemetry';
+import { mergeSimulationContext } from '@/lib/simulationHydration';
 import { resolveSimulationPath } from '@/lib/simulationRouting';
+import {
+  createDefaultUserProfileFormState,
+  MARKETING_MATURITY_OPTIONS,
+  PROFILE_ROLE_OPTIONS,
+  SIMULATION_GOAL_OPTIONS,
+  toggleGoal,
+  type UserProfileFormState,
+} from '@/lib/userProfile';
 import { cn } from '@/lib/utils';
 import { CompanyProfile, Industry, MarketLandscape, TimeHorizon } from '@/types';
 import type { LucideIcon } from 'lucide-react';
@@ -192,6 +203,36 @@ const BUDGET_GUIDANCE: Array<{
   },
 ];
 
+function mapProfileFromApi(profile: Record<string, unknown> | null | undefined): UserProfileFormState {
+  const rawGoals = profile?.selected_goals;
+  const selectedGoals = Array.isArray(rawGoals)
+    ? rawGoals.filter((goal): goal is string => typeof goal === 'string')
+    : undefined;
+
+  return {
+    fullName: typeof profile?.full_name === 'string' ? profile.full_name : '',
+    companyName: typeof profile?.company_name === 'string' ? profile.company_name : '',
+    role:
+      typeof profile?.role === 'string' && PROFILE_ROLE_OPTIONS.some((option) => option.value === profile.role)
+        ? (profile.role as UserProfileFormState['role'])
+        : 'cmo',
+    marketingMaturity:
+      typeof profile?.marketing_maturity === 'string' &&
+      MARKETING_MATURITY_OPTIONS.some((option) => option.value === profile.marketing_maturity)
+        ? (profile.marketing_maturity as UserProfileFormState['marketingMaturity'])
+        : 'developing',
+    selectedGoals:
+      selectedGoals && selectedGoals.length > 0
+        ? (selectedGoals as UserProfileFormState['selectedGoals'])
+        : ['pipeline'],
+    preferredDifficulty:
+      typeof profile?.preferred_difficulty === 'string' &&
+      ['easy', 'medium', 'hard'].includes(profile.preferred_difficulty)
+        ? (profile.preferred_difficulty as UserProfileFormState['preferredDifficulty'])
+        : 'medium',
+  };
+}
+
 export const SCENARIOS = [
   {
     id: 'turnaround',
@@ -281,6 +322,9 @@ export default function SetupPage() {
       conversionOptimization: 33,
     },
   });
+  const [profileDraft, setProfileDraft] = useState<UserProfileFormState>(() => createDefaultUserProfileFormState());
+  const [profileLoadState, setProfileLoadState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
 
   usePageTracking();
   const { trackStart, trackMilestone } = useSimulationTracking();
@@ -322,6 +366,36 @@ export default function SetupPage() {
     })();
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    let isMounted = true;
+    setProfileLoadState('loading');
+
+    void (async () => {
+      try {
+        const response = await fetch('/api/profile');
+        if (!response.ok) {
+          throw new Error('Failed to load profile memory.');
+        }
+        const apiData = await response.json();
+        const loadedProfile = mapProfileFromApi(apiData?.profile);
+        if (!isMounted) return;
+        setProfileDraft((current) => ({ ...current, ...loadedProfile }));
+        setProfileLoadState('ready');
+        setProfileMessage(null);
+      } catch (error) {
+        if (!isMounted) return;
+        setProfileLoadState('error');
+        setProfileMessage(error instanceof Error ? error.message : 'Profile memory could not be loaded.');
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
   const handleNext = () => {
     if (step < totalSteps) {
       setStep((current) => current + 1);
@@ -337,12 +411,48 @@ export default function SetupPage() {
     }
   };
 
+  const saveProfileMemory = async (runId: string) => {
+    const profilePayload = {
+      fullName: profileDraft.fullName.trim(),
+      companyName: data.companyName.trim(),
+      role: profileDraft.role,
+      marketingMaturity: profileDraft.marketingMaturity,
+      selectedGoals: profileDraft.selectedGoals,
+      preferredDifficulty: profileDraft.preferredDifficulty,
+      onboardingAnswers: {
+        scenarioId: data.scenarioId,
+        scenarioName: selectedScenario?.name ?? null,
+        logoStyle: data.logoStyle,
+        budgetAllocation: data.budgetAllocation,
+        budgetTotal,
+        runId,
+      },
+    };
+
+    const response = await fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profilePayload),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error || 'Failed to save profile memory.');
+    }
+
+    return response.json();
+  };
+
   const saveAndContinue = async () => {
     try {
       const scenario = SCENARIOS.find((entry) => entry.id === data.scenarioId);
       if (!scenario) throw new Error('Scenario missing');
+      const runId = crypto.randomUUID();
+      const startedAt = new Date().toISOString();
 
       const initialState: Partial<SimulationContext> = {
+        simulationId: runId,
+        startedAt: new Date(startedAt),
         scenarioId: scenario.id,
         strategy: {
           companyName: data.companyName.trim(),
@@ -360,8 +470,28 @@ export default function SetupPage() {
         totalBudget: scenario.budget,
         remainingBudget: scenario.budget,
       };
+      const hydratedContext = mergeSimulationContext(
+        createInitialSimulationContext(),
+        initialState as HydrationPatch,
+      );
+
+      try {
+        await saveProfileMemory(runId);
+        setProfileMessage('Profile memory saved to Supabase.');
+        setProfileLoadState('ready');
+      } catch (profileError) {
+        logger.error('Failed to save profile memory', profileError);
+        setProfileMessage('Profile memory could not be saved, but the simulation can continue.');
+        setProfileLoadState('error');
+      }
 
       localStorage.setItem('cmo-sim-state-v2', JSON.stringify(initialState));
+
+      try {
+        await saveSimulationSnapshot(hydratedContext, 'setup', 'in_progress');
+      } catch (snapshotError) {
+        logger.error('Failed to persist initial simulation snapshot', snapshotError);
+      }
 
       trackStart({
         industry: scenario.industry,
@@ -374,6 +504,19 @@ export default function SetupPage() {
         companyNameLength: data.companyName.trim().length,
       });
 
+      void recordSimulationEvent({
+        runId,
+        eventType: 'setup_completed',
+        phase: 'setup',
+        payload: {
+          scenarioId: scenario.id,
+          companyName: data.companyName.trim(),
+          role: profileDraft.role,
+          marketingMaturity: profileDraft.marketingMaturity,
+          preferredDifficulty: profileDraft.preferredDifficulty,
+        },
+      });
+
       router.push('/sim/strategy');
     } catch (error) {
       logger.error('Error saving simulation', error);
@@ -382,8 +525,11 @@ export default function SetupPage() {
   };
 
   const launchGuidedDemo = () => {
+    const runId = crypto.randomUUID();
     const demoScenario = SCENARIOS.find((scenario) => scenario.id === 'challenger') || SCENARIOS[0];
     const guidedDemoState: Partial<SimulationContext> = {
+      simulationId: runId,
+      startedAt: new Date(),
       scenarioId: demoScenario.id,
       strategy: {
         companyName: 'Guided Demo Co.',
@@ -405,8 +551,27 @@ export default function SetupPage() {
       totalBudget: demoScenario.budget,
       remainingBudget: demoScenario.budget,
     };
+    const hydratedDemoContext = mergeSimulationContext(
+      createInitialSimulationContext(),
+      guidedDemoState as HydrationPatch,
+    );
 
     localStorage.setItem('cmo-sim-state-v2', JSON.stringify(guidedDemoState));
+    void (async () => {
+      try {
+        await saveSimulationSnapshot(hydratedDemoContext, 'setup', 'in_progress');
+        await recordSimulationEvent({
+          runId,
+          eventType: 'guided_demo_started',
+          phase: 'setup',
+          payload: {
+            scenarioId: demoScenario.id,
+          },
+        });
+      } catch (error) {
+        logger.error('Failed to persist guided demo setup', error);
+      }
+    })();
     router.push('/sim/strategy?demo=1');
   };
 
@@ -481,6 +646,146 @@ export default function SetupPage() {
             <Button type="button" variant="outline" className="w-full border-slate-200 bg-white text-slate-700" onClick={() => setReviewOpen(true)}>
               Open setup review
             </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
+              Profile Memory
+            </div>
+            <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-950">Remember who this simulation is for</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Saved to Supabase and reused as onboarding memory for future runs and debrief context.
+            </p>
+          </div>
+          <div className="text-xs font-medium text-slate-500">
+            {profileLoadState === 'loading'
+              ? 'Loading saved profile...'
+              : profileLoadState === 'ready'
+                ? 'Profile memory ready'
+                : profileLoadState === 'error'
+                  ? 'Profile memory needs attention'
+                  : 'Profile memory idle'}
+          </div>
+        </div>
+
+        {profileMessage ? (
+          <p className={cn('mt-3 rounded-2xl px-4 py-3 text-sm', profileLoadState === 'error' ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800')}>
+            {profileMessage}
+          </p>
+        ) : null}
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div>
+            <Label htmlFor="profile-full-name" className="text-slate-700">Full name</Label>
+            <Input
+              id="profile-full-name"
+              className="mt-2 bg-white border-slate-200 text-slate-900"
+              value={profileDraft.fullName}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                setProfileDraft((current) => ({ ...current, fullName: event.target.value }))
+              }
+              placeholder="Alex Morgan"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="profile-role" className="text-slate-700">Role / persona</Label>
+            <select
+              id="profile-role"
+              className="mt-2 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
+              value={profileDraft.role}
+              onChange={(event) =>
+                setProfileDraft((current) => ({ ...current, role: event.target.value as UserProfileFormState['role'] }))
+              }
+            >
+              {PROFILE_ROLE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="profile-maturity" className="text-slate-700">Marketing maturity</Label>
+            <select
+              id="profile-maturity"
+              className="mt-2 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
+              value={profileDraft.marketingMaturity}
+              onChange={(event) =>
+                setProfileDraft((current) => ({
+                  ...current,
+                  marketingMaturity: event.target.value as UserProfileFormState['marketingMaturity'],
+                }))
+              }
+            >
+              {MARKETING_MATURITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="profile-difficulty" className="text-slate-700">Preferred difficulty</Label>
+            <select
+              id="profile-difficulty"
+              className="mt-2 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900"
+              value={profileDraft.preferredDifficulty}
+              onChange={(event) =>
+                setProfileDraft((current) => ({
+                  ...current,
+                  preferredDifficulty: event.target.value as UserProfileFormState['preferredDifficulty'],
+                }))
+              }
+            >
+              {[
+                { value: 'easy', label: 'Easy' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'hard', label: 'Hard' },
+              ].map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-slate-700">Primary goals</Label>
+            <span className="text-xs text-slate-500">Pick one or more</span>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {SIMULATION_GOAL_OPTIONS.map((goal) => {
+              const isSelected = profileDraft.selectedGoals.includes(goal.value);
+              return (
+                <button
+                  key={goal.value}
+                  type="button"
+                  className={cn(
+                    'rounded-full border px-3 py-2 text-sm font-medium transition-colors',
+                    isSelected
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                  )}
+                  onClick={() =>
+                    setProfileDraft((current) => ({
+                      ...current,
+                      selectedGoals: toggleGoal(current.selectedGoals, goal.value),
+                    }))
+                  }
+                >
+                  {goal.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>

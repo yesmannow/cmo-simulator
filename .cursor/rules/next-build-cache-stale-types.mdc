@@ -1,0 +1,49 @@
+---
+description: Next.js stale .next/types validator errors during pnpm verify or typecheck — clear .next before editing source.
+globs:
+  - "src/app/**"
+  - "next.config.*"
+  - "package.json"
+  - "pnpm-lock.yaml"
+  - ".next/types/**"
+alwaysApply: false
+---
+
+## Build / cache note (`.next/types`)
+
+If **`pnpm verify`**, **typecheck**, or **build** fails with a stale `.next/types` validator reference—especially one pointing at an **old or removed route file** (for example `src/app/auth/callback/route.js` after the source was renamed or deleted)—treat it as a **stale Next.js build artifact** first.
+
+**Before changing application source:**
+
+1. Delete the `.next` folder once.
+
+   PowerShell:
+
+   ```powershell
+   Remove-Item -Recurse -Force .next
+   ```
+
+   macOS / Linux:
+
+   ```bash
+   rm -rf .next
+   ```
+
+2. Re-run verification. Prefer this repo’s full check:
+
+   - **`pnpm verify`** — runs lint, typecheck, homepage-proof validation, production build, and postbuild sitemap generation.
+
+   If you cannot use pnpm locally, **npm** is a secondary fallback only, for example:
+
+   - `npm run verify`
+   - `npm run typecheck`
+
+Only edit source if the **same** error persists after clearing `.next`. Do **not** refactor unrelated route files or application source to satisfy stale generated `.next/types` output.
+
+## QA rule
+
+When **`pnpm verify`** fails with a `.next/types` error that references **deleted or renamed** route files: delete `.next` once and **re-run `pnpm verify`** before making source changes.
+
+If needed locally without pnpm, **`npm run verify`** is the fallback for the same workflow.
+
+The project remains healthy if **`pnpm verify`** passes after clearing `.next`; that outcome is Next’s generated cache lagging behind the filesystem, not necessarily a fault in current source.

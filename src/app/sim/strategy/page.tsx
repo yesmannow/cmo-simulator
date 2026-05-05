@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { useSimulation } from '@/hooks/useSimulation';
 import { useSimulationTracking } from '@/hooks/useAnalytics';
+import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 import type { LucideIcon } from 'lucide-react';
 import {
   ArrowRight,
@@ -116,6 +117,16 @@ export default function StrategySessionPage() {
       audienceSelected: Boolean(formData.targetAudience),
       positioningSelected: Boolean(formData.brandPositioning),
     });
+    void recordSimulationEvent({
+      runId: context.simulationId ?? '',
+      eventType: 'strategy_completed',
+      phase: 'strategy',
+      payload: {
+        audienceSelected: Boolean(formData.targetAudience),
+        positioningSelected: Boolean(formData.brandPositioning),
+        primaryChannels: formData.primaryChannels,
+      },
+    });
     startSimulation();
     completeStrategySession();
     router.push('/sim/q1');
@@ -138,11 +149,21 @@ export default function StrategySessionPage() {
       guidedDemo && targetAudience && brandPositioning && (primaryChannels?.length || 0) > 0;
 
     if (guidedDemoReady) {
+      void recordSimulationEvent({
+        runId: context.simulationId ?? '',
+        eventType: 'guided_demo_transitioned',
+        phase: 'strategy',
+        payload: {
+          targetAudience,
+          brandPositioning,
+          primaryChannels,
+        },
+      });
       startSimulation();
       completeStrategySession();
       router.replace('/sim/q1');
     }
-  }, [brandPositioning, completeStrategySession, guidedDemo, primaryChannels?.length, router, startSimulation, targetAudience]);
+  }, [brandPositioning, completeStrategySession, context.simulationId, guidedDemo, primaryChannels, router, startSimulation, targetAudience]);
 
   return (
     <ImmersiveLayout

@@ -41,6 +41,20 @@ import { buildTeachingReport } from "@/lib/simulationInsights";
 
 interface EnhancedDebriefProps {
   context: SimulationContext;
+  scoreBreakdowns: Array<{
+    phase: string;
+    category: string;
+    score: number;
+    maxScore: number;
+    insight: string;
+  }>;
+  recommendations: Array<{
+    priority: number;
+    title: string;
+    body: string;
+    phase: string;
+    category: string;
+  }>;
   onExportPDF: () => void;
   onSaveRun: () => void;
   saveDisabled?: boolean;
@@ -48,7 +62,15 @@ interface EnhancedDebriefProps {
   onShare?: () => void;
 }
 
-export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled = false, onRestart }: EnhancedDebriefProps) {
+export function EnhancedDebrief({
+  context,
+  scoreBreakdowns,
+  recommendations,
+  onExportPDF,
+  onSaveRun,
+  saveDisabled = false,
+  onRestart,
+}: EnhancedDebriefProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
@@ -218,6 +240,46 @@ export function EnhancedDebrief({ context, onExportPDF, onSaveRun, saveDisabled 
           </div>
         </div>
       )
+    },
+    {
+      id: "score-intelligence",
+      title: "Score Breakdown + Next Moves",
+      subtitle: "What the simulation says to do next",
+      content: (
+        <div className="grid gap-6 py-4 lg:grid-cols-2">
+          <div className="space-y-3">
+            {scoreBreakdowns.map((breakdown) => (
+              <div key={`${breakdown.phase}-${breakdown.category}`} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-widest text-blue-300/70">{breakdown.phase} · {breakdown.category}</p>
+                    <p className="mt-1 text-sm text-slate-100">{breakdown.insight}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-black text-white">{breakdown.score}</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">/ {breakdown.maxScore}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {recommendations.length > 0 ? recommendations.map((recommendation) => (
+              <div key={`${recommendation.phase}-${recommendation.category}-${recommendation.priority}`} className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+                <p className="text-xs font-black uppercase tracking-widest text-blue-300/80">
+                  {recommendation.phase} · priority {recommendation.priority}
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-white">{recommendation.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-blue-100/80">{recommendation.body}</p>
+              </div>
+            )) : (
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                No recommendations generated.
+              </div>
+            )}
+          </div>
+        </div>
+      ),
     },
     {
       id: "revenue-performance",

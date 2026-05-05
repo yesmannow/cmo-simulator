@@ -8,6 +8,7 @@ import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { EnhancedDebrief } from '@/components/simulation/EnhancedDebrief';
 import { SimulationDebriefPdf } from '@/components/simulation/SimulationDebriefPdf';
 import { useSimulation } from '@/hooks/useSimulation';
+import { deriveSimulationRecommendations, buildSimulationScoreBreakdowns } from '@/lib/simulationIntelligence';
 import {
   formatAuthErrorMessage,
   getSimAuthSession,
@@ -17,6 +18,7 @@ import {
 } from '@/lib/simAuth';
 import { toPersistedRunPayload } from '@/lib/simulationPersistence';
 import { buildSimulationDebriefReport } from '@/lib/simulationReport';
+import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
 export default function DebriefPage() {
   const router = useRouter();
@@ -29,6 +31,8 @@ export default function DebriefPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authPromptDismissed, setAuthPromptDismissed] = useState(false);
+  const scoreBreakdowns = buildSimulationScoreBreakdowns(context);
+  const recommendations = deriveSimulationRecommendations(context, scoreBreakdowns);
 
   useEffect(() => {
     setShowConfetti(true);
@@ -101,6 +105,15 @@ export default function DebriefPage() {
       }
 
       setStatusMessage('Run saved to Supabase successfully.');
+      void recordSimulationEvent({
+        runId: context.simulationId ?? '',
+        eventType: 'debrief_saved',
+        phase: 'debrief',
+        payload: {
+          overallScore: payload.overallScore,
+          grade: payload.grade,
+        },
+      });
     } catch (error) {
       logger.error('Error saving simulation run', error);
       setStatusMessage(error instanceof Error ? error.message : 'Unknown save error.');
@@ -201,6 +214,8 @@ export default function DebriefPage() {
       )}
       <EnhancedDebrief
         context={context}
+        scoreBreakdowns={scoreBreakdowns}
+        recommendations={recommendations}
         onExportPDF={handleExportPDF}
         onSaveRun={handleSaveRun}
         saveDisabled={!authSession || isSaving}

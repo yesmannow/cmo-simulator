@@ -6,8 +6,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requiresAuth =
     pathname.startsWith("/sim") || pathname.startsWith("/api/simulations");
+  const requiresApiAuth =
+    pathname.startsWith("/api/profile") || pathname.startsWith("/api/simulation-events");
 
-  if (requiresAuth && !user) {
+  if ((requiresAuth || requiresApiAuth) && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/auth/sign-in";
     redirectUrl.searchParams.set("next", pathname);
@@ -21,5 +23,5 @@ export async function middleware(request: NextRequest) {
 // would call getUser() on every page (including `/`), which blocks the UI on a
 // slow or unreachable Supabase host during local dev.
 export const config = {
-  matcher: ["/sim/:path*", "/api/simulations/:path*"],
+  matcher: ["/sim/:path*", "/api/simulations/:path*", "/api/profile/:path*", "/api/simulation-events/:path*"],
 };

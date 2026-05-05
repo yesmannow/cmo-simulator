@@ -9,6 +9,7 @@ import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { QuarterOperatingConsole } from '@/components/simulation/QuarterOperatingConsole';
 import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
 import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
+import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
 export default function Q1Page() {
   const router = useRouter();
@@ -54,6 +55,16 @@ export default function Q1Page() {
         selectedTactics={selectedTactics}
         onConfirm={() => {
           void saveSimulationSnapshot(context, 'Q1', 'in_progress');
+          void recordSimulationEvent({
+            runId: context.simulationId ?? '',
+            eventType: 'quarter_completed',
+            phase: 'Q1',
+            payload: {
+              quarter: 'Q1',
+              tacticCount: selectedTactics.length,
+              usedBudget,
+            },
+          });
           setShowDebrief(false);
           completeQuarter('Q1');
           router.push('/sim/q2');
