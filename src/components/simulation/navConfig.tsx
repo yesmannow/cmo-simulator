@@ -3,12 +3,15 @@ import {
   BarChart3,
   Flag,
   GitBranch,
+  History,
   Home,
   Layers3,
   LayoutDashboard,
   LineChart,
   Megaphone,
+  PlayCircle,
   FolderOpenDot,
+  SearchCheck,
   Sparkles,
   Wrench,
 } from 'lucide-react';
@@ -48,6 +51,12 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   ...CRM_NAV_ITEMS,
 ];
 
+export const MOBILE_MODE_NAV_ITEMS: NavItem[] = [
+  { label: 'Play', href: '/sim', icon: PlayCircle },
+  { label: 'Review', href: '/sim/campaigns', icon: SearchCheck },
+  { label: 'History', href: '/sim/simulations', icon: History },
+];
+
 export function titleForPath(pathname: string) {
   if (pathname.startsWith('/sim/setup')) return 'Setup';
   if (pathname.startsWith('/sim/simulations')) return 'My Simulations';
@@ -80,6 +89,19 @@ export function primaryNavItemForPath(pathname: string): NavItem {
   if (pathname.startsWith('/sim/analytics')) return { label: 'Analytics', href: '/sim/analytics', icon: LineChart };
   if (pathname.startsWith('/sim/debrief')) return { label: 'Debrief', href: '/sim/debrief', icon: BarChart3 };
   return { label: 'Overview', href: '/sim', icon: LayoutDashboard };
+}
+
+export function mobileModeItemForPath(pathname: string): NavItem {
+  if (pathname.startsWith('/sim/simulations')) return { label: 'History', href: '/sim/simulations', icon: History };
+  if (
+    pathname.startsWith('/sim/campaigns')
+    || pathname.startsWith('/sim/pipeline')
+    || pathname.startsWith('/sim/analytics')
+    || pathname.startsWith('/sim/debrief')
+  ) {
+    return { label: 'Review', href: '/sim/campaigns', icon: SearchCheck };
+  }
+  return { label: 'Play', href: '/sim', icon: PlayCircle };
 }
 
 export function quarterNavItemForPhase(currentPhase: SimulationPhase): NavItem {

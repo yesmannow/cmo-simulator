@@ -3,10 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { useSimulation } from '@/hooks/useSimulation';
+import { useSimulationTracking } from '@/hooks/useAnalytics';
 import type { LucideIcon } from 'lucide-react';
 import {
   ArrowRight,
-  Compass,
   DollarSign,
   Globe,
   Handshake,
@@ -66,6 +66,7 @@ const POSITIONING_OPTIONS = [
 export default function StrategySessionPage() {
   const router = useRouter();
   const { context, setStrategy, completeStrategySession, startSimulation } = useSimulation();
+  const { trackMilestone } = useSimulationTracking();
   const { guidedDemo, targetAudience, brandPositioning, primaryChannels } = context.strategy;
 
   const [formData, setFormData] = useState<StrategyFormData>({
@@ -75,6 +76,7 @@ export default function StrategySessionPage() {
     customAudience: '',
     customPositioning: '',
   });
+  const [mobileStep, setMobileStep] = useState<1 | 2 | 3>(1);
 
   const handleChannelToggle = (channelId: string) => {
     const nextChannels = formData.primaryChannels.includes(channelId)
@@ -110,6 +112,10 @@ export default function StrategySessionPage() {
   };
 
   const handleComplete = () => {
+    trackMilestone('strategy_complete', formData.primaryChannels.length, {
+      audienceSelected: Boolean(formData.targetAudience),
+      positioningSelected: Boolean(formData.brandPositioning),
+    });
     startSimulation();
     completeStrategySession();
     router.push('/sim/q1');
@@ -118,6 +124,14 @@ export default function StrategySessionPage() {
   const canComplete = Boolean(
     formData.targetAudience && formData.brandPositioning && formData.primaryChannels.length > 0
   );
+  const canAdvanceStep =
+    (mobileStep === 1 && Boolean(formData.targetAudience))
+    || (mobileStep === 2 && Boolean(formData.brandPositioning))
+    || mobileStep === 3;
+
+  useEffect(() => {
+    trackMilestone('strategy_step_view', mobileStep, { step: mobileStep });
+  }, [mobileStep, trackMilestone]);
 
   useEffect(() => {
     const guidedDemoReady =
@@ -137,34 +151,27 @@ export default function StrategySessionPage() {
       quarter="Strategy Session"
     >
       <div className="max-w-5xl mx-auto space-y-10 pb-20">
-        <GlassCard className="border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#172554_42%,#1e293b_100%)] text-white">
-          <div className="p-6 sm:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-100">
-                  <Compass className="h-3.5 w-3.5" />
-                  Strategy Controls
-                </div>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight">Translate setup into an operating plan</h2>
-                <p className="mt-3 text-sm leading-6 text-slate-200">
-                  This page now acts like a control layer rather than a playful chooser. Once complete, the simulator launches the CRM-style Q1 console with your audience, positioning, and channels preloaded.
-                </p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:w-[340px]">
-                <div className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">What unlocks next</div>
-                  <div className="mt-2 text-sm font-semibold text-white">Q1 Operating Console</div>
-                  <div className="mt-1 text-sm text-slate-200">Budget, readiness, and tactical deployment open after strategy is complete.</div>
-                </div>
-                <div className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">Required</div>
-                  <div className="mt-2 text-sm font-semibold text-white">Audience, Positioning, Channels</div>
-                  <div className="mt-1 text-sm text-slate-200">These fields shape which tactics make sense in the simulation.</div>
-                </div>
-              </div>
-            </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 md:hidden">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <span>Strategy flow</span>
+            <span>Step {mobileStep} / 3</span>
           </div>
-        </GlassCard>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[1, 2, 3].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setMobileStep(s as 1 | 2 | 3)}
+                className={cn(
+                  'rounded-xl border px-2 py-2 text-xs font-semibold',
+                  mobileStep === s ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50 text-slate-600',
+                )}
+              >
+                {s === 1 ? 'Audience' : s === 2 ? 'Positioning' : 'Channels'}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Budget Overview */}
         <GlassCard className="border-slate-200 bg-white">
@@ -186,7 +193,7 @@ export default function StrategySessionPage() {
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Target Audience */}
-          <GlassCard className="h-full">
+          <GlassCard className={cn("h-full", mobileStep !== 1 && 'hidden md:block')}>
             <div className="p-6 space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-950">
@@ -253,7 +260,7 @@ export default function StrategySessionPage() {
           </GlassCard>
 
           {/* Brand Positioning */}
-          <GlassCard className="h-full">
+          <GlassCard className={cn("h-full", mobileStep !== 2 && 'hidden md:block')}>
             <div className="p-6 space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-950">
@@ -321,7 +328,7 @@ export default function StrategySessionPage() {
         </div>
 
         {/* Primary Channels */}
-        <GlassCard>
+        <GlassCard className={cn(mobileStep !== 3 && 'hidden md:block')}>
           <div className="p-8 space-y-8">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-slate-950">
@@ -340,7 +347,7 @@ export default function StrategySessionPage() {
                   key={channel.id}
                   variant="outline"
                   className={cn(
-                    "h-auto p-4 flex flex-col items-start gap-3 text-left transition-all duration-300",
+                    "h-auto whitespace-normal p-4 flex flex-col items-start gap-3 text-left transition-all duration-300",
                     formData.primaryChannels.includes(channel.id)
                       ? "border-slate-900 bg-slate-900 text-white shadow-sm scale-[1.02]"
                       : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
@@ -348,9 +355,9 @@ export default function StrategySessionPage() {
                   onClick={() => handleChannelToggle(channel.id)}
                 >
                   <ChannelIcon icon={channel.icon} selected={formData.primaryChannels.includes(channel.id)} />
-                  <div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.18em]">{channel.name}</div>
-                    <div className={cn("mt-2 text-xs leading-5", formData.primaryChannels.includes(channel.id) ? "text-slate-200" : "text-slate-500")}>
+                  <div className="min-w-0 w-full">
+                    <div className="break-words text-[11px] font-black uppercase tracking-[0.18em]">{channel.name}</div>
+                    <div className={cn("mt-2 break-words text-xs leading-5", formData.primaryChannels.includes(channel.id) ? "text-slate-200" : "text-slate-500")}>
                       {channel.description}
                     </div>
                   </div>
@@ -406,6 +413,34 @@ export default function StrategySessionPage() {
               Strategize your foundation to unlock the command center
             </motion.p>
           )}
+        </div>
+
+        <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+88px)] z-30 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:hidden">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 border-slate-200"
+              disabled={mobileStep === 1}
+              onClick={() => setMobileStep((prev) => (prev === 1 ? 1 : ((prev - 1) as 1 | 2 | 3)))}
+            >
+              Back
+            </Button>
+            {mobileStep < 3 ? (
+              <Button
+                type="button"
+                className="flex-1 bg-slate-900 text-white hover:bg-slate-800"
+                disabled={!canAdvanceStep}
+                onClick={() => setMobileStep((prev) => (prev === 3 ? 3 : ((prev + 1) as 1 | 2 | 3)))}
+              >
+                Continue
+              </Button>
+            ) : (
+              <Button type="button" className="flex-1 bg-slate-900 text-white hover:bg-slate-800" disabled={!canComplete} onClick={handleComplete}>
+                Launch Q1
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </ImmersiveLayout>

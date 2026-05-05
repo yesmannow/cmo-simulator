@@ -15,6 +15,14 @@ import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief
 import { TalentMarketModal } from '@/components/simulation/TalentMarketModal';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { Button } from '@/components/ui/button';
+import {
+  MobileSheet,
+  MobileSheetContent,
+  MobileSheetDescription,
+  MobileSheetDismissButton,
+  MobileSheetHeader,
+  MobileSheetTitle,
+} from '@/components/ui/mobile-sheet';
 import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
 
 export default function Q2Page() {
@@ -27,6 +35,7 @@ export default function Q2Page() {
   const [talentCandidates, setTalentCandidates] = useState<TalentCandidate[]>([]);
   const [showTalentMarket, setShowTalentMarket] = useState(false);
   const [hasTriggeredTalentMarket, setHasTriggeredTalentMarket] = useState(false);
+  const [showOptionsPrompt, setShowOptionsPrompt] = useState(false);
 
   const quarterBudget = Math.floor((context.totalBudget || 500000) / 4);
   const usedBudget = selectedTactics.reduce((sum, tactic) => sum + (tactic.cost || 0), 0);
@@ -58,19 +67,27 @@ export default function Q2Page() {
     removeTactic('Q2', tacticId);
   };
 
+  const openTalentOptions = () => {
+    setTalentCandidates(getRandomTalentPool(3));
+    setShowTalentMarket(true);
+    setHasTriggeredTalentMarket(true);
+  };
+
+  useEffect(() => {
+    if (selectedTactics.length === 0) {
+      setShowOptionsPrompt(true);
+    }
+  }, [selectedTactics.length]);
+
   const specialActions = (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <section id="quarter-options" className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Quarter options</h2>
       <div className="mt-3 grid gap-2">
         <Button
           type="button"
           variant="outline"
           className="justify-start rounded-md border-slate-300 bg-white text-slate-800"
-          onClick={() => {
-            setTalentCandidates(getRandomTalentPool(3));
-            setShowTalentMarket(true);
-            setHasTriggeredTalentMarket(true);
-          }}
+          onClick={openTalentOptions}
           disabled={hasTriggeredTalentMarket}
         >
           <Users className="mr-2 h-4 w-4" />
@@ -142,6 +159,59 @@ export default function Q2Page() {
           router.push('/sim/q3');
         }}
       />
+
+      <MobileSheet open={showOptionsPrompt} onOpenChange={setShowOptionsPrompt}>
+        <MobileSheetContent className="max-h-[72vh]">
+          <MobileSheetHeader>
+            <div>
+              <MobileSheetTitle>Quarter options available</MobileSheetTitle>
+              <MobileSheetDescription>
+                Want to use optional actions now, or continue with tactic planning first?
+              </MobileSheetDescription>
+            </div>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-2 px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-start rounded-xl border-slate-300 bg-white text-slate-800"
+              onClick={() => {
+                setShowOptionsPrompt(false);
+                openTalentOptions();
+              }}
+              disabled={hasTriggeredTalentMarket}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Use talent options
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full justify-start rounded-xl border-slate-300 bg-white text-slate-800"
+              onClick={() => {
+                setShowOptionsPrompt(false);
+                handleTriggerWildcard();
+              }}
+              disabled={showWildcardModal}
+            >
+              <Briefcase className="mr-2 h-4 w-4" />
+              Open market briefing
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-slate-600 hover:bg-slate-100"
+              onClick={() => {
+                setShowOptionsPrompt(false);
+                document.getElementById('quarter-options')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+            >
+              Show options and continue planning
+            </Button>
+          </div>
+        </MobileSheetContent>
+      </MobileSheet>
     </ImmersiveLayout>
   );
 }

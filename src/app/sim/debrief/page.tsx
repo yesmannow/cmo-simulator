@@ -28,6 +28,7 @@ export default function DebriefPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [authPromptDismissed, setAuthPromptDismissed] = useState(false);
 
   useEffect(() => {
     setShowConfetti(true);
@@ -152,11 +153,11 @@ export default function DebriefPage() {
   return (
     <div className="space-y-6">
       <ConfettiEffect trigger={showConfetti} />
-      {!authSession && (
+      {!authSession && !authPromptDismissed && (
         <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Unlock Save + Export</h2>
+          <h2 className="text-lg font-semibold text-slate-950">Save and export are optional</h2>
           <p className="mt-2 text-sm text-slate-600">
-            Keep simulation play open for everyone; require Supabase sign-in for persistence and report exports.
+            Continue as guest with full debrief access. Sign in only when you want to save runs or export reports.
           </p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <input
@@ -173,14 +174,24 @@ export default function DebriefPage() {
               onChange={(event) => setPasswordInput(event.target.value)}
             />
           </div>
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="rounded-md border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                setAuthPromptDismissed(true);
+                setStatusMessage('Continuing as guest. Sign in anytime to unlock save/export.');
+              }}
+            >
+              Continue as guest
+            </button>
             <button
               type="button"
               className="rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800"
               onClick={() => void handleSignIn()}
               disabled={isSigningIn}
             >
-              {isSigningIn ? 'Working...' : 'Sign In / Sign Up For Save/Export'}
+              {isSigningIn ? 'Working...' : 'Unlock Save/Export'}
             </button>
           </div>
         </div>

@@ -127,27 +127,19 @@ export function QuarterOperatingConsole({
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-3 grid grid-cols-1 gap-2">
             <MobileActionButton
-              label="Forecast"
-              meta={planReadiness}
+              label="Insights"
+              meta={`${planReadiness} · ${forecast.riskWarnings.length} warnings`}
               onClick={() => setActiveSheet('forecast')}
-            />
-            <MobileActionButton
-              label="Risks + logic"
-              meta={`${forecast.riskWarnings.length} warnings`}
-              onClick={() => setActiveSheet('logic')}
-            />
-            <MobileActionButton
-              label="Channel readout"
-              meta={`${forecast.channelBreakdown.length} channels`}
-              onClick={() => setActiveSheet('channels')}
             />
           </div>
         </div>
       </header>
 
-      <ExecutivePressure currentQuarter={quarter} context={context} />
+      <div className="hidden lg:block">
+        <ExecutivePressure currentQuarter={quarter} context={context} />
+      </div>
 
       <section className="hidden gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_360px]">
         <Panel className="p-0">
@@ -629,6 +621,39 @@ export function QuarterOperatingConsole({
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-950">Decision logic</h3>
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                {forecast.explanationBullets.map((bullet) => (
+                  <li key={bullet}>{bullet}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-950">Risks</h3>
+              <div className="mt-3 space-y-2">
+                {forecast.riskWarnings.map((warning) => (
+                  <div key={warning} className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+                    {warning}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
+              <h3 className="text-sm font-semibold text-slate-950">Channel readout</h3>
+              <div className="mt-3 space-y-2">
+                {forecast.channelBreakdown.length === 0 ? (
+                  <p className="text-sm text-slate-600">Add moves to generate a channel forecast.</p>
+                ) : (
+                  forecast.channelBreakdown.map((channel) => (
+                    <div key={channel.channel} className="rounded-2xl border border-slate-200 px-3 py-2">
+                      <p className="text-xs font-semibold uppercase text-slate-600">{channel.channel}</p>
+                      <p className="text-sm font-semibold text-slate-950">${Math.round(channel.contribution).toLocaleString()}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </MobileSheetContent>

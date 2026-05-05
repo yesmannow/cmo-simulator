@@ -79,7 +79,7 @@ export function MobileSheetDismissButton({ className }: { className?: string }) 
   return (
     <Drawer.Close
       className={cn(
-        'inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700',
+        'inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700',
         className,
       )}
       aria-label="Close sheet"

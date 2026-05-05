@@ -28,8 +28,8 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
   const nextQuarterLabel = quarter === 'Q4' ? 'View annual debrief' : `Continue to ${quarter === 'Q1' ? 'Q2' : quarter === 'Q2' ? 'Q3' : 'Q4'}`;
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-950/70 px-4 py-8 backdrop-blur-sm">
-      <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white shadow-2xl">
+    <div className="relative z-20 rounded-[24px] border border-slate-200 bg-white shadow-xl md:fixed md:inset-0 md:z-[100] md:overflow-y-auto md:bg-slate-950/70 md:px-4 md:py-8 md:backdrop-blur-sm">
+      <div className="mx-auto max-w-5xl rounded-[24px] border-0 border-slate-200 bg-white md:rounded-xl md:border md:shadow-2xl">
         <header className="border-b border-slate-200 p-6">
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">{quarter} debrief</p>
           <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -39,7 +39,7 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
                 This review translates your selected moves into business outcomes before the simulation advances the quarter.
               </p>
             </div>
-            <Button type="button" className="rounded-md bg-slate-950 text-white hover:bg-slate-800" onClick={onConfirm}>
+            <Button type="button" className="hidden rounded-md bg-slate-950 text-white hover:bg-slate-800 md:inline-flex" onClick={onConfirm}>
               {nextQuarterLabel}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -111,8 +111,13 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
             </section>
           </aside>
         </main>
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white/96 p-4 backdrop-blur md:hidden">
+          <Button type="button" className="w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800" onClick={onConfirm}>
+            {nextQuarterLabel}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
-

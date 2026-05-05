@@ -117,30 +117,57 @@ export default function CampaignsPage() {
           title="Campaign Register"
           subtitle="Search and review deployed tactics. Read-only: filters and drill-down don’t affect outcomes."
           right={
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="w-full space-y-2">
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search campaigns…"
-                className="h-9 w-[260px] border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
+                className="h-10 w-full border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 md:w-[260px]"
               />
-              <FilterButton active={quarterFilter === 'all'} onClick={() => setQuarterFilter('all')}>
-                All Quarters
-              </FilterButton>
-              {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((q) => (
-                <FilterButton key={q} active={quarterFilter === q} onClick={() => setQuarterFilter(q)}>
-                  {q}
+              <div className="grid grid-cols-2 gap-2 md:hidden">
+                <select
+                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                  value={quarterFilter}
+                  onChange={(e) => setQuarterFilter(e.target.value as QuarterFilter)}
+                >
+                  <option value="all">All Quarters</option>
+                  <option value="Q1">Q1</option>
+                  <option value="Q2">Q2</option>
+                  <option value="Q3">Q3</option>
+                  <option value="Q4">Q4</option>
+                </select>
+                <select
+                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+                >
+                  <option value="all">All Types</option>
+                  <option value="digital">Digital</option>
+                  <option value="content">Content</option>
+                  <option value="traditional">Traditional</option>
+                  <option value="events">Events</option>
+                  <option value="partnerships">Partnerships</option>
+                </select>
+              </div>
+              <div className="hidden flex-wrap items-center gap-2 md:flex">
+                <FilterButton active={quarterFilter === 'all'} onClick={() => setQuarterFilter('all')}>
+                  All Quarters
                 </FilterButton>
-              ))}
-              <span className="mx-1 hidden h-9 w-px bg-slate-200 sm:block" />
-              <FilterButton active={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>
-                All Types
-              </FilterButton>
-              {(['digital', 'content', 'traditional', 'events', 'partnerships'] as const).map((c) => (
-                <FilterButton key={c} active={categoryFilter === c} onClick={() => setCategoryFilter(c)}>
-                  {categoryLabel(c)}
+                {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((q) => (
+                  <FilterButton key={q} active={quarterFilter === q} onClick={() => setQuarterFilter(q)}>
+                    {q}
+                  </FilterButton>
+                ))}
+                <span className="mx-1 hidden h-9 w-px bg-slate-200 lg:block" />
+                <FilterButton active={categoryFilter === 'all'} onClick={() => setCategoryFilter('all')}>
+                  All Types
                 </FilterButton>
-              ))}
+                {(['digital', 'content', 'traditional', 'events', 'partnerships'] as const).map((c) => (
+                  <FilterButton key={c} active={categoryFilter === c} onClick={() => setCategoryFilter(c)}>
+                    {categoryLabel(c)}
+                  </FilterButton>
+                ))}
+              </div>
             </div>
           }
         >
@@ -183,7 +210,7 @@ export default function CampaignsPage() {
             )}
           </div>
 
-          <div className="hidden overflow-auto md:block">
+          <div className="hidden overflow-auto lg:block">
             <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0">
               <thead>
                 <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">

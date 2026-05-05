@@ -76,12 +76,23 @@ export function useSimulationTracking() {
     );
   }, []);
 
+  const trackMilestone = useCallback((name: string, value?: number, properties?: Record<string, unknown>) => {
+    analytics.track(
+      EventCategory.ENGAGEMENT,
+      EventAction.BUTTON_CLICK,
+      `ux_milestone_${name}`,
+      value,
+      properties,
+    );
+  }, []);
+
   return {
     trackStart,
     trackComplete,
     trackPause,
     trackResume,
-    trackAbandon
+    trackAbandon,
+    trackMilestone,
   };
 }
 

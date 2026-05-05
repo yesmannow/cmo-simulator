@@ -9,11 +9,12 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import { CompanyMark } from '@/components/simulation/CompanyMark';
 import { MobileInstallPrompt } from '@/components/simulation/MobileInstallPrompt';
 import {
-  ALL_NAV_ITEMS,
   CORE_NAV_ITEMS,
   CRM_NAV_ITEMS,
+  MOBILE_MODE_NAV_ITEMS,
   QUARTER_NAV_ITEMS,
   activeHref,
+  mobileModeItemForPath,
   primaryNavItemForPath,
   quarterNavItemForPhase,
   titleForPath,
@@ -60,6 +61,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
 
   const primaryItem = useMemo(() => primaryNavItemForPath(pathname), [pathname]);
   const quarterItem = useMemo(() => quarterNavItemForPhase(currentPhase), [currentPhase]);
+  const mobileModeItem = useMemo(() => mobileModeItemForPath(pathname), [pathname]);
 
   useEffect(() => {
     setMobileNavVisible(true);
@@ -92,11 +94,11 @@ export function CrmShell({ children }: { children: ReactNode }) {
       const delta = currentY - lastY;
       const nearBottom = window.innerHeight + currentY >= document.documentElement.scrollHeight - 72;
 
-      if (currentY < 40 || nearBottom) {
+      if (currentY < 64 || nearBottom) {
         setMobileNavVisible(true);
-      } else if (delta > 10) {
+      } else if (delta > 28) {
         setMobileNavVisible(false);
-      } else if (delta < -8) {
+      } else if (delta < -16) {
         setMobileNavVisible(true);
       }
 
@@ -299,8 +301,9 @@ export function CrmShell({ children }: { children: ReactNode }) {
         aria-label="Mobile simulator navigation"
       >
         <div className="mx-auto flex max-w-md items-center justify-between rounded-[28px] border border-white/80 bg-white/88 px-3 py-2 shadow-[0_20px_45px_rgba(15,23,42,0.14)] backdrop-blur-xl">
-          <MobileNavLink item={{ label: 'Home', href: '/sim', icon: ALL_NAV_ITEMS[0].icon }} pathname={pathname} />
-          <MobileNavLink item={primaryItem} pathname={pathname} />
+          <MobileNavLink item={MOBILE_MODE_NAV_ITEMS[0]} pathname={pathname} activeOverride={mobileModeItem.label === 'Play'} />
+          <MobileNavLink item={MOBILE_MODE_NAV_ITEMS[1]} pathname={pathname} activeOverride={mobileModeItem.label === 'Review'} />
+          <MobileNavLink item={MOBILE_MODE_NAV_ITEMS[2]} pathname={pathname} activeOverride={mobileModeItem.label === 'History'} />
           <MobileNavLink item={quarterItem} pathname={pathname} />
           <button
             type="button"
@@ -329,6 +332,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
             <MobileSheetDismissButton />
           </MobileSheetHeader>
           <div className="space-y-5 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <NavSheetSection title="Modes" items={MOBILE_MODE_NAV_ITEMS} pathname={pathname} targetHref={mobileModeItem.href} />
             <NavSheetSection title="Core" items={[{ label: 'Setup', href: '/sim/setup', icon: Wrench }, ...CORE_NAV_ITEMS]} pathname={pathname} targetHref={primaryItem.href} />
             <NavSheetSection title="Quarter Views" items={QUARTER_NAV_ITEMS} pathname={pathname} targetHref={quarterItem.href} />
             <NavSheetSection title="CRM Views" items={CRM_NAV_ITEMS} pathname={pathname} targetHref={primaryItem.href} />
@@ -379,9 +383,9 @@ function SidebarGroup({
   );
 }
 
-function MobileNavLink({ item, pathname }: { item: NavItem; pathname: string }) {
+function MobileNavLink({ item, pathname, activeOverride }: { item: NavItem; pathname: string; activeOverride?: boolean }) {
   const Icon = item.icon;
-  const isActive = activeHref(pathname, item.href);
+  const isActive = activeOverride ?? activeHref(pathname, item.href);
 
   return (
     <Link href={item.href} className="flex min-w-[68px] justify-center">

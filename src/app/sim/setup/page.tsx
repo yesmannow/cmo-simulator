@@ -16,6 +16,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import {
+  MobileSheet,
+  MobileSheetContent,
+  MobileSheetDismissButton,
+  MobileSheetHeader,
+  MobileSheetTitle,
+} from '@/components/ui/mobile-sheet';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { LogoGenerator, type CompanyLogoStyle } from '@/components/LogoGenerator';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -260,6 +267,7 @@ export default function SetupPage() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [showAdvancedScenario, setShowAdvancedScenario] = useState(false);
   const [showAdvancedIdentity, setShowAdvancedIdentity] = useState(false);
   const [showAdvancedBudget, setShowAdvancedBudget] = useState(false);
@@ -275,7 +283,7 @@ export default function SetupPage() {
   });
 
   usePageTracking();
-  const { trackStart } = useSimulationTracking();
+  const { trackStart, trackMilestone } = useSimulationTracking();
 
   const [hasSavedRun, setHasSavedRun] = useState(false);
   const [savedRunContext, setSavedRunContext] = useState<Partial<SimulationContext> | null>(null);
@@ -290,6 +298,10 @@ export default function SetupPage() {
   const selectedScenario = SCENARIOS.find((scenario) => scenario.id === data.scenarioId);
   const SelectedScenarioIcon = selectedScenario?.icon;
   const stepMeta = STEP_META[step - 1];
+
+  useEffect(() => {
+    trackMilestone('setup_step_view', step, { step });
+  }, [step, trackMilestone]);
 
   useEffect(() => {
     if (!user) return;
@@ -356,6 +368,10 @@ export default function SetupPage() {
         difficulty: 'intermediate',
         timeHorizon: scenario.timeHorizon,
         totalBudget: scenario.budget,
+      });
+      trackMilestone('setup_complete', totalSteps, {
+        scenarioId: scenario.id,
+        companyNameLength: data.companyName.trim().length,
       });
 
       router.push('/sim/strategy');
@@ -461,6 +477,11 @@ export default function SetupPage() {
           </div>
           <Progress value={progress} className="mt-3 h-2.5 bg-slate-200" />
           <div className="mt-2 text-xs text-slate-500">{Math.round(progress)}% complete</div>
+          <div className="mt-3 md:hidden">
+            <Button type="button" variant="outline" className="w-full border-slate-200 bg-white text-slate-700" onClick={() => setReviewOpen(true)}>
+              Open setup review
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -795,7 +816,7 @@ export default function SetupPage() {
           </motion.div>
         </AnimatePresence>
 
-        <aside className="space-y-5">
+        <aside className="hidden space-y-5 xl:block">
           <Card className="border-slate-200 bg-white shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold tracking-tight text-slate-950">Conversation Summary</CardTitle>
@@ -883,7 +904,7 @@ export default function SetupPage() {
         </aside>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+88px)] z-30 flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm sm:static sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="ghost"
           onClick={handleBack}
@@ -946,6 +967,36 @@ export default function SetupPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <MobileSheet open={reviewOpen} onOpenChange={setReviewOpen}>
+        <MobileSheetContent className="max-h-[82vh]">
+          <MobileSheetHeader>
+            <MobileSheetTitle>Setup review</MobileSheetTitle>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Scenario</div>
+              <div className="mt-2 text-sm font-semibold text-slate-950">{selectedScenario ? selectedScenario.name : 'Awaiting selection'}</div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Identity</div>
+              <div className="mt-2 text-sm font-semibold text-slate-950">{data.companyName.trim() || 'Name not approved yet'}</div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">Budget posture</div>
+              <div className="mt-2 space-y-2">
+                {BUDGET_GUIDANCE.map((item) => (
+                  <div key={item.key} className="flex items-center justify-between text-sm text-slate-700">
+                    <span>{item.shortLabel}</span>
+                    <span className="font-semibold text-slate-950">{data.budgetAllocation[item.key]}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </MobileSheetContent>
+      </MobileSheet>
     </div>
   );
 }
