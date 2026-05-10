@@ -57,3 +57,8 @@ Thumbs.db
 
 .vercel
 .env*.local
+
+# Local research artifacts (generated during browser/plugin exploration)
+.playwright-mcp/
+figma-*.png
+rhombus-*.png

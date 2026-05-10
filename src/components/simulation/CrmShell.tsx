@@ -225,6 +225,9 @@ export function CrmShell({ children }: { children: ReactNode }) {
                     <Link className="mt-0.5 block rounded-md px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100" href="/sim/setup">
                       New simulation
                     </Link>
+                    <Link className="mt-0.5 block rounded-md px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100" href="/sim/credits">
+                      Credits
+                    </Link>
                     <button
                       type="button"
                       onClick={handleSignOut}

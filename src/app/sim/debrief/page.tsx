@@ -6,6 +6,7 @@ import { pdf } from '@react-pdf/renderer';
 import { logger } from '@/lib/logger';
 import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { EnhancedDebrief } from '@/components/simulation/EnhancedDebrief';
+import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { SimulationDebriefPdf } from '@/components/simulation/SimulationDebriefPdf';
 import { useSimulation } from '@/hooks/useSimulation';
 import { deriveSimulationRecommendations, buildSimulationScoreBreakdowns } from '@/lib/simulationIntelligence';
@@ -164,64 +165,70 @@ export default function DebriefPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <ConfettiEffect trigger={showConfetti} />
-      {!authSession && !authPromptDismissed && (
-        <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-950">Save and export are optional</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Continue as guest with full debrief access. Sign in only when you want to save runs or export reports.
-          </p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <input
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
-              placeholder="Work email"
-              value={emailInput}
-              onChange={(event) => setEmailInput(event.target.value)}
-            />
-            <input
-              type="password"
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
-              placeholder="Password (min 8 chars)"
-              value={passwordInput}
-              onChange={(event) => setPasswordInput(event.target.value)}
-            />
+    <ImmersiveLayout
+      title="Debrief"
+      quarter="CRM View"
+      subtitle="Executive review: what worked, what didn’t, and what to adjust in the next run. Save/export is optional."
+    >
+      <div className="mx-auto max-w-7xl space-y-6">
+        <ConfettiEffect trigger={showConfetti} />
+        {!authSession && !authPromptDismissed && (
+          <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-950">Save and export are optional</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Continue as guest with full debrief access. Sign in only when you want to save runs or export reports.
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <input
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                placeholder="Work email"
+                value={emailInput}
+                onChange={(event) => setEmailInput(event.target.value)}
+              />
+              <input
+                type="password"
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                placeholder="Password (min 8 chars)"
+                value={passwordInput}
+                onChange={(event) => setPasswordInput(event.target.value)}
+              />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                onClick={() => {
+                  setAuthPromptDismissed(true);
+                  setStatusMessage('Continuing as guest. Sign in anytime to unlock save/export.');
+                }}
+              >
+                Continue as guest
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800"
+                onClick={() => void handleSignIn()}
+                disabled={isSigningIn}
+              >
+                {isSigningIn ? 'Working...' : 'Unlock Save/Export'}
+              </button>
+            </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded-md border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
-              onClick={() => {
-                setAuthPromptDismissed(true);
-                setStatusMessage('Continuing as guest. Sign in anytime to unlock save/export.');
-              }}
-            >
-              Continue as guest
-            </button>
-            <button
-              type="button"
-              className="rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800"
-              onClick={() => void handleSignIn()}
-              disabled={isSigningIn}
-            >
-              {isSigningIn ? 'Working...' : 'Unlock Save/Export'}
-            </button>
-          </div>
-        </div>
-      )}
-      {statusMessage && (
-        <div className="mx-auto max-w-5xl text-sm text-slate-700">{statusMessage}</div>
-      )}
-      <EnhancedDebrief
-        context={context}
-        scoreBreakdowns={scoreBreakdowns}
-        recommendations={recommendations}
-        onExportPDF={handleExportPDF}
-        onSaveRun={handleSaveRun}
-        saveDisabled={!authSession || isSaving}
-        onRestart={handleRestart}
-        onShare={handleShare}
-      />
-    </div>
+        )}
+        {statusMessage && (
+          <div className="mx-auto max-w-5xl text-sm text-slate-700">{statusMessage}</div>
+        )}
+        <EnhancedDebrief
+          context={context}
+          scoreBreakdowns={scoreBreakdowns}
+          recommendations={recommendations}
+          onExportPDF={handleExportPDF}
+          onSaveRun={handleSaveRun}
+          saveDisabled={!authSession || isSaving}
+          onRestart={handleRestart}
+          onShare={handleShare}
+        />
+      </div>
+    </ImmersiveLayout>
   );
 }

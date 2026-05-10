@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -78,6 +79,9 @@ export default function StrategySessionPage() {
     customPositioning: '',
   });
   const [mobileStep, setMobileStep] = useState<1 | 2 | 3>(1);
+  const [channelDetailsId, setChannelDetailsId] = useState<string | null>(null);
+
+  const selectedChannel = channelDetailsId ? CHANNEL_OPTIONS.find((c) => c.id === channelDetailsId) ?? null : null;
 
   const handleChannelToggle = (channelId: string) => {
     const nextChannels = formData.primaryChannels.includes(channelId)
@@ -172,6 +176,42 @@ export default function StrategySessionPage() {
       quarter="Strategy Session"
     >
       <div className="max-w-5xl mx-auto space-y-10 pb-20">
+        {/* Strategy Controls */}
+        <GlassCard className="border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_55%,#f1f5f9_100%)]">
+          <div className="p-6 md:p-8">
+            <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700">
+                  Strategy controls
+                </div>
+                <h2 className="text-lg font-semibold tracking-tight text-slate-950 md:text-xl">
+                  Translate setup into an operating plan
+                </h2>
+                <p className="max-w-2xl text-sm leading-6 text-slate-700">
+                  This page now acts like a control layer rather than a playful chooser. Once complete, the simulator launches the CRM-style Q1 console with your audience, positioning, and channels preloaded.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">What unlocks next</div>
+                  <div className="mt-2 text-sm font-semibold text-slate-950">Quarter console access</div>
+                  <div className="mt-1 text-sm leading-6 text-slate-700">
+                    Budget readiness and tactical deployment open after strategy is complete.
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">Required</div>
+                  <div className="mt-2 text-sm font-semibold text-slate-950">Audience, stance, channels</div>
+                  <div className="mt-1 text-sm leading-6 text-slate-700">
+                    These fields shape which tactics make sense in the simulation.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+
         <div className="rounded-2xl border border-slate-200 bg-white p-4 md:hidden">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             <span>Strategy flow</span>
@@ -377,10 +417,25 @@ export default function StrategySessionPage() {
                 >
                   <ChannelIcon icon={channel.icon} selected={formData.primaryChannels.includes(channel.id)} />
                   <div className="min-w-0 w-full">
-                    <div className="break-words text-[11px] font-black uppercase tracking-[0.18em]">{channel.name}</div>
-                    <div className={cn("mt-2 break-words text-xs leading-5", formData.primaryChannels.includes(channel.id) ? "text-slate-200" : "text-slate-500")}>
-                      {channel.description}
+                    <div className="break-words text-[12px] font-black uppercase tracking-[0.12em] leading-4">
+                      {channel.name}
                     </div>
+                    <button
+                      type="button"
+                      className={cn(
+                        "mt-3 inline-flex w-fit items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                        formData.primaryChannels.includes(channel.id)
+                          ? "border-white/15 bg-white/10 text-white hover:bg-white/15"
+                          : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100",
+                      )}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setChannelDetailsId(channel.id);
+                      }}
+                    >
+                      Learn more
+                    </button>
                   </div>
                 </Button>
               ))}
@@ -464,6 +519,29 @@ export default function StrategySessionPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={Boolean(channelDetailsId)} onOpenChange={(open) => { if (!open) setChannelDetailsId(null); }}>
+        <DialogContent className="max-w-xl border-slate-200 bg-white text-slate-950">
+          {selectedChannel ? (
+            <DialogHeader>
+              <DialogTitle className="text-slate-950">{selectedChannel.name}</DialogTitle>
+              <DialogDescription className="text-slate-600">
+                What this channel means inside the simulator.
+              </DialogDescription>
+            </DialogHeader>
+          ) : null}
+          {selectedChannel ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                {selectedChannel.description}
+              </div>
+              <div className="text-xs text-slate-600">
+                Tip: Select 2-4 channels total. This just sets the starting lanes for Q1 planning.
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </ImmersiveLayout>
   );
 }

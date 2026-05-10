@@ -233,7 +233,7 @@ function mapProfileFromApi(profile: Record<string, unknown> | null | undefined):
   };
 }
 
-export const SCENARIOS = [
+const SCENARIOS = [
   {
     id: 'turnaround',
     name: 'The Turnaround',

@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { GitBranch, TrendingUp } from 'lucide-react';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
+import { RhombusTableShell } from '@/components/simulation/RhombusTableShell';
 import { Panel } from '@/components/crm/Panel';
 import { StatCard } from '@/components/crm/StatCard';
 import { useSimulation } from '@/hooks/useSimulation';
@@ -32,6 +33,7 @@ const CHANNEL_LABELS: Record<Channel, string> = {
 
 export default function PipelinePage() {
   const { context } = useSimulation();
+  const [query, setQuery] = useState('');
 
   const snapshot = useMemo(() => {
     const results = context.engineState?.results;
@@ -70,8 +72,14 @@ export default function PipelinePage() {
       }))
       .filter((row) => row.contribution > 0 || row.roi > 0)
       .sort((a, b) => b.contribution - a.contribution)
-      .slice(0, 6);
+      ;
   }, [context.engineState?.results?.channelContributions, context.engineState?.results?.channelRoi]);
+
+  const filteredChannels = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return channelMix;
+    return channelMix.filter((row) => row.label.toLowerCase().includes(needle) || row.channel.toLowerCase().includes(needle));
+  }, [channelMix, query]);
 
   return (
     <ImmersiveLayout
@@ -144,7 +152,7 @@ export default function PipelinePage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {channelMix.map((row) => (
+                {channelMix.slice(0, 6).map((row) => (
                   <div key={row.channel} className="rounded-lg border border-slate-200 bg-white p-3">
                     <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
                       <span>{row.label}</span>
@@ -163,6 +171,84 @@ export default function PipelinePage() {
             )}
           </Panel>
         </div>
+
+        <RhombusTableShell
+          title="Channel Register"
+          subtitle="CRM-style channel rollup for the latest engine tick. Read-only."
+          query={query}
+          onQueryChange={setQuery}
+          queryPlaceholder="Search channels…"
+          meta={
+            <>
+              <span className="font-semibold text-slate-800">{filteredChannels.length}</span> channels
+            </>
+          }
+        >
+          <div className="px-5 py-4">
+            {filteredChannels.length === 0 ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                No channels match your search.
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 md:hidden">
+                  {filteredChannels.map((row) => (
+                    <div key={row.channel} className="rounded-[24px] border border-slate-200 bg-white p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-slate-950">{row.label}</div>
+                          <div className="mt-1 text-xs text-slate-500">ROI {Math.round(row.roi)}%</div>
+                        </div>
+                        <div className="text-right text-sm font-semibold text-slate-950">{formatCurrency(row.contribution)}</div>
+                      </div>
+                      <div className="mt-3 h-2 w-full rounded-full bg-slate-100">
+                        <div
+                          className="h-2 rounded-full bg-slate-900"
+                          style={{ width: `${Math.min(100, Math.max(3, (row.contribution / Math.max(1, snapshot.incrementalSales)) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="hidden overflow-auto md:block">
+                  <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0">
+                    <thead>
+                      <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        <th className="sticky top-0 bg-white py-3 pr-4">Channel</th>
+                        <th className="sticky top-0 bg-white py-3 pr-4">Contribution</th>
+                        <th className="sticky top-0 bg-white py-3 pr-4">ROI</th>
+                        <th className="sticky top-0 bg-white py-3 pr-4">Share of revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredChannels.map((row) => (
+                        <tr key={row.channel} className="border-t border-slate-100">
+                          <td className="whitespace-nowrap py-4 pr-4 text-sm font-semibold text-slate-900">{row.label}</td>
+                          <td className="whitespace-nowrap py-4 pr-4 text-sm text-slate-700">{formatCurrency(row.contribution)}</td>
+                          <td className="whitespace-nowrap py-4 pr-4 text-sm text-slate-700">{Math.round(row.roi)}%</td>
+                          <td className="py-4 pr-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-2 w-full max-w-[220px] rounded-full bg-slate-100">
+                                <div
+                                  className="h-2 rounded-full bg-slate-900"
+                                  style={{ width: `${Math.min(100, Math.max(0, (row.contribution / Math.max(1, snapshot.incrementalSales)) * 100))}%` }}
+                                />
+                              </div>
+                              <div className="text-xs font-semibold text-slate-600">
+                                {Math.round((row.contribution / Math.max(1, snapshot.incrementalSales)) * 100)}%
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </RhombusTableShell>
       </div>
     </ImmersiveLayout>
   );

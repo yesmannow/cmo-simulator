@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
-import { Panel } from '@/components/crm/Panel';
+import { RhombusTableShell } from '@/components/simulation/RhombusTableShell';
 import { StatCard } from '@/components/crm/StatCard';
 import { useSimulation } from '@/hooks/useSimulation';
 import type { Tactic } from '@/lib/simMachine';
@@ -113,17 +112,14 @@ export default function CampaignsPage() {
           />
         </div>
 
-        <Panel
+        <RhombusTableShell
           title="Campaign Register"
           subtitle="Search and review deployed tactics. Read-only: filters and drill-down don’t affect outcomes."
-          right={
+          query={query}
+          onQueryChange={setQuery}
+          queryPlaceholder="Search campaigns…"
+          filters={
             <div className="w-full space-y-2">
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search campaigns…"
-                className="h-10 w-full border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 md:w-[260px]"
-              />
               <div className="grid grid-cols-2 gap-2 md:hidden">
                 <select
                   className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700"
@@ -170,8 +166,14 @@ export default function CampaignsPage() {
               </div>
             </div>
           }
+          meta={
+            <>
+              <span className="font-semibold text-slate-800">{rows.length}</span> campaigns
+            </>
+          }
         >
-          <div className="space-y-3 md:hidden">
+          <div className="px-5 py-4">
+            <div className="space-y-3 md:hidden">
             {rows.length === 0 ? (
               <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600">
                 No campaigns yet. Add tactics in a quarter to populate this view.
@@ -270,7 +272,8 @@ export default function CampaignsPage() {
               </tbody>
             </table>
           </div>
-        </Panel>
+          </div>
+        </RhombusTableShell>
 
         <Dialog open={!!selected} onOpenChange={(open) => (!open ? setSelected(null) : null)}>
           <DialogContent className="max-w-2xl border-slate-200 bg-white text-slate-950">

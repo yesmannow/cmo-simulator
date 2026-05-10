@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { RunHistoryTable, type RunHistoryRow } from "@/components/simulation/RunHistoryTable";
 import { resumeSimulationRun } from "@/lib/resumeSimulationRun";
-import { buildSimulationScoreBreakdowns, deriveSimulationRecommendations } from "@/lib/simulationIntelligence";
 import type { SimulationContext } from "@/lib/simMachine";
 
 type PersistedRun = {
@@ -19,12 +19,6 @@ type PersistedRun = {
   context: Partial<SimulationContext> | null;
   saved_at: string;
 };
-
-function safeDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown save time";
-  return date.toLocaleString();
-}
 
 /** Map PostgREST / Supabase errors to a short UI message when the table or schema is wrong. */
 function loadSimulationsUserMessage(apiError: string | undefined, details: unknown): string {
@@ -41,20 +35,6 @@ function loadSimulationsUserMessage(apiError: string | undefined, details: unkno
   return apiError ?? "Unable to load simulations.";
 }
 
-function StatusBadge({ status }: { status: "in_progress" | "completed" }) {
-  if (status === "completed") {
-    return (
-      <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-        Completed
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-      In progress
-    </span>
-  );
-}
 
 export default function SimulationsPage() {
   const router = useRouter();
@@ -146,6 +126,18 @@ export default function SimulationsPage() {
     }
   };
 
+  const tableRows: RunHistoryRow[] = runs.map((run) => ({
+    run_id: run.run_id,
+    company_name: run.company_name,
+    current_phase: run.current_phase,
+    status: run.status,
+    overall_score: run.overall_score,
+    grade: run.grade,
+    saved_at: run.saved_at,
+    canResume: Boolean(run.context),
+    context: run.context,
+  }));
+
   return (
     <section className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -184,13 +176,17 @@ export default function SimulationsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {isLoading ? (
-          <div className="p-6 text-sm text-slate-600">Loading saved runs…</div>
-        ) : error ? (
-          <div className="p-6 text-sm text-rose-700">{error}</div>
-        ) : runs.length === 0 ? (
-          <div className="flex flex-col items-start gap-4 p-6">
+      {isLoading ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+          Loading saved runs…
+        </div>
+      ) : error ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-rose-700 shadow-sm">
+          {error}
+        </div>
+      ) : runs.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col items-start gap-4">
             <p className="text-sm text-slate-600">
               No saved runs yet. Start your first simulation to begin tracking your decisions and score.
             </p>
@@ -201,67 +197,18 @@ export default function SimulationsPage() {
               Start a simulation
             </Link>
           </div>
-        ) : (
-          <ul className="divide-y divide-slate-200">
-            {runs.map((run) => (
-              <li
-                key={run.run_id}
-                className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between"
-              >
-                <div>
-                  {(() => {
-                    const context = run.context as SimulationContext | null;
-                    const scoreBreakdowns = context ? buildSimulationScoreBreakdowns(context) : [];
-                    const recommendation = context ? deriveSimulationRecommendations(context, scoreBreakdowns)[0] : null;
-                    return (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-slate-950">
-                            {run.company_name || "Untitled Company"}
-                          </p>
-                          <StatusBadge status={run.status} />
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {safeDate(run.saved_at)} · phase {run.current_phase}
-                        </p>
-                        {(run.overall_score !== null || run.grade) && (
-                          <p className="mt-1 text-xs text-slate-600">
-                            Score: {run.overall_score ?? "n/a"}
-                            {run.grade ? ` · Grade ${run.grade}` : ""}
-                          </p>
-                        )}
-                        {recommendation ? (
-                          <p className="mt-2 text-xs text-slate-600">
-                            Next best action: <span className="font-semibold text-slate-900">{recommendation.title}</span>
-                          </p>
-                        ) : null}
-                      </>
-                    );
-                  })()}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="inline-flex rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-                    disabled={!run.context}
-                    onClick={() => handleResume(run)}
-                  >
-                    {run.status === "completed" ? "Review run" : "Resume run"}
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex rounded-md border border-rose-100 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
-                    disabled={deletingId === run.run_id}
-                    onClick={() => handleDelete(run.run_id)}
-                  >
-                    {deletingId === run.run_id ? "Deleting…" : "Delete"}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+        </div>
+      ) : (
+        <RunHistoryTable
+          runs={tableRows}
+          isBusy={Boolean(deletingId)}
+          onResume={(runId) => {
+            const run = runs.find((item) => item.run_id === runId);
+            if (run) handleResume(run);
+          }}
+          onDelete={handleDelete}
+        />
+      )}
     </section>
   );
 }
