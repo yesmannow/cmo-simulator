@@ -34,6 +34,12 @@ describe('buildSimulationDebriefReport', () => {
 
     expect(report.score).toBeGreaterThan(0);
     expect(report.grade).toBeDefined();
+    expect(report.rubricRows).toHaveLength(5);
+    expect(report.rubricRows[0]).toMatchObject({
+      label: expect.any(String),
+      score: expect.any(Number),
+      weightPercent: expect.any(Number),
+    });
     expect(report.quarterRows).toHaveLength(4);
     expect(report.quarterRows[0].tactics).toContain(SAMPLE_TACTICS[0].name);
     expect(report.nextMove).toBeTruthy();

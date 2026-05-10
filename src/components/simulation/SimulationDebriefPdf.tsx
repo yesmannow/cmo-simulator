@@ -144,6 +144,21 @@ export function SimulationDebriefPdf({ report }: SimulationDebriefPdfProps) {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Executive rubric</Text>
+          <Text style={[styles.blockText, { marginBottom: 8 }]}>
+            Composite score blends five deterministic categories (each 0–100) with fixed weights. Values below mirror the debrief breakdown.
+          </Text>
+          {report.rubricRows.map((row) => (
+            <View key={row.key} style={styles.block} wrap={false}>
+              <Text style={styles.blockLabel}>
+                {row.label} · {row.score}/100 (weight {row.weightPercent}%, ~{row.weightedPoints} pts toward composite)
+              </Text>
+              <Text style={styles.blockText}>{row.explanation}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Executive Summary</Text>
           <View style={styles.block}>
             <Text style={styles.blockLabel}>Outcome</Text>

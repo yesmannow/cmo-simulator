@@ -1,6 +1,14 @@
 import type { SimulationContext, Tactic } from '@/lib/simMachine';
 import type { SimulationKpiSnapshot, SimulationTeachingGrade } from '@/lib/simulationContracts';
-import { buildTeachingReport, calculateGrade, calculateOverallScore, type TeachingReport } from '@/lib/simulationInsights';
+import {
+  buildTeachingReport,
+  calculateGrade,
+  calculateOverallScore,
+  EXECUTIVE_RUBRIC_LABELS,
+  type ExecutiveRubricKey,
+  type TeachingReport,
+} from '@/lib/simulationInsights';
+import { buildSimulationScoreBreakdowns } from '@/lib/simulationIntelligence';
 
 export interface SimulationReportUser {
   email: string;
@@ -22,11 +30,21 @@ export interface SimulationReportDecision {
   category: Tactic['category'];
 }
 
+export interface SimulationDebriefRubricRow {
+  key: ExecutiveRubricKey;
+  label: string;
+  score: number;
+  weightPercent: number;
+  weightedPoints: number;
+  explanation: string;
+}
+
 export interface SimulationDebriefReport {
   generatedAt: string;
   user?: SimulationReportUser;
   score: number;
   grade: SimulationTeachingGrade;
+  rubricRows: SimulationDebriefRubricRow[];
   finalKpis: SimulationKpiSnapshot;
   summary: TeachingReport;
   quarterRows: SimulationReportQuarterRow[];
@@ -43,6 +61,24 @@ export function buildSimulationDebriefReport(
   const score = calculateOverallScore(context);
   const grade = calculateGrade(score);
   const summary = buildTeachingReport(context);
+  const scoreBreakdowns = buildSimulationScoreBreakdowns(context);
+  const rubricRows: SimulationDebriefRubricRow[] = scoreBreakdowns
+    .filter((row) => row.phase === 'rubric')
+    .map((row) => {
+      const key = row.category as ExecutiveRubricKey;
+      const meta = row.metadata as {
+        weightPercent?: number;
+        weightedContribution?: number;
+      };
+      return {
+        key,
+        label: EXECUTIVE_RUBRIC_LABELS[key],
+        score: row.score,
+        weightPercent: typeof meta.weightPercent === 'number' ? meta.weightPercent : 0,
+        weightedPoints: typeof meta.weightedContribution === 'number' ? meta.weightedContribution : 0,
+        explanation: row.insight,
+      };
+    });
   const quarterKeys: Array<'Q1' | 'Q2' | 'Q3' | 'Q4'> = ['Q1', 'Q2', 'Q3', 'Q4'];
   const quarterRows = quarterKeys.map((quarter) => ({
     quarter,
@@ -69,6 +105,7 @@ export function buildSimulationDebriefReport(
     user,
     score,
     grade,
+    rubricRows,
     finalKpis: {
       revenue: context.kpis.revenue,
       profit: context.kpis.profit,

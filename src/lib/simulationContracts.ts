@@ -7,6 +7,9 @@
  *   enters `debrief`. Uses `SimulationMachineGrade` (A–F only).
  * - **Teaching / persistence** (`simulationInsights.calculateOverallScore` + `calculateGrade`): powers
  *   PDF export, `PersistedRunPayload`, and `simulationIntelligence` breakdowns. Uses `SimulationTeachingGrade` (A+–F).
+ *   The composite score is a **weighted executive rubric** (growth quality, efficiency, strategic coherence,
+ *   resilience/execution, finish quality), not legacy headline revenue+Q4 share alone. Older saved runs may still
+ *   store numeric scores computed under prior formulas — treat history as approximate unless recalculated client-side.
  *
  * Do not assume machine `finalResults.score` matches persisted `overallScore` without reconciling formulas.
  */

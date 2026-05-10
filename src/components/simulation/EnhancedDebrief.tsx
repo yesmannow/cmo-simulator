@@ -37,8 +37,15 @@ import {
   Megaphone
 } from "lucide-react";
 import { SimulationContext } from "@/lib/simMachine";
+import type { SimulationTeachingGrade } from "@/lib/simulationContracts";
 import CountUp from "react-countup";
-import { buildTeachingReport } from "@/lib/simulationInsights";
+import {
+  buildTeachingReport,
+  calculateGrade,
+  calculateOverallScore,
+  EXECUTIVE_RUBRIC_LABELS,
+  type ExecutiveRubricKey,
+} from "@/lib/simulationInsights";
 
 interface EnhancedDebriefProps {
   context: SimulationContext;
@@ -63,6 +70,67 @@ interface EnhancedDebriefProps {
   onShare?: () => void;
 }
 
+function teachingGradePresentation(grade: SimulationTeachingGrade) {
+  switch (grade) {
+    case "A+":
+      return {
+        letter: "A+",
+        label: "ELITE",
+        color: "text-blue-600",
+        border: "border-blue-300",
+        glow: "shadow-blue-200/80",
+      };
+    case "A":
+      return {
+        letter: "A",
+        label: "EXECUTIVE",
+        color: "text-emerald-600",
+        border: "border-emerald-300",
+        glow: "shadow-emerald-200/80",
+      };
+    case "B":
+      return {
+        letter: "B",
+        label: "STRATEGIST",
+        color: "text-indigo-600",
+        border: "border-indigo-300",
+        glow: "shadow-indigo-200/80",
+      };
+    case "C":
+      return {
+        letter: "C",
+        label: "OPERATOR",
+        color: "text-amber-600",
+        border: "border-amber-300",
+        glow: "shadow-amber-200/80",
+      };
+    case "D":
+      return {
+        letter: "D",
+        label: "BUILDING",
+        color: "text-orange-600",
+        border: "border-orange-300",
+        glow: "shadow-orange-200/80",
+      };
+    default:
+      return {
+        letter: "F",
+        label: "RESET",
+        color: "text-rose-600",
+        border: "border-rose-300",
+        glow: "shadow-rose-200/80",
+      };
+  }
+}
+
+function formatRecommendationLane(phase: string, category: string) {
+  if (phase === "rubric") {
+    const label = EXECUTIVE_RUBRIC_LABELS[category as ExecutiveRubricKey];
+    if (label) return `Rubric · ${label}`;
+  }
+  return `${phase} · ${category}`;
+}
+
 export function EnhancedDebrief({
   context,
   scoreBreakdowns,
@@ -83,46 +151,17 @@ export function EnhancedDebrief({
     { quarter: "Q4", revenue: context.quarters.Q4.results.revenue, share: context.quarters.Q4.results.marketShare },
   ];
 
-  const totalRevenue = quarterlyData.reduce((sum, q) => sum + q.revenue, 0);
   const finalMarketShare = context.quarters.Q4.results.marketShare;
   
-  const getGrade = (score: number) => {
-    if (score >= 90)
-      return {
-        grade: "L",
-        label: "LEGENDARY",
-        color: "text-blue-600",
-        border: "border-blue-300",
-        glow: "shadow-blue-200/80",
-      };
-    if (score >= 80)
-      return {
-        grade: "A",
-        label: "EXECUTIVE",
-        color: "text-emerald-600",
-        border: "border-emerald-300",
-        glow: "shadow-emerald-200/80",
-      };
-    if (score >= 70)
-      return {
-        grade: "B",
-        label: "STRATEGIST",
-        color: "text-indigo-600",
-        border: "border-indigo-300",
-        glow: "shadow-indigo-200/80",
-      };
-    return {
-      grade: "C",
-      label: "MANAGER",
-      color: "text-amber-600",
-      border: "border-amber-300",
-      glow: "shadow-amber-200/80",
-    };
-  };
-
-  const overallScore = Math.round((totalRevenue / 2000000) * 50 + finalMarketShare * 2);
-  const gradeInfo = getGrade(overallScore);
+  const overallScore = calculateOverallScore(context);
+  const teachingGrade = calculateGrade(overallScore);
+  const gradeInfo = teachingGradePresentation(teachingGrade);
   const report = buildTeachingReport(context);
+  const rubricRows = scoreBreakdowns.filter((row) => row.phase === "rubric");
+  const checkpointRows = scoreBreakdowns.filter((row) =>
+    ["setup", "strategy", "Q1", "Q2", "Q3", "Q4"].includes(row.phase),
+  );
+  const overallRow = scoreBreakdowns.find((row) => row.phase === "debrief");
   const contactUrl = process.env.NEXT_PUBLIC_COMPANY_CONTACT_URL || "https://darlingmartech.com/contact?source=cmo-simulator";
 
   // Phase 3 Calculations
@@ -162,8 +201,14 @@ export function EnhancedDebrief({
     const briefing = [
       "CMO Simulator Growth Briefing",
       "",
-      `Strategic score: ${overallScore}`,
+      `Executive composite: ${overallScore}/100 (${teachingGrade})`,
       `Leadership archetype: ${archetype.name}`,
+      "",
+      ...rubricRows.map((row) => {
+        const label =
+          EXECUTIVE_RUBRIC_LABELS[row.category as ExecutiveRubricKey] ?? row.category;
+        return `${label}: ${row.score}/100 — ${row.insight}`;
+      }),
       "",
       `Outcome: ${report.outcome}`,
       `Why: ${report.why}`,
@@ -252,7 +297,9 @@ export function EnhancedDebrief({
             className={`relative flex h-48 w-48 flex-col items-center justify-center rounded-full border-8 bg-slate-50 shadow-lg ${gradeInfo.border} ${gradeInfo.glow}`}
           >
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white to-slate-100/80 opacity-90" />
-            <span className={`relative text-8xl font-black tracking-tighter ${gradeInfo.color}`}>{gradeInfo.grade}</span>
+            <span className={`relative text-7xl font-black tracking-tighter ${gradeInfo.color} sm:text-8xl`}>
+              {gradeInfo.letter}
+            </span>
             <span className="relative mt-[-10px] text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">
               {gradeInfo.label}
             </span>
@@ -260,14 +307,14 @@ export function EnhancedDebrief({
 
           <div className="grid w-full max-w-2xl grid-cols-2 gap-10 px-10">
             <div className="space-y-1 text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Global Rank</p>
-              <p className="text-3xl font-bold uppercase text-slate-900">TOP 12%</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Teaching grade</p>
+              <p className="text-3xl font-bold uppercase text-slate-900">{teachingGrade}</p>
             </div>
             <div className="space-y-1 text-center">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Strategic Score</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Executive composite</p>
               <p className="text-3xl font-bold text-slate-900">
                 <CountUp end={overallScore} duration={2} />
-                pts
+                /100
               </p>
             </div>
           </div>
@@ -277,29 +324,81 @@ export function EnhancedDebrief({
     {
       id: "score-intelligence",
       title: "Score Breakdown + Next Moves",
-      subtitle: "What the simulation says to do next",
+      subtitle: "Weighted rubric plus execution checkpoints — deterministic, replayable scoring",
       content: (
         <div className="grid gap-6 py-4 lg:grid-cols-2">
-          <div className="space-y-3">
-            {scoreBreakdowns.map((breakdown) => (
-              <div
-                key={`${breakdown.phase}-${breakdown.category}`}
-                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
+          <div className="space-y-5">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">Executive rubric</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                Five categories (each scored 0–100) roll into the composite using fixed weights: growth quality 26%, efficiency 20%, strategic coherence 22%, resilience / execution 18%, finish quality 14%.
+              </p>
+              <div className="mt-3 space-y-3">
+                {rubricRows.map((breakdown) => (
+                  <div
+                    key={`${breakdown.phase}-${breakdown.category}`}
+                    className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black uppercase tracking-widest text-blue-800">
+                          {EXECUTIVE_RUBRIC_LABELS[breakdown.category as ExecutiveRubricKey] ?? breakdown.category}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-800">{breakdown.insight}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-2xl font-black text-slate-900">{breakdown.score}</div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+                          / {breakdown.maxScore}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {overallRow ? (
+              <div className="rounded-2xl border border-slate-900 bg-slate-900 p-4 text-white">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-black uppercase tracking-widest text-blue-700">
-                      {breakdown.phase} · {breakdown.category}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-800">{breakdown.insight}</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-blue-200">Composite</p>
+                    <p className="mt-1 text-sm text-slate-100">{overallRow.insight}</p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-2xl font-black text-slate-900">{breakdown.score}</div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">/ {breakdown.maxScore}</div>
+                    <div className="text-2xl font-black">{overallRow.score}</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                      / {overallRow.maxScore}
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
+            ) : null}
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-500">Execution checkpoints</p>
+              <div className="mt-3 space-y-3">
+                {checkpointRows.map((breakdown) => (
+                  <div
+                    key={`${breakdown.phase}-${breakdown.category}`}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black uppercase tracking-widest text-blue-700">
+                          {breakdown.phase} · {breakdown.category}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-800">{breakdown.insight}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="text-2xl font-black text-slate-900">{breakdown.score}</div>
+                        <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+                          / {breakdown.maxScore}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="space-y-3">
             {recommendations.length > 0 ? (
@@ -309,7 +408,8 @@ export function EnhancedDebrief({
                   className="rounded-2xl border border-blue-200 bg-blue-50 p-4"
                 >
                   <p className="text-xs font-black uppercase tracking-widest text-blue-800">
-                    {recommendation.phase} · priority {recommendation.priority}
+                    {formatRecommendationLane(recommendation.phase, recommendation.category)} · priority{" "}
+                    {recommendation.priority}
                   </p>
                   <h3 className="mt-1 text-lg font-semibold text-slate-900">{recommendation.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-blue-950/80">{recommendation.body}</p>
