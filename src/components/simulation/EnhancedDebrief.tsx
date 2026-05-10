@@ -46,6 +46,7 @@ import {
   EXECUTIVE_RUBRIC_LABELS,
   type ExecutiveRubricKey,
 } from "@/lib/simulationInsights";
+import { DebriefBenchmarkContextStrip, DebriefNextRunCard } from "@/components/simulation/DebriefExecutivePanels";
 
 interface EnhancedDebriefProps {
   context: SimulationContext;
@@ -630,6 +631,10 @@ export function EnhancedDebrief({
 
   return (
     <div className="mt-[-40px] flex min-h-screen flex-col items-center bg-transparent px-4 py-10 text-slate-950">
+      <div className="mb-6 w-full max-w-5xl space-y-4">
+        <DebriefBenchmarkContextStrip context={context} />
+        <DebriefNextRunCard report={report} archetypeAdvice={archetype.advice} />
+      </div>
       <motion.div
         layout
         className="relative w-full max-w-5xl overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-xl"

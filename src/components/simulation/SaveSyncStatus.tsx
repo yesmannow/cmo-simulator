@@ -54,12 +54,12 @@ export function SaveSyncStatus() {
 
   const label =
     detail.state === "saving"
-      ? "Saving…"
+      ? "Syncing run…"
       : detail.state === "saved"
-        ? "Saved"
+        ? "Synced to account"
         : detail.state === "offline"
-          ? "Offline"
-          : "Save issue";
+          ? "Offline — not synced"
+          : "Save sync issue";
 
   return (
     <div

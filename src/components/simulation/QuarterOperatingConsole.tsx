@@ -18,10 +18,83 @@ import {
 } from '@/components/ui/mobile-sheet';
 import { CMOMentor } from '@/components/simulation/CMOMentor';
 import { ExecutivePressure } from '@/components/simulation/ExecutivePressure';
-import { buildSimulationForecast, formatForecastValue, getTacticBusinessProfile, type QuarterKey } from '@/lib/simulationForecast';
+import {
+  buildSimulationForecast,
+  formatForecastValue,
+  getTacticBusinessProfile,
+  type QuarterKey,
+  type SimulationForecast,
+} from '@/lib/simulationForecast';
 import type { EnrichedTactic } from '@/lib/tactics';
 import type { SimulationContext, Tactic } from '@/lib/simMachine';
 import { cn } from '@/lib/utils';
+
+const QUARTER_EXEC_FOCUS: Record<
+  QuarterKey,
+  { headline: string; objectives: string[] }
+> = {
+  Q1: {
+    headline: 'Proof before scale',
+    objectives: [
+      'Establish credible early signal on pipeline and awareness without exhausting Q2–Q4 flexibility.',
+      'Bias toward moves that create learning velocity the board can interpret in 90 days.',
+    ],
+  },
+  Q2: {
+    headline: 'Controlled acceleration',
+    objectives: [
+      'Scale what Q1 validated while watching acquisition efficiency and team load.',
+      'Avoid doubling down on a single lane before retention and conversion buffers exist.',
+    ],
+  },
+  Q3: {
+    headline: 'Resilience tuning',
+    objectives: [
+      'Rebalance toward durable demand and satisfaction before the Q4 narrative sprint.',
+      'Use remaining wildcard room deliberately — volatility compounds late in the year.',
+    ],
+  },
+  Q4: {
+    headline: 'Board-ready finish',
+    objectives: [
+      'Optimize for profitable revenue and defensible share story heading into debrief.',
+      'Explicitly pair growth moves with trust or efficiency offsets where pressure is highest.',
+    ],
+  },
+};
+
+function buildPlanConsequenceSummary(
+  forecast: SimulationForecast,
+  budgetIsOver: boolean,
+  hasMoves: boolean,
+): { verdictLabel: string; verdictTone: 'neutral' | 'positive' | 'warning' | 'danger'; detail: string } {
+  if (!hasMoves) {
+    return {
+      verdictLabel: 'Awaiting portfolio',
+      verdictTone: 'neutral',
+      detail:
+        'Once you add tactics, this panel explains how the projected quarter compares to today’s baseline — including downside/upside spread in the pulse chart.',
+    };
+  }
+  if (budgetIsOver) {
+    return {
+      verdictLabel: 'Over committed',
+      verdictTone: 'danger',
+      detail: `${forecast.topRisk} Trim or swap tactics until reserve returns to zero — otherwise execution risk dominates the forecast.`,
+    };
+  }
+  const primary = forecast.explanationBullets[0];
+  const riskCount = forecast.riskWarnings.length;
+  const spreadNote =
+    forecast.scenarioSpread.revenue > 0
+      ? ` Revenue scenario spread is ${formatForecastValue(forecast.scenarioSpread.revenue, 'currency')} — wider spreads mean less certainty on landing the base case.`
+      : '';
+  const verdictLabel =
+    riskCount >= 2 ? 'High variance plan' : riskCount === 1 ? 'Balanced with cautions' : 'Strong guardrails';
+  const verdictTone = riskCount >= 2 ? 'warning' : riskCount === 1 ? 'neutral' : 'positive';
+  const detail = `${primary ?? 'Projections reflect modeled synergies, audience fit, and competitive drag.'}${riskCount ? ` ${riskCount} additional modeled warning${riskCount > 1 ? 's' : ''} in the decision brief.` : ''}${spreadNote}`;
+  return { verdictLabel, verdictTone, detail };
+}
 
 interface QuarterOperatingConsoleProps {
   context: SimulationContext;
@@ -56,12 +129,17 @@ export function QuarterOperatingConsole({
     () => buildSimulationForecast(context, quarter, selectedTactics),
     [context, quarter, selectedTactics],
   );
+  const execFocus = QUARTER_EXEC_FOCUS[quarter];
   const [briefTactic, setBriefTactic] = useState<EnrichedTactic | null>(null);
   const finalizeHintMobileId = useId();
   const finalizeHintDesktopId = useId();
   const selectedIds = useMemo(() => new Set(selectedTactics.map((tactic) => tactic.id)), [selectedTactics]);
   const { budgetSummary } = forecast;
   const budgetIsOver = budgetSummary.remainingBudget < 0;
+  const planConsequence = useMemo(
+    () => buildPlanConsequenceSummary(forecast, budgetIsOver, selectedTactics.length > 0),
+    [forecast, budgetIsOver, selectedTactics.length],
+  );
   const finalizeHintText =
     selectedTactics.length === 0
       ? 'Add at least one move to finalize this quarter.'
@@ -110,6 +188,35 @@ export function QuarterOperatingConsole({
             </div>
           </div>
         </div>
+        <div className="border-t border-slate-200 bg-slate-50/90 px-4 py-4 md:px-6">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Quarter objective</p>
+              <p className="mt-1 text-base font-semibold text-slate-950">{execFocus.headline}</p>
+              <ul className="mt-2 list-disc space-y-1.5 pl-4 text-sm leading-6 text-slate-600">
+                {execFocus.objectives.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div
+              className={cn(
+                'rounded-2xl border p-4',
+                planConsequence.verdictTone === 'danger'
+                  ? 'border-red-200 bg-red-50/90'
+                  : planConsequence.verdictTone === 'warning'
+                    ? 'border-amber-200 bg-amber-50/90'
+                    : planConsequence.verdictTone === 'positive'
+                      ? 'border-emerald-200 bg-emerald-50/90'
+                      : 'border-slate-200 bg-white',
+              )}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Why this plan is strong or fragile</p>
+              <p className="mt-1 text-sm font-semibold text-slate-950">{planConsequence.verdictLabel}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-700">{planConsequence.detail}</p>
+            </div>
+          </div>
+        </div>
       </header>
 
       <div className="hidden lg:block">
@@ -122,7 +229,9 @@ export function QuarterOperatingConsole({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">Operating pulse</h2>
-                <p className="text-sm leading-6 text-slate-600">Forecasted movement if the selected plan is finalized.</p>
+                <p className="text-sm leading-6 text-slate-600">
+                  Forecasted KPI movement vs today if you finalize this portfolio — read alongside scenario spread and risks in the decision brief.
+                </p>
               </div>
               <span className={cn(
                 'w-fit rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wide',
@@ -470,7 +579,7 @@ function DecisionBriefPanel({
         <h2 className="text-lg font-semibold text-slate-950">Decision brief</h2>
       </div>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Expand sections for full forecast notes, scenarios, risks, and channel mix.
+        Use this as the narrative bridge between tactic choices and quarter outcomes: drivers, warnings, and alternate scenarios live below.
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2">

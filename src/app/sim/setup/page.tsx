@@ -435,11 +435,11 @@ export default function SetupPage() {
 
       try {
         await saveProfileMemory(runId);
-        setProfileMessage('Profile memory saved to Supabase.');
+        setProfileMessage('Profile saved to your account — future runs will reuse these answers.');
         setProfileLoadState('ready');
       } catch (profileError) {
         logger.error('Failed to save profile memory', profileError);
-        setProfileMessage('Profile memory could not be saved, but the simulation can continue.');
+        setProfileMessage('Profile could not be synced; strategy and quarters still work — sign in later to retry.');
         setProfileLoadState('error');
       }
 
@@ -579,18 +579,26 @@ export default function SetupPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
               <Wrench className="h-3.5 w-3.5" />
-              Workspace Setup
+              Executive calibration
             </div>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Focused setup flow</h1>
-            <p className="mt-2 text-sm text-slate-600">One decision at a time. Only the required inputs for this step are shown.</p>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Diagnose the operating context before tactics</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Each step captures board pressure, identity, and capital posture — the inputs leadership teams argue about before campaigns ship. Only what this step needs is shown.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" className="border-slate-200 bg-white text-slate-700" onClick={launchGuidedDemo}>
               Start Guided Demo Run
             </Button>
             {hasSavedRun ? (
-              <Button type="button" variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-900" onClick={resumeSavedRun}>
-                Resume Latest Saved Run
+              <Button
+                type="button"
+                variant="outline"
+                className="border-emerald-200 bg-emerald-50 text-emerald-900"
+                onClick={resumeSavedRun}
+                title="Restores your last cloud save and routes you to the saved phase (strategy or a quarter)."
+              >
+                Resume latest saved run
               </Button>
             ) : null}
           </div>
@@ -616,9 +624,9 @@ export default function SetupPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-600">
               Profile Memory
             </div>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-950">Remember who this simulation is for</h2>
+            <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-950">Anchor the run to a real decision-maker</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Saved to Supabase and reused as onboarding memory for future runs and debrief context.
+              Stored with your account so future sessions and debriefs stay grounded in role, maturity, and stated goals — without changing how quarters execute.
             </p>
           </div>
           <div className="text-xs font-medium text-slate-500">

@@ -5,6 +5,9 @@
  * Priority: P2 (Week 4)
  */
 
+import type { SimulationContext } from '@/lib/simMachine';
+import { calculateOverallScore } from '@/lib/simulationInsights';
+
 export interface BenchmarkData {
   industry: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
@@ -101,6 +104,52 @@ const BENCHMARK_DATA: Record<string, Record<string, BenchmarkData[]>> = {
     ]
   }
 };
+
+/** Map simulation `Industry` strings onto benchmark tables (only healthcare / legal / ecommerce exist today). */
+export function mapSimulationIndustryToBenchmarkIndustry(industry: string): keyof typeof BENCHMARK_DATA {
+  if (industry === 'healthcare') return 'healthcare';
+  if (industry === 'legal') return 'legal';
+  if (industry === 'ecommerce') return 'ecommerce';
+  // SaaS, fintech, and other verticals use ecommerce curves as a digital-demand proxy cohort.
+  return 'ecommerce';
+}
+
+/**
+ * Align teaching composite (0–100) with the synthetic “score” scale inside {@link BENCHMARK_DATA}
+ * so percentile ranking stays on-chart without changing benchmark constants.
+ */
+export function mapTeachingCompositeToBenchmarkScore(composite0to100: number): number {
+  const clamped = Math.max(0, Math.min(100, composite0to100));
+  return Math.round(2000 + clamped * 78);
+}
+
+/**
+ * Full-run benchmark lens for debrief surfaces — deterministic, uses existing benchmark tables + FY aggregates.
+ */
+export function buildBenchmarkComparisonFromSimulationContext(context: SimulationContext): BenchmarkComparison {
+  const quarters = [context.quarters.Q1, context.quarters.Q2, context.quarters.Q3, context.quarters.Q4];
+  const totalRevenue = quarters.reduce((sum, q) => sum + (q.results.revenue || 0), 0);
+  const totalProfit = quarters.reduce((sum, q) => sum + (q.results.profit || 0), 0);
+  const roi = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+  const marketShare = context.quarters.Q4.results.marketShare || 0;
+  const brandEquity = context.quarters.Q4.results.brandAwareness ?? context.quarters.Q4.results.customerSatisfaction ?? 0;
+  const syntheticScore = mapTeachingCompositeToBenchmarkScore(calculateOverallScore(context));
+
+  const industry = mapSimulationIndustryToBenchmarkIndustry(context.strategy.industry ?? "ecommerce");
+  const difficulty = context.strategy.difficulty ?? "intermediate";
+
+  return generateBenchmarkComparison(
+    {
+      revenue: totalRevenue,
+      roi,
+      marketShare,
+      brandEquity,
+      score: syntheticScore,
+    },
+    industry,
+    difficulty,
+  );
+}
 
 /**
  * Get benchmark data for industry and difficulty

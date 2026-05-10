@@ -84,7 +84,7 @@ export default function LandingPage() {
             CMO Simulator
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 sm:text-xl">
-            A playable marketing strategy lab for business owners and growth leaders. Run a simulated year, make budget calls under pressure, and leave with a briefing that explains what your decisions reveal.
+            An executive-grade marketing decision lab: run a simulated year under board pressure, see projected consequences quarter by quarter, and exit with debrief benchmarks plus replay experiments — not a trivia quiz.
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">

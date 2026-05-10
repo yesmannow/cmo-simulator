@@ -144,8 +144,8 @@ export default function StrategySessionPage() {
 
   return (
     <ImmersiveLayout
-      title="Strategic Foundation"
-      subtitle="Define the audience, market stance, and go-to-market channels that the operating console will carry into Q1."
+      title="Strategic foundation — executive hypothesis"
+      subtitle="Translate calibration into a testable GTM thesis: who you serve, how you show up, and which lanes get priority before budget hits the quarterly console."
       quarter="Strategy Session"
     >
       <div className="max-w-5xl mx-auto space-y-10 pb-20">
@@ -155,29 +155,29 @@ export default function StrategySessionPage() {
             <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]">
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700">
-                  Strategy controls
+                  Strategy diagnostics
                 </div>
                 <h2 className="text-lg font-semibold tracking-tight text-slate-950 md:text-xl">
-                  Translate setup into an operating plan
+                  Lock the thesis the operating quarters must defend
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-slate-700">
-                  This page now acts like a control layer rather than a playful chooser. Once complete, the simulator launches the CRM-style Q1 console with your audience, positioning, and channels preloaded.
+                  These answers shape tactic eligibility, alignment scoring, and how pressure shows up in-quarter — they are not cosmetic flavor text.
                 </p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">What unlocks next</div>
-                  <div className="mt-2 text-sm font-semibold text-slate-950">Quarter console access</div>
+                  <div className="mt-2 text-sm font-semibold text-slate-950">Quarter operating console</div>
                   <div className="mt-1 text-sm leading-6 text-slate-700">
-                    Budget readiness and tactical deployment open after strategy is complete.
+                    Q1 opens only after this thesis is explicit — budget deployment follows, not precedes, the narrative.
                   </div>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">Required</div>
-                  <div className="mt-2 text-sm font-semibold text-slate-950">Audience, stance, channels</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">Required inputs</div>
+                  <div className="mt-2 text-sm font-semibold text-slate-950">Audience · stance · channels</div>
                   <div className="mt-1 text-sm leading-6 text-slate-700">
-                    These fields shape which tactics make sense in the simulation.
+                    Each selection feeds alignment scoring and mentor cues across Q1–Q4 (same completion rules as before).
                   </div>
                 </div>
               </div>
@@ -215,8 +215,8 @@ export default function StrategySessionPage() {
                 <DollarSign className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-slate-950 mb-1">Annual Marketing Budget</h3>
-                <p className="text-slate-600 text-sm">Allocated across 4 quarters for maximum impact</p>
+                <h3 className="text-xl font-semibold text-slate-950 mb-1">Annual marketing envelope</h3>
+                <p className="text-slate-600 text-sm">Scenario-defined capital you will deploy across four quarters — pillar split from setup still applies.</p>
               </div>
             </div>
             <div className="text-4xl sm:text-5xl font-semibold tracking-tight text-slate-950">
