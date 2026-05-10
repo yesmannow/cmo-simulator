@@ -8,14 +8,24 @@ import type { SimulationContext, Tactic } from '@/lib/simMachine';
 import { cn } from '@/lib/utils';
 
 interface EndOfQuarterDebriefProps {
-  isOpen: boolean;
   context: SimulationContext;
   quarter: QuarterKey;
   selectedTactics: Tactic[];
   onConfirm: () => void;
+  isOpen?: boolean;
+  mode?: 'modal' | 'page';
+  onBack?: () => void;
 }
 
-export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics, onConfirm }: EndOfQuarterDebriefProps) {
+export function EndOfQuarterDebrief({
+  isOpen = true,
+  context,
+  quarter,
+  selectedTactics,
+  onConfirm,
+  mode = 'modal',
+  onBack,
+}: EndOfQuarterDebriefProps) {
   const forecast = useMemo(
     () => buildSimulationForecast(context, quarter, selectedTactics),
     [context, quarter, selectedTactics],
@@ -27,9 +37,22 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
   const negativeMoves = forecast.deltaFromCurrent.filter((metric) => metric.delta < 0);
   const nextQuarterLabel = quarter === 'Q4' ? 'View annual debrief' : `Continue to ${quarter === 'Q1' ? 'Q2' : quarter === 'Q2' ? 'Q3' : 'Q4'}`;
 
+  const isPage = mode === 'page';
+
   return (
-    <div className="relative z-20 rounded-[24px] border border-slate-200 bg-white shadow-xl md:fixed md:inset-0 md:z-[100] md:overflow-y-auto md:bg-slate-950/70 md:px-4 md:py-8 md:backdrop-blur-sm">
-      <div className="mx-auto max-w-5xl rounded-[24px] border-0 border-slate-200 bg-white md:rounded-xl md:border md:shadow-2xl">
+    <div
+      className={cn(
+        isPage
+          ? 'mx-auto max-w-6xl'
+          : 'relative z-20 rounded-[24px] border border-slate-200 bg-white shadow-xl md:fixed md:inset-0 md:z-[100] md:overflow-y-auto md:bg-slate-950/70 md:px-4 md:py-8 md:backdrop-blur-sm',
+      )}
+    >
+      <div
+        className={cn(
+          'mx-auto rounded-[24px] bg-white',
+          isPage ? 'max-w-6xl border border-slate-200 shadow-xl' : 'max-w-5xl border-0 border-slate-200 md:rounded-xl md:border md:shadow-2xl',
+        )}
+      >
         <header className="border-b border-slate-200 p-6">
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">{quarter} debrief</p>
           <div className="mt-2 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -39,10 +62,17 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
                 This review translates your selected moves into business outcomes before the simulation advances the quarter.
               </p>
             </div>
-            <Button type="button" className="hidden rounded-md bg-slate-950 text-white hover:bg-slate-800 md:inline-flex" onClick={onConfirm}>
-              {nextQuarterLabel}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <div className="hidden gap-3 md:flex">
+              {onBack ? (
+                <Button type="button" variant="outline" className="rounded-md border-slate-300 bg-white text-slate-800" onClick={onBack}>
+                  Back to plan
+                </Button>
+              ) : null}
+              <Button type="button" className="rounded-md bg-slate-950 text-white hover:bg-slate-800" onClick={onConfirm}>
+                {nextQuarterLabel}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -111,11 +141,27 @@ export function EndOfQuarterDebrief({ isOpen, context, quarter, selectedTactics,
             </section>
           </aside>
         </main>
-        <div className="sticky bottom-0 border-t border-slate-200 bg-white/96 p-4 backdrop-blur md:hidden">
-          <Button type="button" className="w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800" onClick={onConfirm}>
-            {nextQuarterLabel}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+        <div className="sticky bottom-0 border-t border-slate-200 bg-white/96 p-4 backdrop-blur">
+          <div className="flex flex-col gap-3 md:flex-row md:justify-end">
+            {onBack ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full rounded-xl border-slate-300 bg-white text-slate-800 md:w-auto md:min-w-[180px]"
+                onClick={onBack}
+              >
+                Back to plan
+              </Button>
+            ) : null}
+            <Button
+              type="button"
+              className="w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800 md:w-auto md:min-w-[240px]"
+              onClick={onConfirm}
+            >
+              {nextQuarterLabel}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

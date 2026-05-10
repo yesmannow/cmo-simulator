@@ -8,6 +8,13 @@ import { ConfettiEffect } from '@/components/simulation/ConfettiEffect';
 import { EnhancedDebrief } from '@/components/simulation/EnhancedDebrief';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { SimulationDebriefPdf } from '@/components/simulation/SimulationDebriefPdf';
+import {
+  MobileSheet,
+  MobileSheetContent,
+  MobileSheetDismissButton,
+  MobileSheetHeader,
+  MobileSheetTitle,
+} from '@/components/ui/mobile-sheet';
 import { useSimulation } from '@/hooks/useSimulation';
 import { deriveSimulationRecommendations, buildSimulationScoreBreakdowns } from '@/lib/simulationIntelligence';
 import { calculateGrade, calculateOverallScore } from '@/lib/simulationInsights';
@@ -43,10 +50,13 @@ export default function DebriefPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [authPromptDismissed, setAuthPromptDismissed] = useState(false);
   const [profileRow, setProfileRow] = useState<Record<string, unknown> | null>(null);
+  const [showFullDebrief, setShowFullDebrief] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const scoreBreakdowns = buildSimulationScoreBreakdowns(context);
   const recommendations = deriveSimulationRecommendations(context, scoreBreakdowns);
+  const overallScore = calculateOverallScore(context);
+  const finalGrade = calculateGrade(overallScore);
 
   useEffect(() => {
     setShowConfetti(true);
@@ -215,79 +225,12 @@ export default function DebriefPage() {
     >
       <div className="mx-auto max-w-7xl space-y-6">
         <ConfettiEffect trigger={showConfetti} />
-        {!authSession && !authPromptDismissed && (
+        {!authSession && (
           <div className="mx-auto max-w-5xl rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-950">Save / export — optional layer</h2>
+            <h2 className="text-lg font-semibold text-slate-950">Save / export stays optional</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Full debrief, benchmark lens, and carousel run locally in your session. Sign in only when you want a durable cloud copy or PDF export.
+              The result screen and full debrief work locally right away. Open account actions only when you want a durable cloud save or PDF export.
             </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                spellCheck={false}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
-                placeholder="Work email"
-                value={emailInput}
-                onChange={(event) => setEmailInput(event.target.value)}
-              />
-              <input
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
-                placeholder="Password (min 8 chars)"
-                value={passwordInput}
-                onChange={(event) => setPasswordInput(event.target.value)}
-              />
-              <input
-                name="given-name"
-                type="text"
-                autoComplete="given-name"
-                spellCheck={false}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
-                placeholder="First name (for new accounts)"
-                value={firstNameInput}
-                onChange={(event) => setFirstNameInput(event.target.value)}
-              />
-              <input
-                name="family-name"
-                type="text"
-                autoComplete="family-name"
-                spellCheck={false}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
-                placeholder="Last name (for new accounts)"
-                value={lastNameInput}
-                onChange={(event) => setLastNameInput(event.target.value)}
-              />
-            </div>
-            <p className="mt-2 text-xs text-slate-500">
-              New accounts require first and last name. Existing users can leave those blank when signing in.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
-                onClick={() => {
-                  setAuthPromptDismissed(true);
-                  setStatusMessage(
-                    'Continuing in-session. Sign in anytime from this page to save or export — resume later via Setup → Resume latest saved run.',
-                  );
-                }}
-              >
-                Continue as guest
-              </button>
-              <button
-                type="button"
-                className="rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800"
-                onClick={() => void handleSignIn()}
-                disabled={isSigningIn}
-              >
-                {isSigningIn ? 'Working...' : 'Unlock Save/Export'}
-              </button>
-            </div>
           </div>
         )}
         {statusMessage && (
@@ -295,17 +238,173 @@ export default function DebriefPage() {
             {statusMessage}
           </div>
         )}
-        <EnhancedDebrief
-          context={context}
-          scoreBreakdowns={scoreBreakdowns}
-          recommendations={recommendations}
-          onExportPDF={handleExportPDF}
-          onSaveRun={handleSaveRun}
-          saveDisabled={!authSession || isSaving}
-          onRestart={handleRestart}
-          onShare={handleShare}
-        />
+        <section className="mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl">
+          <div className="border-b border-slate-200 bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] px-6 py-6 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Annual result</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Your board-facing result is ready</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              See the score first, then open the full annual debrief when you want the detailed report and replay guidance.
+            </p>
+          </div>
+          <div className="grid gap-4 px-6 py-6 md:grid-cols-3">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Composite score</div>
+              <div className="mt-2 text-4xl font-semibold tracking-tight text-slate-950">{overallScore}</div>
+              <div className="text-sm text-slate-600">Out of 100</div>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Grade</div>
+              <div className="mt-2 text-4xl font-semibold tracking-tight text-slate-950">{finalGrade}</div>
+              <div className="text-sm text-slate-600">Teaching grade</div>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-center">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Next move</div>
+              <div className="mt-2 text-base font-semibold text-slate-950">Open the annual debrief</div>
+              <div className="mt-1 text-sm text-slate-600">Then save, export, or replay from the account actions surface.</div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 border-t border-slate-200 px-6 py-5 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              className="rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-800"
+              onClick={() => setShowFullDebrief(true)}
+            >
+              View annual debrief
+            </button>
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={() => setActionsOpen(true)}
+            >
+              Save / export / account
+            </button>
+            <button
+              type="button"
+              className="rounded-xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={handleRestart}
+            >
+              Replay from strategy
+            </button>
+          </div>
+        </section>
+        {showFullDebrief ? (
+          <EnhancedDebrief
+            context={context}
+            scoreBreakdowns={scoreBreakdowns}
+            recommendations={recommendations}
+            onExportPDF={handleExportPDF}
+            onSaveRun={handleSaveRun}
+            saveDisabled={!authSession || isSaving}
+            onRestart={handleRestart}
+            onShare={handleShare}
+            showUtilityActions={false}
+          />
+        ) : null}
       </div>
+      <MobileSheet open={actionsOpen} onOpenChange={setActionsOpen}>
+        <MobileSheetContent className="max-h-[88vh]">
+          <MobileSheetHeader>
+            <div>
+              <MobileSheetTitle>Account actions</MobileSheetTitle>
+            </div>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            {!authSession ? (
+              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-600">
+                  Sign in only when you want to save this run or export the PDF briefing.
+                </p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    inputMode="email"
+                    spellCheck={false}
+                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                    placeholder="Work email"
+                    value={emailInput}
+                    onChange={(event) => setEmailInput(event.target.value)}
+                  />
+                  <input
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                    placeholder="Password (min 8 chars)"
+                    value={passwordInput}
+                    onChange={(event) => setPasswordInput(event.target.value)}
+                  />
+                  <input
+                    name="given-name"
+                    type="text"
+                    autoComplete="given-name"
+                    spellCheck={false}
+                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                    placeholder="First name (for new accounts)"
+                    value={firstNameInput}
+                    onChange={(event) => setFirstNameInput(event.target.value)}
+                  />
+                  <input
+                    name="family-name"
+                    type="text"
+                    autoComplete="family-name"
+                    spellCheck={false}
+                    className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                    placeholder="Last name (for new accounts)"
+                    value={lastNameInput}
+                    onChange={(event) => setLastNameInput(event.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-slate-500">
+                  New accounts require first and last name. Existing users can leave those blank when signing in.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="rounded-md border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                    onClick={() => {
+                      setActionsOpen(false);
+                      setStatusMessage(
+                        'Continuing in-session. Sign in anytime from this page to save or export — resume later via Setup → Resume latest saved run.',
+                      );
+                    }}
+                  >
+                    Continue as guest
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-800"
+                    onClick={() => void handleSignIn()}
+                    disabled={isSigningIn}
+                  >
+                    {isSigningIn ? 'Working...' : 'Unlock Save/Export'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            <div className="grid gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                onClick={() => void handleSaveRun()}
+                disabled={!authSession || isSaving}
+              >
+                {isSaving ? 'Saving run…' : 'Save run to account'}
+              </button>
+              <button
+                type="button"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                onClick={() => void handleExportPDF()}
+                disabled={!authSession}
+              >
+                Export PDF briefing
+              </button>
+            </div>
+          </div>
+        </MobileSheetContent>
+      </MobileSheet>
     </ImmersiveLayout>
   );
 }

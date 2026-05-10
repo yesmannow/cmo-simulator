@@ -3,15 +3,16 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSimulation } from '@/hooks/useSimulation';
-import { resolveSimulationPath } from '@/lib/simulationRouting';
+import { resolveProgressRoute } from '@/lib/simulationProgress';
 
 export default function SimulationIndexPage() {
   const router = useRouter();
-  const { currentPhase } = useSimulation();
+  const { context, isReady } = useSimulation();
 
   useEffect(() => {
-    router.replace(resolveSimulationPath(currentPhase));
-  }, [currentPhase, router]);
+    if (!isReady) return;
+    router.replace(resolveProgressRoute(context));
+  }, [context, isReady, router]);
 
   return (
     <div className="flex items-center justify-center min-h-[400px]">

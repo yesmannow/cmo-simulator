@@ -1,6 +1,7 @@
 import type React from 'react';
 import {
   BarChart3,
+  CircleUserRound,
   Flag,
   GitBranch,
   History,
@@ -56,6 +57,12 @@ export const MOBILE_MODE_NAV_ITEMS: NavItem[] = [
   { label: 'Review', href: '/sim/campaigns', icon: SearchCheck },
   { label: 'History', href: '/sim/simulations', icon: History },
 ];
+
+export const MOBILE_ACCOUNT_NAV_ITEM: NavItem = {
+  label: 'Account',
+  href: '/sim/simulations',
+  icon: CircleUserRound,
+};
 
 export function titleForPath(pathname: string) {
   if (pathname.startsWith('/sim/setup')) return 'Setup';

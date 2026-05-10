@@ -10,17 +10,13 @@ import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/l
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { QuarterOperatingConsole } from '@/components/simulation/QuarterOperatingConsole';
-import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { Button } from '@/components/ui/button';
-import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
-import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
 export default function Q4Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard } = useSimulation();
   const [selectedTactics, setSelectedTactics] = useState<Tactic[]>(context.quarters.Q4.tactics || []);
-  const [showDebrief, setShowDebrief] = useState(false);
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
 
@@ -69,6 +65,10 @@ export default function Q4Page() {
     </section>
   );
 
+  const focusSelectedPlan = () => {
+    document.getElementById('selected-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <ImmersiveLayout title="Q4 Operating Plan" subtitle="Close the year with a defensible scorecard." quarter="Quarter 4" hideHeader>
       <QuarterOperatingConsole
@@ -80,7 +80,7 @@ export default function Q4Page() {
         selectedTactics={selectedTactics}
         onAddTactic={handleAddTactic}
         onRemoveTactic={handleRemoveTactic}
-        onCompleteQuarter={() => setShowDebrief(true)}
+        onCompleteQuarter={() => router.push('/sim/q4/debrief')}
         canComplete={canComplete}
         completeLabel="Finalize annual plan"
         specialActions={specialActions}
@@ -94,33 +94,15 @@ export default function Q4Page() {
             const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
             respondToWildcard('Q4', currentWildcard, choiceId, impact);
             setShowWildcardModal(false);
+            focusSelectedPlan();
           }}
-          onClose={() => setShowWildcardModal(false)}
+          onClose={() => {
+            setShowWildcardModal(false);
+            focusSelectedPlan();
+          }}
         />
       )}
 
-      <EndOfQuarterDebrief
-        isOpen={showDebrief}
-        context={context}
-        quarter="Q4"
-        selectedTactics={selectedTactics}
-        onConfirm={() => {
-          void saveSimulationSnapshot(context, 'Q4', 'completed');
-          void recordSimulationEvent({
-            runId: context.simulationId ?? '',
-            eventType: 'quarter_completed',
-            phase: 'Q4',
-            payload: {
-              quarter: 'Q4',
-              tacticCount: selectedTactics.length,
-              usedBudget,
-            },
-          });
-          setShowDebrief(false);
-          completeQuarter('Q4');
-          router.push('/sim/debrief');
-        }}
-      />
     </ImmersiveLayout>
   );
 }

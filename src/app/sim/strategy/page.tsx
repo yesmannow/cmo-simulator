@@ -68,11 +68,13 @@ export default function StrategySessionPage() {
   const handleAudienceSelect = (audience: string) => {
     setFormData((current) => ({ ...current, targetAudience: audience }));
     setStrategy({ targetAudience: audience });
+    setMobileStep(2);
   };
 
   const handlePositioningSelect = (positioning: string) => {
     setFormData((current) => ({ ...current, brandPositioning: positioning }));
     setStrategy({ brandPositioning: positioning });
+    setMobileStep(3);
   };
 
   const handleCustomAudience = () => {
@@ -185,7 +187,7 @@ export default function StrategySessionPage() {
           </div>
         </GlassCard>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 md:hidden">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
             <span>Strategy flow</span>
             <span>Step {mobileStep} / 3</span>
@@ -227,7 +229,7 @@ export default function StrategySessionPage() {
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Target Audience */}
-          <GlassCard className={cn("h-full", mobileStep !== 1 && 'hidden md:block')}>
+          <GlassCard className={cn("h-full", mobileStep !== 1 && 'hidden')}>
             <div className="p-6 space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-950">
@@ -294,7 +296,7 @@ export default function StrategySessionPage() {
           </GlassCard>
 
           {/* Brand Positioning */}
-          <GlassCard className={cn("h-full", mobileStep !== 2 && 'hidden md:block')}>
+          <GlassCard className={cn("h-full", mobileStep !== 2 && 'hidden')}>
             <div className="p-6 space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-950">
@@ -362,7 +364,7 @@ export default function StrategySessionPage() {
         </div>
 
         {/* Primary Channels */}
-        <GlassCard className={cn(mobileStep !== 3 && 'hidden md:block')}>
+        <GlassCard className={cn(mobileStep !== 3 && 'hidden')}>
           <div className="p-8 space-y-8">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-slate-950">

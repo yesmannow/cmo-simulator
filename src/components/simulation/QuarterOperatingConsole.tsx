@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { AlertTriangle, ArrowRight, BarChart3, Check, Circle, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp, WalletCards } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -131,6 +131,9 @@ export function QuarterOperatingConsole({
   );
   const execFocus = QUARTER_EXEC_FOCUS[quarter];
   const [briefTactic, setBriefTactic] = useState<EnrichedTactic | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const selectedPlanRef = useRef<HTMLDivElement | null>(null);
+  const previousSelectedCountRef = useRef(selectedTactics.length);
   const finalizeHintMobileId = useId();
   const finalizeHintDesktopId = useId();
   const selectedIds = useMemo(() => new Set(selectedTactics.map((tactic) => tactic.id)), [selectedTactics]);
@@ -151,6 +154,13 @@ export function QuarterOperatingConsole({
     : budgetIsOver
       ? 'Budget needs review'
       : 'Ready to review';
+
+  useEffect(() => {
+    if (selectedTactics.length > previousSelectedCountRef.current) {
+      selectedPlanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    previousSelectedCountRef.current = selectedTactics.length;
+  }, [selectedTactics.length]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 pb-10 lg:space-y-6 lg:pb-16">
@@ -219,74 +229,36 @@ export function QuarterOperatingConsole({
         </div>
       </header>
 
-      <div className="hidden lg:block">
-        <ExecutivePressure currentQuarter={quarter} context={context} />
-      </div>
-
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:gap-6">
-        <Panel className="min-w-0 p-0" id="operating-pulse">
-          <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">Operating pulse</h2>
-                <p className="text-sm leading-6 text-slate-600">
-                  Forecasted KPI movement vs today if you finalize this portfolio — read alongside scenario spread and risks in the decision brief.
-                </p>
-              </div>
-              <span className={cn(
-                'w-fit rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wide',
-                budgetIsOver ? 'bg-red-50 text-red-700' : selectedTactics.length > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600',
-              )}>
-                {planReadiness}
-              </span>
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Panel className="min-w-0">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Quarter review</p>
+              <h2 className="mt-1 text-lg font-semibold text-slate-950">Keep this screen for decisions. Open the review surface when you need the forecast and rationale.</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                KPI movement, risk notes, confidence band, and mentor guidance now live behind one dedicated review screen so this console stays lighter while you build the plan.
+              </p>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl border-slate-300 bg-white text-slate-800"
+              onClick={() => setReviewOpen(true)}
+            >
+              Open quarter review
+            </Button>
           </div>
-          {selectedTactics.length === 0 && (
-            <div className="border-b border-slate-200 px-4 py-3 sm:px-5">
-              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-900">
-                No moves selected. Add one move to see a true plan projection.
-              </div>
-            </div>
-          )}
-          <div className="grid gap-px bg-slate-200 sm:grid-cols-2 lg:grid-cols-5">
-            {forecast.deltaFromCurrent.map((metric) => (
-              <MetricTile key={metric.label} metric={metric} />
-            ))}
-          </div>
-          <div className="border-t border-slate-200 px-4 py-4 sm:px-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-950">Confidence band</h3>
-                <p className="text-sm text-slate-600">Downside, base, and upside quarter outcomes for the current plan.</p>
-              </div>
-              <Badge variant="outline" className="w-fit border-slate-300 bg-slate-50 text-slate-700">
-                Revenue spread {formatForecastValue(forecast.scenarioSpread.revenue, 'currency')}
-              </Badge>
-            </div>
-            <div className="mt-4 h-[180px] sm:h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={forecast.confidenceBand} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} stroke="#64748b" />
-                  <YAxis tickLine={false} axisLine={false} fontSize={12} stroke="#64748b" tickFormatter={formatCompactCurrency} />
-                  <Tooltip
-                    cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }}
-                    contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10 }}
-                    formatter={(value: number, key: string) => [
-                      formatForecastValue(value, 'currency'),
-                      key === 'lower' ? 'Downside' : key === 'upper' ? 'Upside' : 'Base',
-                    ]}
-                  />
-                  <Area type="monotone" dataKey="upper" stroke="#cbd5e1" fill="#e2e8f0" fillOpacity={0.35} />
-                  <Area type="monotone" dataKey="lower" stroke="#cbd5e1" fill="#ffffff" fillOpacity={1} />
-                  <Area type="monotone" dataKey="expected" stroke="#0f172a" fill="#0f172a" fillOpacity={0.1} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <BudgetFact label="Plan state" value={planReadiness} isWarning={budgetIsOver} />
+            <BudgetFact label="Selected moves" value={`${selectedTactics.length}`} />
+            <BudgetFact label="Revenue spread" value={formatForecastValue(forecast.scenarioSpread.revenue, 'currency')} />
           </div>
         </Panel>
 
-        <DecisionBriefPanel forecast={forecast} planReadiness={planReadiness} selectedCount={selectedTactics.length} />
+        <Panel>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Decision status</div>
+          <p className="mt-2 text-sm leading-6 text-slate-700">{planConsequence.detail}</p>
+        </Panel>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -413,6 +385,7 @@ export function QuarterOperatingConsole({
             </div>
           </Panel>
 
+          <div ref={selectedPlanRef} id="selected-plan" className="scroll-mt-24">
           <Panel>
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
@@ -450,6 +423,7 @@ export function QuarterOperatingConsole({
               </div>
             )}
           </Panel>
+          </div>
 
           <div className="space-y-4 lg:hidden">
             <Panel>
@@ -468,7 +442,14 @@ export function QuarterOperatingConsole({
               </div>
             </Panel>
 
-            <CMOMentor selectedTactics={selectedTactics} remainingBudget={budgetSummary.remainingBudget} currentQuarter={quarter} context={context} />
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full rounded-[22px] border-slate-300 bg-white text-slate-800"
+              onClick={() => setReviewOpen(true)}
+            >
+              Open quarter review
+            </Button>
 
             {specialActions}
 
@@ -510,7 +491,14 @@ export function QuarterOperatingConsole({
             </div>
           </Panel>
 
-          <CMOMentor selectedTactics={selectedTactics} remainingBudget={budgetSummary.remainingBudget} currentQuarter={quarter} context={context} />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full rounded-xl border-slate-300 bg-white text-slate-800"
+            onClick={() => setReviewOpen(true)}
+          >
+            Open quarter review
+          </Button>
 
           {specialActions}
 
@@ -553,6 +541,86 @@ export function QuarterOperatingConsole({
               </div>
             </>
           )}
+        </MobileSheetContent>
+      </MobileSheet>
+
+      <MobileSheet open={reviewOpen} onOpenChange={setReviewOpen}>
+        <MobileSheetContent className="max-h-[90vh]">
+          <MobileSheetHeader>
+            <div>
+              <MobileSheetTitle>{quarter} review</MobileSheetTitle>
+              <MobileSheetDescription>
+                Forecast, risk notes, and mentor guidance for the plan you are about to commit.
+              </MobileSheetDescription>
+            </div>
+            <MobileSheetDismissButton />
+          </MobileSheetHeader>
+          <div className="space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <ExecutivePressure currentQuarter={quarter} context={context} />
+            <Panel className="min-w-0 p-0" id="operating-pulse">
+              <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-950">Operating pulse</h2>
+                    <p className="text-sm leading-6 text-slate-600">
+                      Forecasted KPI movement vs today if you finalize this portfolio.
+                    </p>
+                  </div>
+                  <span className={cn(
+                    'w-fit rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wide',
+                    budgetIsOver ? 'bg-red-50 text-red-700' : selectedTactics.length > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600',
+                  )}>
+                    {planReadiness}
+                  </span>
+                </div>
+              </div>
+              {selectedTactics.length === 0 && (
+                <div className="border-b border-slate-200 px-4 py-3 sm:px-5">
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-900">
+                    No moves selected. Add one move to see a true plan projection.
+                  </div>
+                </div>
+              )}
+              <div className="grid gap-px bg-slate-200 sm:grid-cols-2">
+                {forecast.deltaFromCurrent.map((metric) => (
+                  <MetricTile key={metric.label} metric={metric} />
+                ))}
+              </div>
+              <div className="border-t border-slate-200 px-4 py-4 sm:px-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-950">Confidence band</h3>
+                    <p className="text-sm text-slate-600">Downside, base, and upside quarter outcomes for the current plan.</p>
+                  </div>
+                  <Badge variant="outline" className="w-fit border-slate-300 bg-slate-50 text-slate-700">
+                    Revenue spread {formatForecastValue(forecast.scenarioSpread.revenue, 'currency')}
+                  </Badge>
+                </div>
+                <div className="mt-4 h-[180px] sm:h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={forecast.confidenceBand} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                      <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} stroke="#64748b" />
+                      <YAxis tickLine={false} axisLine={false} fontSize={12} stroke="#64748b" tickFormatter={formatCompactCurrency} />
+                      <Tooltip
+                        cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }}
+                        contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10 }}
+                        formatter={(value: number, key: string) => [
+                          formatForecastValue(value, 'currency'),
+                          key === 'lower' ? 'Downside' : key === 'upper' ? 'Upside' : 'Base',
+                        ]}
+                      />
+                      <Area type="monotone" dataKey="upper" stroke="#cbd5e1" fill="#e2e8f0" fillOpacity={0.35} />
+                      <Area type="monotone" dataKey="lower" stroke="#cbd5e1" fill="#ffffff" fillOpacity={1} />
+                      <Area type="monotone" dataKey="expected" stroke="#0f172a" fill="#0f172a" fillOpacity={0.1} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </Panel>
+            <DecisionBriefPanel forecast={forecast} planReadiness={planReadiness} selectedCount={selectedTactics.length} />
+            <CMOMentor selectedTactics={selectedTactics} remainingBudget={budgetSummary.remainingBudget} currentQuarter={quarter} context={context} />
+          </div>
         </MobileSheetContent>
       </MobileSheet>
     </div>

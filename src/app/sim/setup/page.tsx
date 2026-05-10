@@ -266,6 +266,7 @@ export default function SetupPage() {
   const [step, setStep] = useState(1);
   const [guideOpen, setGuideOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [profileExpanded, setProfileExpanded] = useState(false);
   const [showAdvancedScenario, setShowAdvancedScenario] = useState(false);
   const [showAdvancedIdentity, setShowAdvancedIdentity] = useState(false);
   const [showAdvancedBudget, setShowAdvancedBudget] = useState(false);
@@ -353,6 +354,12 @@ export default function SetupPage() {
     };
   }, [user]);
 
+  useEffect(() => {
+    if (step === 2 && data.companyName.trim().length >= 2 && !showAdvancedIdentity) {
+      setShowAdvancedIdentity(true);
+    }
+  }, [data.companyName, showAdvancedIdentity, step]);
+
   const handleNext = () => {
     if (step < totalSteps) {
       setStep((current) => current + 1);
@@ -366,6 +373,18 @@ export default function SetupPage() {
     if (step > 1) {
       setStep((current) => current - 1);
     }
+  };
+
+  const commitScenarioAndAdvance = (scenarioId: string) => {
+    setData((current) => ({ ...current, scenarioId }));
+    setShowAdvancedScenario(false);
+    setStep(2);
+  };
+
+  const commitIdentityAndAdvance = (logoStyle: CompanyLogoStyle) => {
+    if (data.companyName.trim().length < 2) return;
+    setData((current) => ({ ...current, logoStyle }));
+    setStep(3);
   };
 
   const saveProfileMemory = async (runId: string) => {
@@ -639,6 +658,11 @@ export default function SetupPage() {
                   : 'Profile memory idle'}
           </div>
         </div>
+        <div className="mt-4">
+          <Button type="button" variant="outline" className="border-slate-200 bg-white text-slate-700" onClick={() => setProfileExpanded((prev) => !prev)}>
+            {profileExpanded ? 'Hide profile memory' : 'Open profile memory'}
+          </Button>
+        </div>
 
         {profileMessage ? (
           <p className={cn('mt-3 rounded-2xl px-4 py-3 text-sm', profileLoadState === 'error' ? 'bg-rose-50 text-rose-800' : 'bg-emerald-50 text-emerald-800')}>
@@ -646,6 +670,8 @@ export default function SetupPage() {
           </p>
         ) : null}
 
+        {profileExpanded ? (
+        <>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div>
             <Label htmlFor="profile-full-name" className="text-slate-700">Full name</Label>
@@ -756,6 +782,12 @@ export default function SetupPage() {
             })}
           </div>
         </div>
+        </>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+            Keep this collapsed if you want the setup flow to stay tighter on mobile. Open it when you want the run tied to role, goals, and preferred difficulty.
+          </div>
+        )}
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_320px]">
@@ -781,7 +813,7 @@ export default function SetupPage() {
                       <Button
                         type="button"
                         className="bg-slate-950 text-white hover:bg-slate-800"
-                        onClick={() => setData((current) => ({ ...current, scenarioId: 'challenger' }))}
+                        onClick={() => commitScenarioAndAdvance('challenger')}
                       >
                         Use recommended default
                       </Button>
@@ -806,7 +838,7 @@ export default function SetupPage() {
                               ? 'border-slate-900 bg-slate-950 text-white shadow-[0_18px_40px_rgba(15,23,42,0.2)]'
                               : 'border-slate-200 bg-slate-50/70 text-slate-950 hover:border-slate-300 hover:bg-white',
                           )}
-                          onClick={() => setData((current) => ({ ...current, scenarioId: scenario.id }))}
+                          onClick={() => commitScenarioAndAdvance(scenario.id)}
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className={cn('rounded-2xl border p-3', isSelected ? 'border-white/10 bg-white/10' : scenario.color)}>
@@ -874,7 +906,10 @@ export default function SetupPage() {
                       <Button
                         type="button"
                         className="bg-slate-950 text-white hover:bg-slate-800"
-                        onClick={() => setData((current) => ({ ...current, companyName: 'Northstar Systems' }))}
+                        onClick={() => {
+                          setData((current) => ({ ...current, companyName: 'Northstar Systems' }));
+                          setShowAdvancedIdentity(true);
+                        }}
                       >
                         Use recommended default
                       </Button>
@@ -911,7 +946,7 @@ export default function SetupPage() {
                                 'w-full rounded-2xl border p-4 text-left transition-all',
                                 isSelected ? 'border-slate-900 bg-slate-950 text-white' : 'border-slate-200 bg-slate-50/70 text-slate-900 hover:border-slate-300 hover:bg-white',
                               )}
-                              onClick={() => setData((current) => ({ ...current, logoStyle: option.id }))}
+                              onClick={() => commitIdentityAndAdvance(option.id)}
                             >
                               <div className="flex items-center gap-3">
                                 <Icon className="h-5 w-5" />

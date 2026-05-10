@@ -69,6 +69,7 @@ interface EnhancedDebriefProps {
   saveDisabled?: boolean;
   onRestart: () => void;
   onShare?: () => void;
+  showUtilityActions?: boolean;
 }
 
 function teachingGradePresentation(grade: SimulationTeachingGrade) {
@@ -140,6 +141,7 @@ export function EnhancedDebrief({
   onSaveRun,
   saveDisabled = false,
   onRestart,
+  showUtilityActions = true,
 }: EnhancedDebriefProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
@@ -730,38 +732,40 @@ export function EnhancedDebrief({
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={onSaveRun}
-                disabled={saveDisabled}
-                variant="outline"
-                className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50 disabled:opacity-40"
-              >
-                <Save className="h-4 w-4" /> Save Run
-              </Button>
-              <Button
-                onClick={onExportPDF}
-                variant="outline"
-                className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50"
-              >
-                <Download className="h-4 w-4" /> Export Briefing
-              </Button>
-              <Button
-                onClick={handleCopyBriefing}
-                variant="outline"
-                className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50"
-              >
-                <Clipboard className="h-4 w-4" /> Copy Summary
-              </Button>
-              {currentSlide === slides.length - 1 && (
+            {showUtilityActions ? (
+              <div className="flex flex-wrap gap-3">
                 <Button
-                  onClick={onRestart}
-                  className="h-12 rounded-xl bg-slate-900 px-8 font-black text-white shadow-md transition-transform hover:bg-slate-800 active:scale-95"
+                  onClick={onSaveRun}
+                  disabled={saveDisabled}
+                  variant="outline"
+                  className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50 disabled:opacity-40"
                 >
-                  RESTART CAMPAIGN
+                  <Save className="h-4 w-4" /> Save Run
                 </Button>
-              )}
-            </div>
+                <Button
+                  onClick={onExportPDF}
+                  variant="outline"
+                  className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50"
+                >
+                  <Download className="h-4 w-4" /> Export Briefing
+                </Button>
+                <Button
+                  onClick={handleCopyBriefing}
+                  variant="outline"
+                  className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50"
+                >
+                  <Clipboard className="h-4 w-4" /> Copy Summary
+                </Button>
+                {currentSlide === slides.length - 1 && (
+                  <Button
+                    onClick={onRestart}
+                    className="h-12 rounded-xl bg-slate-900 px-8 font-black text-white shadow-md transition-transform hover:bg-slate-800 active:scale-95"
+                  >
+                    RESTART CAMPAIGN
+                  </Button>
+                )}
+              </div>
+            ) : null}
           </div>
           {copyStatus && <p className="mt-4 text-sm font-medium text-blue-800">{copyStatus}</p>}
         </div>

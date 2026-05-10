@@ -4,13 +4,14 @@ import type { EnhancedWildcardEvent, EnhancedWildcardImpactResult } from '@/lib/
 
 // Hook to manage simulation state globally across routes
 export function useSimulation() {
-  const { state, send } = useSimulationContext();
+  const { state, send, isReady } = useSimulationContext();
 
   return {
     // Current state information
     currentPhase: state.value as string,
     context: state.context,
     canTransition: state.can,
+    isReady,
     
     // State checks
     isIdle: state.matches('idle'),

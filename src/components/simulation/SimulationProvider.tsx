@@ -90,6 +90,7 @@ function SimulationMachineProvider({
 }) {
   const [state, send] = useMachine(simulationMachine);
   const hasAppliedHydration = useRef(false);
+  const [isReady, setIsReady] = useState(Object.keys(hydratedContext).length === 0);
 
   // Hydrate once; machine remains in idle after hydration so we must guard repeats.
   useEffect(() => {
@@ -100,6 +101,11 @@ function SimulationMachineProvider({
     ) {
       hasAppliedHydration.current = true;
       send({ type: 'HYDRATE_CONTEXT', context: hydratedContext });
+      setIsReady(true);
+    }
+
+    if (!hasAppliedHydration.current && Object.keys(hydratedContext).length === 0) {
+      setIsReady(true);
     }
   }, [hydratedContext, send, state]);
 
@@ -109,7 +115,7 @@ function SimulationMachineProvider({
   }, [state.context]);
 
   return (
-    <SimulationReactContext.Provider value={{ state, send, isReady: true }}>
+    <SimulationReactContext.Provider value={{ state, send, isReady }}>
       {children}
     </SimulationReactContext.Provider>
   );

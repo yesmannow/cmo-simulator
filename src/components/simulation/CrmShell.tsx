@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, CircleDot, MoreHorizontal, Sparkles, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleDot, Sparkles, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { CompanyMark } from '@/components/simulation/CompanyMark';
@@ -12,12 +12,12 @@ import { SaveSyncStatus } from '@/components/simulation/SaveSyncStatus';
 import {
   CORE_NAV_ITEMS,
   CRM_NAV_ITEMS,
+  MOBILE_ACCOUNT_NAV_ITEM,
   MOBILE_MODE_NAV_ITEMS,
   QUARTER_NAV_ITEMS,
   activeHref,
   mobileModeItemForPath,
   primaryNavItemForPath,
-  quarterNavItemForPhase,
   titleForPath,
   type NavItem,
 } from '@/components/simulation/navConfig';
@@ -30,6 +30,12 @@ import {
   MobileSheetTitle,
 } from '@/components/ui/mobile-sheet';
 import { useSimulation } from '@/hooks/useSimulation';
+import {
+  isAllowedProgressRoute,
+  isGuardedSimulatorRoute,
+  resolveProgressRoute,
+  type SimulatorProgressRoute,
+} from '@/lib/simulationProgress';
 import { cn } from '@/lib/utils';
 
 function formatCurrency(value: number) {
@@ -48,9 +54,9 @@ export function CrmShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut, isLoading } = useAuth();
-  const { context, currentPhase } = useSimulation();
+  const { context, isReady } = useSimulation();
   const [mobileNavVisible, setMobileNavVisible] = useState(true);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const companyNameRaw = context.strategy.companyName?.trim() ?? '';
@@ -60,10 +66,20 @@ export function CrmShell({ children }: { children: ReactNode }) {
   const runStatus = context.finalResults ? 'Completed' : 'In progress';
   const userLabel = user?.email ?? 'Signed in user';
   const roleLabel = user?.role ?? 'user';
+  const progressRoute = useMemo(() => resolveProgressRoute(context), [context]);
+  const quarterItem = useMemo(() => quarterNavItemForRoute(progressRoute), [progressRoute]);
+  const mobileModeItem = useMemo(() => mobileModeItemForPath(pathname), [pathname]);
+  const lockedQuarterRoutes = useMemo(() => getLockedQuarterRoutes(progressRoute), [progressRoute]);
 
   const primaryItem = useMemo(() => primaryNavItemForPath(pathname), [pathname]);
-  const quarterItem = useMemo(() => quarterNavItemForPhase(currentPhase), [currentPhase]);
-  const mobileModeItem = useMemo(() => mobileModeItemForPath(pathname), [pathname]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    if (!pathname) return;
+    if (!isGuardedSimulatorRoute(pathname)) return;
+    if (isAllowedProgressRoute(pathname, progressRoute)) return;
+    router.replace(progressRoute);
+  }, [isReady, pathname, progressRoute, router]);
 
   useEffect(() => {
     setMobileNavVisible(true);
@@ -151,6 +167,7 @@ export function CrmShell({ children }: { children: ReactNode }) {
               label="CMO Simulator"
               items={[{ label: 'Setup', href: '/sim/setup', icon: Wrench }, ...CORE_NAV_ITEMS, ...QUARTER_NAV_ITEMS]}
               pathname={pathname}
+              lockedHrefs={lockedQuarterRoutes}
               collapsed={sidebarCollapsed}
             />
             <SidebarGroup label="CRM Views" items={CRM_NAV_ITEMS} pathname={pathname} className="mt-5" collapsed={sidebarCollapsed} />
@@ -314,33 +331,59 @@ export function CrmShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             className="flex min-w-[68px] flex-col items-center gap-1 rounded-2xl px-2 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-            onClick={() => setMoreOpen(true)}
+            onClick={() => setAccountOpen(true)}
           >
             <motion.div whileTap={{ scale: 0.95 }} className="flex flex-col items-center gap-1">
               <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-                <MoreHorizontal className="h-4 w-4" />
+                <MOBILE_ACCOUNT_NAV_ITEM.icon className="h-4 w-4" />
               </span>
-              <span>More</span>
+              <span>{MOBILE_ACCOUNT_NAV_ITEM.label}</span>
             </motion.div>
           </button>
         </div>
       </nav>
 
-      <MobileSheet open={moreOpen} onOpenChange={setMoreOpen}>
+      <MobileSheet open={accountOpen} onOpenChange={setAccountOpen}>
         <MobileSheetContent className="max-h-[84vh]">
           <MobileSheetHeader>
             <div>
-              <MobileSheetTitle>Simulator navigation</MobileSheetTitle>
+              <MobileSheetTitle>My account</MobileSheetTitle>
               <MobileSheetDescription>
-                Core routes stay in the thumb zone. Everything else remains one sheet away.
+                Saved runs, account actions, sync status, and secondary navigation live here on mobile.
               </MobileSheetDescription>
             </div>
             <MobileSheetDismissButton />
           </MobileSheetHeader>
           <div className="space-y-5 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
+            <section className="space-y-3 rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Account</div>
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                <div className="truncate text-sm font-semibold text-slate-950">{userLabel}</div>
+                <div className="mt-1 text-xs uppercase tracking-wide text-slate-500">{roleLabel}</div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <SaveSyncStatus />
+              </div>
+              <div className="grid gap-2">
+                <AccountSheetLink href="/sim/simulations" label="My simulations" onNavigate={() => setAccountOpen(false)} />
+                <AccountSheetLink href="/sim/setup" label="New simulation" onNavigate={() => setAccountOpen(false)} />
+                <AccountSheetLink href="/sim/credits" label="Credits" onNavigate={() => setAccountOpen(false)} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleSignOut();
+                    setAccountOpen(false);
+                  }}
+                  disabled={isLoading}
+                  className="rounded-[22px] border border-rose-200 bg-white px-4 py-3 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
+                >
+                  {isLoading ? 'Signing out…' : 'Sign out'}
+                </button>
+              </div>
+            </section>
             <NavSheetSection title="Modes" items={MOBILE_MODE_NAV_ITEMS} pathname={pathname} targetHref={mobileModeItem.href} />
             <NavSheetSection title="Core" items={[{ label: 'Setup', href: '/sim/setup', icon: Wrench }, ...CORE_NAV_ITEMS]} pathname={pathname} targetHref={primaryItem.href} />
-            <NavSheetSection title="Quarter Views" items={QUARTER_NAV_ITEMS} pathname={pathname} targetHref={quarterItem.href} />
+            <NavSheetSection title="Quarter Views" items={QUARTER_NAV_ITEMS} pathname={pathname} targetHref={quarterItem.href} lockedHrefs={lockedQuarterRoutes} />
             <NavSheetSection title="CRM Views" items={CRM_NAV_ITEMS} pathname={pathname} targetHref={primaryItem.href} />
           </div>
         </MobileSheetContent>
@@ -353,12 +396,14 @@ function SidebarGroup({
   label,
   items,
   pathname,
+  lockedHrefs,
   className,
   collapsed = false,
 }: {
   label: string;
   items: NavItem[];
   pathname: string;
+  lockedHrefs?: Set<string>;
   className?: string;
   collapsed?: boolean;
 }) {
@@ -368,14 +413,19 @@ function SidebarGroup({
       {items.map((item) => {
         const isActive = activeHref(pathname, item.href);
         const Icon = item.icon;
+        const isLocked = lockedHrefs?.has(item.href) ?? false;
         return (
           <Link
             key={item.href}
-            href={item.href}
+            href={isLocked ? '#' : item.href}
+            onClick={(event) => {
+              if (isLocked) event.preventDefault();
+            }}
             className={cn(
               'mt-1 flex min-w-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               collapsed && 'h-10 justify-center gap-0 px-2',
               isActive ? 'bg-slate-100 text-slate-950' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
+              isLocked && 'cursor-not-allowed opacity-45 hover:bg-transparent hover:text-slate-600',
             )}
             aria-current={isActive ? 'page' : undefined}
             title={collapsed ? item.label : undefined}
@@ -421,11 +471,13 @@ function NavSheetSection({
   items,
   pathname,
   targetHref,
+  lockedHrefs,
 }: {
   title: string;
   items: NavItem[];
   pathname: string;
   targetHref: string;
+  lockedHrefs?: Set<string>;
 }) {
   return (
     <section>
@@ -435,15 +487,20 @@ function NavSheetSection({
           const Icon = item.icon;
           const isActive = activeHref(pathname, item.href);
           const isTarget = item.href === targetHref;
+          const isLocked = lockedHrefs?.has(item.href) ?? false;
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={isLocked ? '#' : item.href}
+              onClick={(event) => {
+                if (isLocked) event.preventDefault();
+              }}
               className={cn(
                 'flex items-center justify-between rounded-[22px] border px-4 py-3 transition',
                 isActive
                   ? 'border-slate-950 bg-slate-950 text-white'
                   : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-white',
+                isLocked && 'cursor-not-allowed opacity-45 hover:bg-slate-50',
               )}
             >
               <div className="flex min-w-0 items-center gap-3">
@@ -453,11 +510,11 @@ function NavSheetSection({
                 <div className="min-w-0">
                   <div className="break-words text-sm font-semibold">{item.label}</div>
                   <div className={cn('break-words text-xs', isActive ? 'text-slate-300' : 'text-slate-500')}>
-                    {isTarget ? 'Current phase target' : isActive ? 'Open now' : 'Open view'}
+                    {isLocked ? 'Locked after finalize' : isTarget ? 'Current phase target' : isActive ? 'Open now' : 'Open view'}
                   </div>
                 </div>
               </div>
-              {isTarget && !isActive && (
+              {isTarget && !isActive && !isLocked && (
                 <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
                   Next
                 </span>
@@ -467,6 +524,44 @@ function NavSheetSection({
         })}
       </div>
     </section>
+  );
+}
+
+function quarterNavItemForRoute(route: SimulatorProgressRoute): NavItem {
+  if (route.startsWith('/sim/q1')) return { label: 'Q1', href: '/sim/q1', icon: QUARTER_NAV_ITEMS[0].icon };
+  if (route.startsWith('/sim/q2')) return { label: 'Q2', href: '/sim/q2', icon: QUARTER_NAV_ITEMS[1].icon };
+  if (route.startsWith('/sim/q3')) return { label: 'Q3', href: '/sim/q3', icon: QUARTER_NAV_ITEMS[2].icon };
+  if (route.startsWith('/sim/q4')) return { label: 'Q4', href: '/sim/q4', icon: QUARTER_NAV_ITEMS[3].icon };
+  return { label: 'Quarter', href: route, icon: Sparkles };
+}
+
+function getLockedQuarterRoutes(route: SimulatorProgressRoute) {
+  const locked = new Set<string>();
+  const order: SimulatorProgressRoute[] = ['/sim/q1', '/sim/q2', '/sim/q3', '/sim/q4'];
+  const activeIndex = order.indexOf(route);
+  if (activeIndex <= 0) return locked;
+
+  order.slice(0, activeIndex).forEach((href) => locked.add(href));
+  return locked;
+}
+
+function AccountSheetLink({
+  href,
+  label,
+  onNavigate,
+}: {
+  href: string;
+  label: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className="rounded-[22px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+    >
+      {label}
+    </Link>
   );
 }
 

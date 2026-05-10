@@ -11,26 +11,15 @@ import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { getRandomTalentPool, type TalentCandidate } from '@/lib/talentMarket';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { QuarterOperatingConsole } from '@/components/simulation/QuarterOperatingConsole';
-import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
 import { TalentMarketModal } from '@/components/simulation/TalentMarketModal';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { Button } from '@/components/ui/button';
-import {
-  MobileSheet,
-  MobileSheetContent,
-  MobileSheetDescription,
-  MobileSheetDismissButton,
-  MobileSheetHeader,
-  MobileSheetTitle,
-} from '@/components/ui/mobile-sheet';
-import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
-import { recordSimulationEvent } from '@/lib/simulationTelemetry';
+import { MobileSheet, MobileSheetContent, MobileSheetDescription, MobileSheetDismissButton, MobileSheetHeader, MobileSheetTitle } from '@/components/ui/mobile-sheet';
 
 export default function Q2Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter } = useSimulation();
+  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard } = useSimulation();
   const [selectedTactics, setSelectedTactics] = useState<Tactic[]>(context.quarters.Q2.tactics || []);
-  const [showDebrief, setShowDebrief] = useState(false);
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [talentCandidates, setTalentCandidates] = useState<TalentCandidate[]>([]);
@@ -72,6 +61,10 @@ export default function Q2Page() {
     setTalentCandidates(getRandomTalentPool(3));
     setShowTalentMarket(true);
     setHasTriggeredTalentMarket(true);
+  };
+
+  const focusSelectedPlan = () => {
+    document.getElementById('selected-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   useEffect(() => {
@@ -119,7 +112,7 @@ export default function Q2Page() {
         selectedTactics={selectedTactics}
         onAddTactic={handleAddTactic}
         onRemoveTactic={handleRemoveTactic}
-        onCompleteQuarter={() => setShowDebrief(true)}
+        onCompleteQuarter={() => router.push('/sim/q2/debrief')}
         canComplete={canComplete}
         completeLabel="Finalize Q2 plan"
         specialActions={specialActions}
@@ -133,8 +126,12 @@ export default function Q2Page() {
             const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
             respondToWildcard('Q2', currentWildcard, choiceId, impact);
             setShowWildcardModal(false);
+            focusSelectedPlan();
           }}
-          onClose={() => setShowWildcardModal(false)}
+          onClose={() => {
+            setShowWildcardModal(false);
+            focusSelectedPlan();
+          }}
         />
       )}
 
@@ -142,35 +139,17 @@ export default function Q2Page() {
         <TalentMarketModal
           candidates={talentCandidates}
           isOpen={showTalentMarket}
-          onHire={() => setShowTalentMarket(false)}
+          onHire={() => {
+            setShowTalentMarket(false);
+            focusSelectedPlan();
+          }}
           availableBudget={remainingBudget}
-          onClose={() => setShowTalentMarket(false)}
+          onClose={() => {
+            setShowTalentMarket(false);
+            focusSelectedPlan();
+          }}
         />
       )}
-
-      <EndOfQuarterDebrief
-        isOpen={showDebrief}
-        context={context}
-        quarter="Q2"
-        selectedTactics={selectedTactics}
-        onConfirm={() => {
-          void saveSimulationSnapshot(context, 'Q2', 'in_progress');
-          void recordSimulationEvent({
-            runId: context.simulationId ?? '',
-            eventType: 'quarter_completed',
-            phase: 'Q2',
-            payload: {
-              quarter: 'Q2',
-              tacticCount: selectedTactics.length,
-              usedBudget,
-              remainingBudget,
-            },
-          });
-          setShowDebrief(false);
-          completeQuarter('Q2');
-          router.push('/sim/q3');
-        }}
-      />
 
       <MobileSheet open={showOptionsPrompt} onOpenChange={setShowOptionsPrompt}>
         <MobileSheetContent className="max-h-[72vh]">

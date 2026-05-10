@@ -11,18 +11,14 @@ import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
 import { calculateBigBetOutcome, getRandomBigBets, type BigBetOption } from '@/lib/talentMarket';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { QuarterOperatingConsole } from '@/components/simulation/QuarterOperatingConsole';
-import { EndOfQuarterDebrief } from '@/components/simulation/EndOfQuarterDebrief';
 import { WildcardModal } from '@/components/simulation/WildcardModal';
 import { BigBetModal } from '@/components/simulation/BigBetModal';
 import { Button } from '@/components/ui/button';
-import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
-import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
 export default function Q3Page() {
   const router = useRouter();
-  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, completeQuarter, makeBigBet } = useSimulation();
+  const { context, addTactic, removeTactic, triggerWildcard, respondToWildcard, makeBigBet } = useSimulation();
   const [selectedTactics, setSelectedTactics] = useState<Tactic[]>(context.quarters.Q3.tactics || []);
-  const [showDebrief, setShowDebrief] = useState(false);
   const [currentWildcard, setCurrentWildcard] = useState<EnhancedWildcardEvent | null>(null);
   const [showWildcardModal, setShowWildcardModal] = useState(false);
   const [availableBigBets, setAvailableBigBets] = useState<BigBetOption[]>([]);
@@ -90,6 +86,10 @@ export default function Q3Page() {
     </section>
   );
 
+  const focusSelectedPlan = () => {
+    document.getElementById('selected-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <ImmersiveLayout title="Q3 Operating Plan" subtitle="Optimize from real signals." quarter="Quarter 3" hideHeader>
       <QuarterOperatingConsole
@@ -101,7 +101,7 @@ export default function Q3Page() {
         selectedTactics={selectedTactics}
         onAddTactic={handleAddTactic}
         onRemoveTactic={handleRemoveTactic}
-        onCompleteQuarter={() => setShowDebrief(true)}
+        onCompleteQuarter={() => router.push('/sim/q3/debrief')}
         canComplete={canComplete}
         completeLabel="Finalize Q3 plan"
         specialActions={specialActions}
@@ -115,8 +115,12 @@ export default function Q3Page() {
             const impact = calculateEnhancedWildcardImpact(currentWildcard, choiceId);
             respondToWildcard('Q3', currentWildcard, choiceId, impact);
             setShowWildcardModal(false);
+            focusSelectedPlan();
           }}
-          onClose={() => setShowWildcardModal(false)}
+          onClose={() => {
+            setShowWildcardModal(false);
+            focusSelectedPlan();
+          }}
         />
       )}
 
@@ -129,36 +133,13 @@ export default function Q3Page() {
             const outcome = calculateBigBetOutcome(bet, context, false);
             makeBigBet('Q3', bet, { success: outcome.success, actualImpact: outcome.actualImpact });
             setShowBigBetModal(false);
+            focusSelectedPlan();
           }}
           availableBudget={remainingBudget}
           currentKPIs={context.kpis}
         />
       )}
 
-      <EndOfQuarterDebrief
-        isOpen={showDebrief}
-        context={context}
-        quarter="Q3"
-        selectedTactics={selectedTactics}
-        onConfirm={() => {
-          void saveSimulationSnapshot(context, 'Q3', 'in_progress');
-          void recordSimulationEvent({
-            runId: context.simulationId ?? '',
-            eventType: 'quarter_completed',
-            phase: 'Q3',
-            payload: {
-              quarter: 'Q3',
-              tacticCount: selectedTactics.length,
-              usedBudget,
-              remainingBudget,
-              bigBetSelected: Boolean(context.quarters.Q3.bigBetMade),
-            },
-          });
-          setShowDebrief(false);
-          completeQuarter('Q3');
-          router.push('/sim/q4');
-        }}
-      />
     </ImmersiveLayout>
   );
 }
