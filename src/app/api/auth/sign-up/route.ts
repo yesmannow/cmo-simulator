@@ -6,6 +6,11 @@ import { logger } from "@/lib/logger";
 
 const MAX_SIGNUP_BODY_BYTES = 32 * 1024;
 const MAX_EMAIL_LEN = 254;
+const MAX_NAME_LEN = 120;
+
+function normalizePersonName(raw: string): string {
+  return raw.trim().replace(/\s+/g, " ");
+}
 
 function publicSiteUrl(request: NextRequest): string {
   const fromEnv = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
@@ -55,7 +60,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { email?: string; password?: string };
+  let body: { email?: string; password?: string; firstName?: string; lastName?: string };
   try {
     body = await request.json();
   } catch {
@@ -64,6 +69,8 @@ export async function POST(request: NextRequest) {
 
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
+  const firstName = normalizePersonName(typeof body.firstName === "string" ? body.firstName : "");
+  const lastName = normalizePersonName(typeof body.lastName === "string" ? body.lastName : "");
 
   if (!email.includes("@") || email.length > MAX_EMAIL_LEN) {
     return NextResponse.json({ message: "Enter a valid email address." }, { status: 400, headers });
@@ -71,6 +78,14 @@ export async function POST(request: NextRequest) {
   if (password.length < 8 || password.length > 256) {
     return NextResponse.json({ message: "Password must be at least 8 characters." }, { status: 400, headers });
   }
+  if (!firstName.length || firstName.length > MAX_NAME_LEN) {
+    return NextResponse.json({ message: "Enter your first name." }, { status: 400, headers });
+  }
+  if (!lastName.length || lastName.length > MAX_NAME_LEN) {
+    return NextResponse.json({ message: "Enter your last name." }, { status: 400, headers });
+  }
+
+  const fullName = `${firstName} ${lastName}`;
 
   const site = publicSiteUrl(request);
   const redirectTo = `${site}/auth/callback?next=${encodeURIComponent("/sim/setup")}`;
@@ -79,7 +94,14 @@ export async function POST(request: NextRequest) {
     type: "signup",
     email,
     password,
-    options: { redirectTo },
+    options: {
+      redirectTo,
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        full_name: fullName,
+      },
+    },
   });
 
   if (error) {
@@ -109,6 +131,23 @@ export async function POST(request: NextRequest) {
       { message: "Could not create a confirmation link." },
       { status: 500, headers },
     );
+  }
+
+  const { error: profileError } = await admin.from("user_profiles").upsert(
+    {
+      user_id: userId,
+      email,
+      full_name: fullName,
+      selected_goals: [],
+      onboarding_answers: {},
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (profileError) {
+    logger.error("sign-up user_profiles upsert failed", profileError, { requestId });
+    await admin.auth.admin.deleteUser(userId);
+    return NextResponse.json({ message: "Could not finish account setup. Try again." }, { status: 500, headers });
   }
 
   const resend = new Resend(apiKey);

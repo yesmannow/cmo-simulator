@@ -7,6 +7,11 @@ export interface SimAuthSession {
   signedInAt: string;
 }
 
+/** Trim and collapse internal whitespace for signup name fields. */
+export function normalizePersonName(raw: string): string {
+  return raw.trim().replace(/\s+/g, " ");
+}
+
 /** User-facing copy for Supabase Auth errors (sign-in / sign-up / reset). */
 export function formatAuthErrorMessage(error: unknown): string {
   const e = error as Partial<AuthError> & { code?: string; status?: number };
@@ -72,43 +77,18 @@ export async function signInSimAuth(email: string, password: string): Promise<Si
   return session;
 }
 
-/** Absolute URL for OAuth / email link return (must match Supabase / GoTrue redirect allow list). */
-export function getOAuthCallbackUrl(nextPath: string): string {
-  const next = nextPath.startsWith("/") ? nextPath : `/${nextPath}`;
-  const origin =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3002").replace(/\/$/, "");
-  return `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
-}
-
-/** Browser-only: redirects to Google consent screen. Enable Google in Supabase Auth providers first. */
-export async function signInWithGoogleOAuth(nextPath: string): Promise<void> {
-  const supabase = createClient();
-  const redirectTo = getOAuthCallbackUrl(nextPath);
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo,
-      queryParams: { prompt: "select_account" },
-    },
-  });
-  if (error) throw error;
-  if (data?.url) {
-    window.location.assign(data.url);
-  }
-}
-
 async function signUpViaServerOrSupabase(
   email: string,
   password: string,
+  firstName: string,
+  lastName: string,
 ): Promise<SignUpSimAuthOutcome> {
   let apiPayload: { code?: string; message?: string } = {};
   try {
     const res = await fetch("/api/auth/sign-up", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, firstName, lastName }),
     });
     try {
       apiPayload = await res.json();
@@ -122,7 +102,18 @@ async function signUpViaServerOrSupabase(
 
     if (res.status === 503 && apiPayload.code === "email_not_configured") {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const fullName = `${firstName} ${lastName}`.trim();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: fullName,
+          },
+        },
+      });
       if (error) {
         return { kind: "error", message: formatAuthErrorMessage(error) };
       }
@@ -150,8 +141,13 @@ async function signUpViaServerOrSupabase(
   }
 }
 
-export async function signUpSimAuth(email: string, password: string): Promise<void> {
-  const outcome = await signUpViaServerOrSupabase(email, password);
+export async function signUpSimAuth(
+  email: string,
+  password: string,
+  firstName: string,
+  lastName: string,
+): Promise<void> {
+  const outcome = await signUpViaServerOrSupabase(email, password, firstName, lastName);
   if (outcome.kind === "error") {
     throw new Error(outcome.message);
   }
@@ -160,8 +156,10 @@ export async function signUpSimAuth(email: string, password: string): Promise<vo
 export async function signUpSimAuthWithOutcome(
   email: string,
   password: string,
+  firstName: string,
+  lastName: string,
 ): Promise<SignUpSimAuthOutcome> {
-  return signUpViaServerOrSupabase(email, password);
+  return signUpViaServerOrSupabase(email, password, firstName, lastName);
 }
 
 function passwordRecoveryRedirectUrl(): string {

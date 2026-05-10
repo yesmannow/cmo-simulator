@@ -14,6 +14,7 @@ import { calculateGrade, calculateOverallScore } from '@/lib/simulationInsights'
 import {
   formatAuthErrorMessage,
   getSimAuthSession,
+  normalizePersonName,
   signInSimAuth,
   signUpSimAuth,
   type SimAuthSession,
@@ -30,6 +31,8 @@ export default function DebriefPage() {
   const [authSession, setAuthSession] = useState<SimAuthSession | null>(null);
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [firstNameInput, setFirstNameInput] = useState('');
+  const [lastNameInput, setLastNameInput] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -95,8 +98,14 @@ export default function DebriefPage() {
       setAuthSession(session);
       setStatusMessage('Signed in. Save/export access enabled.');
     } catch {
+      const given = normalizePersonName(firstNameInput);
+      const family = normalizePersonName(lastNameInput);
+      if (!given.length || !family.length) {
+        setStatusMessage('Enter your first and last name to create a new account.');
+        return;
+      }
       try {
-        await signUpSimAuth(email, passwordInput);
+        await signUpSimAuth(email, passwordInput, given, family);
         setStatusMessage('Account created. Check your inbox to confirm, then sign in.');
       } catch (signUpErr) {
         setStatusMessage(formatAuthErrorMessage(signUpErr));
@@ -222,7 +231,30 @@ export default function DebriefPage() {
                 value={passwordInput}
                 onChange={(event) => setPasswordInput(event.target.value)}
               />
+              <input
+                name="given-name"
+                type="text"
+                autoComplete="given-name"
+                spellCheck={false}
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                placeholder="First name (for new accounts)"
+                value={firstNameInput}
+                onChange={(event) => setFirstNameInput(event.target.value)}
+              />
+              <input
+                name="family-name"
+                type="text"
+                autoComplete="family-name"
+                spellCheck={false}
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
+                placeholder="Last name (for new accounts)"
+                value={lastNameInput}
+                onChange={(event) => setLastNameInput(event.target.value)}
+              />
             </div>
+            <p className="mt-2 text-xs text-slate-500">
+              New accounts require first and last name. Existing users can leave those blank when signing in.
+            </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
