@@ -167,7 +167,12 @@ export function buildTeachingReport(context: SimulationContext): TeachingReport 
     .sort((a, b) => b.tactics - a.tactics)[0];
 
   const outcome = `Finished with ${finalShare.toFixed(1)}% market share, $${Math.round(totalRevenue).toLocaleString()} revenue, and $${Math.round(totalProfit).toLocaleString()} profit.`;
-  const why = `The strongest revenue contribution came in ${strongestQuarter.quarter}, with tactical volume peaking in ${mostTacticsQuarter.quarter}. Rubric highlights: growth ${rubric.growth_quality}, efficiency ${rubric.efficiency}, coherence ${rubric.strategic_coherence}, resilience ${rubric.resilience}, finish ${rubric.finish_quality} (each out of 100).`;
+  const rm = context.engineState.results.runtimeMetrics;
+  const whyRuntime =
+    rm != null
+      ? ` Latest engine tick: difficulty ${rm.difficultyLevel}; blended SOV ${(rm.blendedShareOfVoice * 100).toFixed(1)}%; traffic modifiers — competitive ×${rm.competitiveDragMultiplier.toFixed(3)}, audience fit ×${rm.audienceFitMultiplier.toFixed(3)}, repeat-tactic fatigue ×${rm.tacticFatigueMultiplier.toFixed(3)}.`
+      : "";
+  const why = `The strongest revenue contribution came in ${strongestQuarter.quarter}, with tactical volume peaking in ${mostTacticsQuarter.quarter}. Rubric highlights: growth ${rubric.growth_quality}, efficiency ${rubric.efficiency}, coherence ${rubric.strategic_coherence}, resilience ${rubric.resilience}, finish ${rubric.finish_quality} (each out of 100).${whyRuntime}`;
   const tradeoff = `Resource concentration improved execution depth but increased exposure to saturation and wildcard volatility. Board pressure balance (CEO/CFO/CMO) became the limiting factor in late quarters.`;
   const nextMove = `Run a replay with one deliberate portfolio shift: preserve your top-performing channel, reallocate 15-20% of spend to under-used channels, and compare rubric gains in efficiency and coherence—not only headline revenue.`;
   const growthLeaderTakeaway = `Use this simulation like a planning lab: tie budget decisions to explicit hypotheses, then judge outcomes on durable growth quality and execution resilience, not a single headline KPI.`;

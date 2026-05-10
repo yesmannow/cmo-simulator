@@ -46,6 +46,7 @@ import {
   SIMULATION_SCENARIOS,
   type SimulationScenarioIconKey,
 } from '@/lib/config/simulationScenarios';
+import type { DifficultyLevel } from '@/types';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
@@ -211,6 +212,19 @@ const BUDGET_GUIDANCE: Array<{
     track: 'accent-emerald-400',
   },
 ];
+
+function mapPreferredDifficultyToRuntime(
+  preferred: UserProfileFormState['preferredDifficulty'],
+): DifficultyLevel {
+  switch (preferred) {
+    case 'easy':
+      return 'beginner';
+    case 'hard':
+      return 'advanced';
+    default:
+      return 'intermediate';
+  }
+}
 
 function mapProfileFromApi(profile: Record<string, unknown> | null | undefined): UserProfileFormState {
   const rawGoals = profile?.selected_goals;
@@ -408,6 +422,7 @@ export default function SetupPage() {
           budgetAllocation: data.budgetAllocation,
           marketLandscape: scenario.marketLandscape,
           timeHorizon: scenario.timeHorizon,
+          difficulty: mapPreferredDifficultyToRuntime(profileDraft.preferredDifficulty),
         },
         kpis: scenario.startingKPIs,
         totalBudget: scenario.budget,
@@ -438,7 +453,7 @@ export default function SetupPage() {
 
       trackStart({
         industry: scenario.industry,
-        difficulty: 'intermediate',
+        difficulty: mapPreferredDifficultyToRuntime(profileDraft.preferredDifficulty),
         timeHorizon: scenario.timeHorizon,
         totalBudget: scenario.budget,
       });
@@ -490,6 +505,7 @@ export default function SetupPage() {
         },
         marketLandscape: demoScenario.marketLandscape,
         timeHorizon: demoScenario.timeHorizon,
+        difficulty: 'intermediate',
       },
       kpis: demoScenario.startingKPIs,
       totalBudget: demoScenario.budget,

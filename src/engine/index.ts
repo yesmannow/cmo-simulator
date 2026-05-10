@@ -1,9 +1,21 @@
-import { SimulationState, PlayerInput, MarketConditions, Channel } from '../types/engine';
+import {
+  SimulationState,
+  PlayerInput,
+  MarketConditions,
+  Channel,
+  EngineTickContext,
+} from '../types/engine';
 import type { Industry } from '@/types';
 import { calculateAdstockAll } from './adstock';
 import { applyHillTransformAll } from './saturation';
 import { applySynergy } from './synergy';
 import { safeDivide, clamp, validateCalculationResult } from '@/lib/utils/calculationHelpers';
+import {
+  SOV_EPSILON,
+  computeAudienceFitMultiplier,
+  getDifficultyRuntimeTuning,
+  strategyAudiencePresetToArchetype,
+} from '@/lib/engine/engineRuntimeTuning';
 
 // Channel-specific parameters
 const DECAY_RATES: Record<Channel, number> = {
@@ -91,8 +103,13 @@ const INDUSTRY_DATA: Record<string, {
 export function runSimulationTick(
   previousState: SimulationState,
   playerInputs: PlayerInput,
-  marketConditions: MarketConditions
+  marketConditions: MarketConditions,
+  tickContext?: EngineTickContext,
 ): SimulationState {
+  const difficulty = tickContext?.difficulty ?? 'intermediate';
+  const tuning = getDifficultyRuntimeTuning(difficulty);
+  const quarterTacticIds = tickContext?.quarterTacticIds ?? [];
+  const audienceArchetype = strategyAudiencePresetToArchetype(tickContext?.targetAudience);
   // Update adstock
   const newAdstock = calculateAdstockAll(
     playerInputs.channelBudgets,
@@ -115,7 +132,68 @@ export function runSimulationTick(
   // Apply synergy
   const synergisticResponses = applySynergy(saturatedResponses, activeChannels);
 
-  // Calculate traffic from each channel
+  // Raw traffic from each channel (before competitive / audience / fatigue modifiers)
+  const shareOfVoiceByChannel: Partial<Record<Channel, number>> = {};
+  let totalSpendForTick = 0;
+
+  for (const channel of Object.keys(synergisticResponses) as Channel[]) {
+    const spend = playerInputs.channelBudgets[channel] || 0;
+    if (spend > 0) totalSpendForTick += spend;
+  }
+
+  let blendedShareOfVoice = 1;
+  if (totalSpendForTick > 0) {
+    let sovAccum = 0;
+    for (const channel of Object.keys(synergisticResponses) as Channel[]) {
+      const spend = playerInputs.channelBudgets[channel] || 0;
+      if (spend <= 0) continue;
+      const competitor = marketConditions.competitorSpend[channel] || 0;
+      const sov = safeDivide(spend, spend + competitor + SOV_EPSILON, 1);
+      shareOfVoiceByChannel[channel] = sov;
+      sovAccum += (spend / totalSpendForTick) * sov;
+    }
+    blendedShareOfVoice = clamp(sovAccum, 0, 1);
+  }
+
+  const competitiveDragMultiplier = clamp(
+    tuning.dragFloor + tuning.dragSpan * blendedShareOfVoice,
+    0.5,
+    1,
+  );
+
+  const spendWeights: Partial<Record<Channel, number>> = {};
+  for (const channel of Object.keys(synergisticResponses) as Channel[]) {
+    const spend = playerInputs.channelBudgets[channel] || 0;
+    if (spend > 0) spendWeights[channel] = spend;
+  }
+
+  const audienceFitMultiplier = clamp(
+    computeAudienceFitMultiplier({
+      archetype: audienceArchetype,
+      channelWeights: spendWeights,
+      totalWeight: totalSpendForTick,
+    }),
+    0.85,
+    1.15,
+  );
+
+  const priorUses = previousState.tacticLifetimeUses ?? {};
+  let priorFatigueUnits = 0;
+  for (const tacticId of quarterTacticIds) {
+    priorFatigueUnits += priorUses[tacticId] ?? 0;
+  }
+  const tacticFatigueMultiplier = clamp(
+    1 - tuning.fatigueSensitivity * priorFatigueUnits,
+    tuning.fatigueClampMin,
+    1,
+  );
+
+  const combinedTrafficMultiplier = clamp(
+    competitiveDragMultiplier * audienceFitMultiplier * tacticFatigueMultiplier,
+    0.35,
+    1.25,
+  );
+
   const trafficSources: Record<Channel, number> = {} as Record<Channel, number>;
   let totalTraffic = 0;
 
@@ -125,11 +203,15 @@ export function runSimulationTick(
     const efficiency = TRAFFIC_EFFICIENCY[channel] || 0.01;
     const economicIndex = clamp(marketConditions.economicIndex, 0.1, 2.0); // Clamp economic index
 
-    // Response is 0-1 from Hill transform, multiply by spend and efficiency
-    const traffic = validateCalculationResult(
+    const rawTraffic = validateCalculationResult(
       response * spend * efficiency * economicIndex,
       `Traffic for ${channel}`,
-      0
+      0,
+    );
+    const traffic = validateCalculationResult(
+      rawTraffic * combinedTrafficMultiplier,
+      `Adjusted traffic for ${channel}`,
+      0,
     );
     trafficSources[channel] = traffic;
     totalTraffic += traffic;
@@ -138,11 +220,22 @@ export function runSimulationTick(
   // Ensure totalTraffic is valid
   totalTraffic = validateCalculationResult(totalTraffic, 'Total traffic', 0);
 
+  const runtimeMetrics = {
+    difficultyLevel: difficulty,
+    audienceArchetype,
+    blendedShareOfVoice,
+    shareOfVoiceByChannel,
+    competitiveDragMultiplier,
+    audienceFitMultiplier,
+    tacticFatigueMultiplier,
+    combinedTrafficMultiplier,
+  };
+
   // Calculate leads and conversions (like old engine)
   const leadRate = 0.05; // 5% of traffic becomes leads
   const baseConversionRate = 0.15; // 15% of leads convert
 
-  const leads = Math.floor(totalTraffic * leadRate);
+  const leads = Math.floor(totalTraffic * leadRate * tuning.funnelEfficiencyScalar);
   const conversions = Math.floor(leads * baseConversionRate);
 
   // Get industry data for realistic revenue calculation.
@@ -235,6 +328,11 @@ export function runSimulationTick(
   // Flow State
   const newFlowState = clamp((previousState.flowState || 50) + (totalSpend > 500000 ? -5 : 2), 0, 100);
 
+  const nextTacticLifetimeUses = { ...priorUses };
+  for (const tacticId of quarterTacticIds) {
+    nextTacticLifetimeUses[tacticId] = (nextTacticLifetimeUses[tacticId] ?? 0) + 1;
+  }
+
   // New results
   const results = {
     totalSales,
@@ -244,7 +342,8 @@ export function runSimulationTick(
     leads,
     conversions,
     channelContributions,
-    channelRoi
+    channelRoi,
+    runtimeMetrics,
   };
 
   // Return new state
@@ -253,6 +352,7 @@ export function runSimulationTick(
     industry: previousState.industry ?? configuredIndustry,
     marketConditions,
     adstock: newAdstock,
+    tacticLifetimeUses: nextTacticLifetimeUses,
     results,
     stressMeters,
     brandPosition: currentBrandPos,
@@ -280,6 +380,7 @@ export function initializeSimulationState(options?: { industry?: Industry }): Si
     industry: options?.industry ?? ("healthcare" as Industry),
     marketConditions: initialMarketConditions,
     adstock: initialAdstock,
+    tacticLifetimeUses: {},
     stressMeters: {
       ceo: 75,
       cfo: 75,

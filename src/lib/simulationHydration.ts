@@ -1,6 +1,12 @@
 import type { HydrationPatch, SimulationContext } from "@/lib/simMachine";
-import type { Industry } from "@/types";
-import type { Channel, MarketConditions, SimulationOutput, SimulationState } from "@/types/engine";
+import type { DifficultyLevel, Industry } from "@/types";
+import type {
+  Channel,
+  MarketConditions,
+  SimulationOutput,
+  SimulationRuntimeMetrics,
+  SimulationState,
+} from "@/types/engine";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -26,6 +32,73 @@ function mergeAdstock(
     if (typeof maybe === "number" && Number.isFinite(maybe)) merged[channel] = maybe;
   }
   return merged;
+}
+
+function mergeTacticLifetimeUses(
+  base: Record<string, number> | undefined,
+  patch: unknown,
+): Record<string, number> | undefined {
+  if (!isRecord(patch)) return base ? { ...base } : undefined;
+  const merged = { ...(base ?? {}) };
+  for (const key of Object.keys(patch)) {
+    const v = patch[key];
+    if (typeof v === "number" && Number.isFinite(v)) merged[key] = v;
+  }
+  return merged;
+}
+
+function parseDifficultyLevel(value: unknown): DifficultyLevel | undefined {
+  if (value === "beginner" || value === "intermediate" || value === "advanced") return value;
+  return undefined;
+}
+
+function mergeShareOfVoicePatch(
+  base: Partial<Record<Channel, number>>,
+  patch: unknown,
+): Partial<Record<Channel, number>> {
+  if (!isRecord(patch)) return { ...base };
+  const merged = { ...base } as Partial<Record<Channel, number>>;
+  for (const channel of Object.keys(patch)) {
+    const maybe = patch[channel];
+    if (typeof maybe === "number" && Number.isFinite(maybe)) {
+      (merged as Record<string, number>)[channel] = maybe;
+    }
+  }
+  return merged;
+}
+
+function mergeRuntimeMetrics(
+  base: SimulationRuntimeMetrics | undefined,
+  patch: unknown,
+): SimulationRuntimeMetrics | undefined {
+  if (!isRecord(patch)) return base;
+  const b = base;
+  const difficultyLevel = parseDifficultyLevel(patch.difficultyLevel) ?? b?.difficultyLevel ?? "intermediate";
+  const audienceArchetype =
+    typeof patch.audienceArchetype === "string" ? patch.audienceArchetype : b?.audienceArchetype ?? "balanced";
+
+  const blendedShareOfVoice =
+    typeof patch.blendedShareOfVoice === "number" && Number.isFinite(patch.blendedShareOfVoice)
+      ? patch.blendedShareOfVoice
+      : (b?.blendedShareOfVoice ?? 0);
+
+  const shareOfVoiceByChannel = mergeShareOfVoicePatch(b?.shareOfVoiceByChannel ?? {}, patch.shareOfVoiceByChannel);
+
+  const pickNum = (key: string, fallback: number) =>
+    typeof patch[key] === "number" && Number.isFinite(patch[key] as number)
+      ? (patch[key] as number)
+      : (b?.[key as keyof SimulationRuntimeMetrics] as number | undefined) ?? fallback;
+
+  return {
+    difficultyLevel,
+    audienceArchetype,
+    blendedShareOfVoice,
+    shareOfVoiceByChannel,
+    competitiveDragMultiplier: pickNum("competitiveDragMultiplier", 1),
+    audienceFitMultiplier: pickNum("audienceFitMultiplier", 1),
+    tacticFatigueMultiplier: pickNum("tacticFatigueMultiplier", 1),
+    combinedTrafficMultiplier: pickNum("combinedTrafficMultiplier", 1),
+  };
 }
 
 function mergeMarketConditions(
@@ -60,6 +133,10 @@ function mergeSimulationOutput(
     ? mergeAdstock(base.channelRoi, patch.channelRoi)
     : base.channelRoi;
 
+  const runtimeMetrics = patch.runtimeMetrics
+    ? mergeRuntimeMetrics(base.runtimeMetrics, patch.runtimeMetrics)
+    : base.runtimeMetrics;
+
   return {
     ...base,
     ...(typeof patch.totalSales === "number" ? { totalSales: patch.totalSales } : null),
@@ -70,6 +147,7 @@ function mergeSimulationOutput(
     ...(typeof patch.conversions === "number" ? { conversions: patch.conversions } : null),
     channelContributions,
     channelRoi,
+    ...(runtimeMetrics ? { runtimeMetrics } : null),
   };
 }
 
@@ -127,6 +205,10 @@ function mergeEngineState(
 
   const results = patch.results ? mergeSimulationOutput(base.results, patch.results) : base.results;
 
+  const tacticLifetimeUses = patch.tacticLifetimeUses
+    ? mergeTacticLifetimeUses(base.tacticLifetimeUses, patch.tacticLifetimeUses)
+    : base.tacticLifetimeUses;
+
   const stressMeters = isRecord(patch.stressMeters)
     ? {
         ceo: typeof patch.stressMeters.ceo === "number" ? patch.stressMeters.ceo : base.stressMeters?.ceo ?? 75,
@@ -148,6 +230,7 @@ function mergeEngineState(
     marketConditions,
     adstock,
     results,
+    ...(tacticLifetimeUses ? { tacticLifetimeUses } : null),
     stressMeters,
     brandPosition,
     ...(typeof patch.trustMultiplier === "number" ? { trustMultiplier: patch.trustMultiplier } : null),

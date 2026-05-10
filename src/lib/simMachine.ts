@@ -3,7 +3,7 @@ import { TalentCandidate, BigBetOption } from './talentMarket';
 
 import { runSimulationTick, initializeSimulationState } from '../engine';
 import { SimulationState, Channel, PlayerInput, MarketConditions } from '../types/engine';
-import type { TimeHorizon, MarketLandscape, Industry } from '@/types';
+import type { TimeHorizon, MarketLandscape, Industry, DifficultyLevel } from '@/types';
 import { mergeSimulationContext } from "@/lib/simulationHydration";
 import { buildQuarterMarketConditions } from "@/lib/marketConditions";
 import type {
@@ -30,6 +30,8 @@ export interface SimulationContext {
     budgetAllocation?: Record<string, number>;
     marketLandscape?: MarketLandscape;
     timeHorizon?: TimeHorizon;
+    /** Runtime simulation tuning (`runSimulationTick`). Persisted with saves; omitted → intermediate in engine. */
+    difficulty?: DifficultyLevel;
   };
 
   // Quarterly data
@@ -901,10 +903,16 @@ export function processQuarterAdvance(
   });
 
   // 3. Run Simulation Tick (calculates Adstock, Synergy, Hill Transform)
+  const difficulty = context.strategy.difficulty ?? 'intermediate';
   const newEngineState = runSimulationTick(
     { ...oldEngineState, industry: context.strategy.industry ?? oldEngineState.industry },
     playerInputs,
     marketConditions,
+    {
+      difficulty,
+      targetAudience: context.strategy.targetAudience,
+      quarterTacticIds: quarter.tactics.map((t) => t.id),
+    },
   );
 
   // 4. Calculate Wildcard Impacts
