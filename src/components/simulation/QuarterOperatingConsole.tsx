@@ -4,6 +4,7 @@ import { useId, useMemo, useState } from 'react';
 import type React from 'react';
 import { AlertTriangle, ArrowRight, BarChart3, Check, Circle, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp, WalletCards } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Drawer } from '@/components/ui/Drawer';
@@ -55,7 +56,6 @@ export function QuarterOperatingConsole({
     () => buildSimulationForecast(context, quarter, selectedTactics),
     [context, quarter, selectedTactics],
   );
-  const [activeSheet, setActiveSheet] = useState<null | 'forecast' | 'logic' | 'channels'>(null);
   const [briefTactic, setBriefTactic] = useState<EnrichedTactic | null>(null);
   const finalizeHintMobileId = useId();
   const finalizeHintDesktopId = useId();
@@ -110,48 +110,15 @@ export function QuarterOperatingConsole({
             </div>
           </div>
         </div>
-
-        <div className="border-t border-slate-200 px-4 pb-4 pt-2 lg:hidden">
-          <div className="grid grid-cols-4 gap-2">
-            {forecast.deltaFromCurrent.slice(0, 4).map((metric) => (
-              <div key={metric.label} className="rounded-2xl bg-slate-50 px-2.5 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{metric.label}</p>
-                <p className="mt-1 text-sm font-semibold tracking-tight text-slate-950">
-                  {formatForecastValue(metric.value, metric.format)}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 h-[92px] overflow-hidden rounded-[22px] border border-slate-200 bg-white px-2 py-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={forecast.confidenceBand} margin={{ top: 6, right: 0, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="mobileForecast" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0f172a" stopOpacity={0.24} />
-                    <stop offset="100%" stopColor="#0f172a" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="expected" stroke="#0f172a" strokeWidth={2} fill="url(#mobileForecast)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-3 grid grid-cols-1 gap-2">
-            <MobileActionButton
-              label="Insights"
-              meta={`${planReadiness} · ${forecast.riskWarnings.length} warnings`}
-              onClick={() => setActiveSheet('forecast')}
-            />
-          </div>
-        </div>
       </header>
 
       <div className="hidden lg:block">
         <ExecutivePressure currentQuarter={quarter} context={context} />
       </div>
 
-      <section className="hidden gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_360px]">
-        <Panel className="p-0">
-          <div className="border-b border-slate-200 px-5 py-4">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:gap-6">
+        <Panel className="min-w-0 p-0" id="operating-pulse">
+          <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-950">Operating pulse</h2>
@@ -165,12 +132,19 @@ export function QuarterOperatingConsole({
               </span>
             </div>
           </div>
+          {selectedTactics.length === 0 && (
+            <div className="border-b border-slate-200 px-4 py-3 sm:px-5">
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-900">
+                No moves selected. Add one move to see a true plan projection.
+              </div>
+            </div>
+          )}
           <div className="grid gap-px bg-slate-200 sm:grid-cols-2 lg:grid-cols-5">
             {forecast.deltaFromCurrent.map((metric) => (
               <MetricTile key={metric.label} metric={metric} />
             ))}
           </div>
-          <div className="border-t border-slate-200 px-5 py-4">
+          <div className="border-t border-slate-200 px-4 py-4 sm:px-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-slate-950">Confidence band</h3>
@@ -180,7 +154,7 @@ export function QuarterOperatingConsole({
                 Revenue spread {formatForecastValue(forecast.scenarioSpread.revenue, 'currency')}
               </Badge>
             </div>
-            <div className="mt-4 h-[220px]">
+            <div className="mt-4 h-[180px] sm:h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={forecast.confidenceBand} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -203,95 +177,7 @@ export function QuarterOperatingConsole({
           </div>
         </Panel>
 
-        <Panel>
-          <div className="flex items-center gap-2">
-            <LineChart className="h-5 w-5 text-slate-700" />
-            <h2 className="text-lg font-semibold text-slate-950">Decision brief</h2>
-          </div>
-          <div className="mt-4 space-y-3">
-            <PlanSignal label="Moves selected" value={selectedTactics.length.toString()} />
-            <PlanSignal label="Forecast notes" value={forecast.explanationBullets.length.toString()} />
-            <PlanSignal label="Open risks" value={forecast.riskWarnings.length.toString()} tone={forecast.riskWarnings.length > 0 ? 'warning' : 'neutral'} />
-            <PlanSignal label="Scenario spread" value={formatForecastValue(forecast.scenarioSpread.profit, 'currency')} tone={forecast.scenarioSpread.profit > 0 ? 'warning' : 'neutral'} />
-          </div>
-        </Panel>
-      </section>
-
-      <section className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
-        <Panel className="@container min-w-0">
-          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 max-w-prose">
-              <h2 className="text-lg font-semibold text-slate-950">Baseline vs selected plan</h2>
-              <p className="text-sm leading-5 text-slate-600">Baseline now vs projected quarter-end after selected moves.</p>
-            </div>
-            <Badge variant="outline" className="w-fit shrink-0 border-slate-300 bg-slate-50 text-slate-700">
-              {forecast.topRisk}
-            </Badge>
-          </div>
-          {selectedTactics.length === 0 && (
-            <div className="mt-4 min-w-0 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-900">
-              No moves selected. Add one move to see a true plan projection.
-            </div>
-          )}
-          <div className="mt-4 min-w-0 divide-y divide-slate-200 overflow-x-auto">
-            {forecast.comparisonRows.map((row) => (
-              <div
-                key={row.label}
-                className="grid grid-cols-1 items-start gap-3 py-3 text-sm @[28rem]:grid-cols-[minmax(0,6.5rem)_minmax(0,1fr)_minmax(0,1fr)] @[28rem]:items-center"
-              >
-                <span className="min-w-0 break-words font-semibold leading-snug text-slate-950">{row.label}</span>
-                <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Current baseline</p>
-                  <p className="mt-1 break-words font-semibold leading-snug text-slate-700">{row.currentValue}</p>
-                </div>
-                <div className="min-w-0 rounded-md border border-slate-950 bg-slate-950 px-3 py-2 text-white">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Selected plan</p>
-                  <p className="mt-1 break-words font-semibold leading-snug">{row.plannedValue}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-
-        <Panel>
-          <h2 className="text-lg font-semibold text-slate-950">Scenario readout</h2>
-          <div className="mt-4 space-y-3">
-            {forecast.scenarios.map((scenario) => (
-              <div key={scenario.key} className="rounded-md border border-slate-200 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">{scenario.label}</p>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{scenario.confidenceLabel}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-slate-950">{formatForecastValue(scenario.projectedKpis.revenue, 'currency')}</p>
-                    <p className="text-xs text-slate-500">Revenue</p>
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-2 text-sm text-slate-700">
-                  {scenario.drivers.map((driver) => (
-                    <p key={driver}>{driver}</p>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Panel>
-
-        <Panel>
-          <h2 className="text-lg font-semibold text-slate-950">Top risk</h2>
-          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">
-            {forecast.topRisk}
-          </p>
-          <div className="mt-4 space-y-3">
-            {forecast.scenarios.map((scenario) => (
-              <div key={scenario.key} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{scenario.label}</p>
-                <p className="mt-1 text-sm text-slate-700">{scenario.topRisk}</p>
-              </div>
-            ))}
-          </div>
-        </Panel>
+        <DecisionBriefPanel forecast={forecast} planReadiness={planReadiness} selectedCount={selectedTactics.length} />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -515,60 +401,6 @@ export function QuarterOperatingConsole({
             </div>
           </Panel>
 
-          <Panel>
-            <div className="flex items-center gap-2">
-              <LineChart className="h-5 w-5 text-slate-700" />
-              <h2 className="text-lg font-semibold text-slate-950">Forecast logic</h2>
-            </div>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
-              {forecast.explanationBullets.map((bullet) => (
-                <li key={bullet} className="flex gap-2">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
-                  <span>{bullet}</span>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-
-          <Panel>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-700" />
-              <h2 className="text-lg font-semibold text-slate-950">Risks to manage</h2>
-            </div>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
-              {forecast.riskWarnings.map((warning) => (
-                <li
-                  key={warning}
-                  className="min-w-0 break-words rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950"
-                >
-                  {warning}
-                </li>
-              ))}
-            </ul>
-          </Panel>
-
-          <Panel>
-            <div className="flex items-center gap-2">
-              <PieChart className="h-5 w-5 text-slate-700" />
-              <h2 className="text-lg font-semibold text-slate-950">Channel readout</h2>
-            </div>
-            {forecast.channelBreakdown.length === 0 ? (
-              <p className="mt-4 text-sm leading-6 text-slate-600">Add moves to generate a channel forecast.</p>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {forecast.channelBreakdown.slice(0, 4).map((channel) => (
-                  <div key={channel.channel} className="rounded-md border border-slate-200 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold uppercase text-slate-800">{channel.channel}</p>
-                      <p className="text-sm font-semibold text-slate-950">${Math.round(channel.contribution).toLocaleString()}</p>
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">Projected ROI {channel.roi.toFixed(0)}% · adstock ${Math.round(channel.adstock).toLocaleString()}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
-
           <CMOMentor selectedTactics={selectedTactics} remainingBudget={budgetSummary.remainingBudget} currentQuarter={quarter} context={context} />
 
           {specialActions}
@@ -594,164 +426,6 @@ export function QuarterOperatingConsole({
         </aside>
       </section>
 
-      <MobileSheet open={activeSheet === 'forecast'} onOpenChange={(open) => setActiveSheet(open ? 'forecast' : null)}>
-        <MobileSheetContent className="max-h-[86vh]">
-          <MobileSheetHeader>
-            <div>
-              <MobileSheetTitle>Forecast readout</MobileSheetTitle>
-              <MobileSheetDescription>Downside, base, and upside quarter outcomes for the current plan.</MobileSheetDescription>
-            </div>
-            <MobileSheetDismissButton />
-          </MobileSheetHeader>
-          <div className="space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
-            <div className="h-[220px] rounded-[24px] border border-slate-200 bg-slate-50 p-3">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={forecast.confidenceBand} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="forecastSheetFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0f172a" stopOpacity={0.28} />
-                      <stop offset="100%" stopColor="#0f172a" stopOpacity={0.04} />
-                    </linearGradient>
-                  </defs>
-                  <Tooltip
-                    cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }}
-                    contentStyle={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 10 }}
-                    formatter={(value: number, key: string) => [
-                      formatForecastValue(value, 'currency'),
-                      key === 'lower' ? 'Downside' : key === 'upper' ? 'Upside' : 'Base',
-                    ]}
-                  />
-                  <Area type="monotone" dataKey="upper" stroke="#cbd5e1" fill="#e2e8f0" fillOpacity={0.35} />
-                  <Area type="monotone" dataKey="lower" stroke="#cbd5e1" fill="#ffffff" fillOpacity={1} />
-                  <Area type="monotone" dataKey="expected" stroke="#0f172a" fill="url(#forecastSheetFill)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-3">
-              {forecast.scenarios.map((scenario) => (
-                <div key={scenario.key} className="rounded-[24px] border border-slate-200 bg-white p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-950">{scenario.label}</p>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">{scenario.confidenceLabel}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-slate-950">{formatForecastValue(scenario.projectedKpis.revenue, 'currency')}</p>
-                      <p className="text-xs text-slate-500">Revenue</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 space-y-2 text-sm text-slate-700">
-                    {scenario.drivers.map((driver) => (
-                      <p key={driver}>{driver}</p>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-950">Decision logic</h3>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
-                {forecast.explanationBullets.map((bullet) => (
-                  <li key={bullet}>{bullet}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-950">Risks</h3>
-              <div className="mt-3 space-y-2">
-                {forecast.riskWarnings.map((warning) => (
-                  <div key={warning} className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                    {warning}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-950">Channel readout</h3>
-              <div className="mt-3 space-y-2">
-                {forecast.channelBreakdown.length === 0 ? (
-                  <p className="text-sm text-slate-600">Add moves to generate a channel forecast.</p>
-                ) : (
-                  forecast.channelBreakdown.map((channel) => (
-                    <div key={channel.channel} className="rounded-2xl border border-slate-200 px-3 py-2">
-                      <p className="text-xs font-semibold uppercase text-slate-600">{channel.channel}</p>
-                      <p className="text-sm font-semibold text-slate-950">${Math.round(channel.contribution).toLocaleString()}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </MobileSheetContent>
-      </MobileSheet>
-
-      <MobileSheet open={activeSheet === 'logic'} onOpenChange={(open) => setActiveSheet(open ? 'logic' : null)}>
-        <MobileSheetContent className="max-h-[86vh]">
-          <MobileSheetHeader>
-            <div>
-              <MobileSheetTitle>Risks and decision logic</MobileSheetTitle>
-              <MobileSheetDescription>Why the current plan shifts the modeled outcome and what it puts at risk.</MobileSheetDescription>
-            </div>
-            <MobileSheetDismissButton />
-          </MobileSheetHeader>
-          <div className="space-y-4 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
-            <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
-              {forecast.topRisk}
-            </div>
-            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-950">Forecast logic</h3>
-              <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-700">
-                {forecast.explanationBullets.map((bullet) => (
-                  <li key={bullet} className="flex gap-2">
-                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
-                    <span>{bullet}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-[24px] border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-semibold text-slate-950">Warnings</h3>
-              <div className="mt-3 space-y-3">
-                {forecast.riskWarnings.map((warning) => (
-                  <div key={warning} className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                    {warning}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </MobileSheetContent>
-      </MobileSheet>
-
-      <MobileSheet open={activeSheet === 'channels'} onOpenChange={(open) => setActiveSheet(open ? 'channels' : null)}>
-        <MobileSheetContent className="max-h-[86vh]">
-          <MobileSheetHeader>
-            <div>
-              <MobileSheetTitle>Channel readout</MobileSheetTitle>
-              <MobileSheetDescription>Contribution, ROI, and adstock signal from the selected plan.</MobileSheetDescription>
-            </div>
-            <MobileSheetDismissButton />
-          </MobileSheetHeader>
-          <div className="space-y-3 overflow-y-auto px-5 pb-[calc(env(safe-area-inset-bottom)+18px)]">
-            {forecast.channelBreakdown.length === 0 ? (
-              <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-600">
-                Add moves to generate a channel forecast.
-              </div>
-            ) : (
-              forecast.channelBreakdown.map((channel) => (
-                <div key={channel.channel} className="rounded-[24px] border border-slate-200 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold uppercase text-slate-800">{channel.channel}</p>
-                    <p className="text-sm font-semibold text-slate-950">${Math.round(channel.contribution).toLocaleString()}</p>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500">Projected ROI {channel.roi.toFixed(0)}% · adstock ${Math.round(channel.adstock).toLocaleString()}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </MobileSheetContent>
-      </MobileSheet>
-
       <MobileSheet open={Boolean(briefTactic)} onOpenChange={(open) => (!open ? setBriefTactic(null) : null)}>
         <MobileSheetContent className="max-h-[84vh]">
           {briefTactic && (
@@ -776,9 +450,162 @@ export function QuarterOperatingConsole({
   );
 }
 
-function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
+function DecisionBriefPanel({
+  forecast,
+  planReadiness,
+  selectedCount,
+}: {
+  forecast: ReturnType<typeof buildSimulationForecast>;
+  planReadiness: string;
+  selectedCount: number;
+}) {
+  const notesCount = forecast.explanationBullets.length;
+  const risksCount = forecast.riskWarnings.length;
+  const profitSpreadTone = forecast.scenarioSpread.profit > 0 ? 'warning' : 'neutral';
+
   return (
-    <section className={cn('rounded-lg border border-slate-200 bg-white p-5 shadow-sm', className)}>
+    <Panel className="min-w-0 lg:self-start" id="decision-brief">
+      <div className="flex items-center gap-2">
+        <LineChart className="h-5 w-5 shrink-0 text-slate-700" />
+        <h2 className="text-lg font-semibold text-slate-950">Decision brief</h2>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        Expand sections for full forecast notes, scenarios, risks, and channel mix.
+      </p>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <span className={cn(
+          'rounded-md px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide',
+          planReadiness === 'Budget needs review' ? 'bg-red-50 text-red-700'
+            : selectedCount > 0 ? 'bg-emerald-50 text-emerald-700'
+              : 'bg-slate-100 text-slate-600',
+        )}>
+          {planReadiness}
+        </span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+          {selectedCount} moves
+        </span>
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-medium text-slate-700">
+          {notesCount} notes
+        </span>
+        <span className={cn(
+          'rounded-md border px-2.5 py-1 text-xs font-medium',
+          risksCount > 0 ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-700',
+        )}>
+          {risksCount} risks
+        </span>
+        <span className={cn(
+          'rounded-md border px-2.5 py-1 text-xs font-medium',
+          profitSpreadTone === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-700',
+        )}>
+          Profit spread {formatForecastValue(forecast.scenarioSpread.profit, 'currency')}
+        </span>
+      </div>
+
+      <Accordion type="multiple" className="mt-4 w-full border-t border-slate-200 pt-1">
+        <AccordionItem value="forecast-notes" className="border-slate-200">
+          <AccordionTrigger className="min-h-11 items-center py-3 text-base font-semibold text-slate-950 hover:no-underline [&>svg]:text-slate-500">
+            Full forecast notes
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-4">
+            <ul className="space-y-3 text-sm leading-6 text-slate-700">
+              {forecast.explanationBullets.map((bullet) => (
+                <li key={bullet} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-slate-400" />
+                  <span>{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="risks" className="border-slate-200">
+          <AccordionTrigger className="min-h-11 items-center py-3 text-base font-semibold text-slate-950 hover:no-underline [&>svg]:text-slate-500">
+            Open risks
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-4">
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">
+              {forecast.topRisk}
+            </p>
+            {forecast.riskWarnings.length === 0 ? (
+              <p className="text-sm text-slate-600">No additional modeled warnings for this plan.</p>
+            ) : (
+              <ul className="space-y-2">
+                {forecast.riskWarnings.map((warning) => (
+                  <li
+                    key={warning}
+                    className="min-w-0 break-words rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950"
+                  >
+                    {warning}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="scenarios" className="border-slate-200">
+          <AccordionTrigger className="min-h-11 items-center py-3 text-base font-semibold text-slate-950 hover:no-underline [&>svg]:text-slate-500">
+            Scenario outcomes
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-4">
+            {forecast.scenarios.map((scenario) => (
+              <div key={scenario.key} className="rounded-md border border-slate-200 p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-950">{scenario.label}</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">{scenario.confidenceLabel}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-slate-950">{formatForecastValue(scenario.projectedKpis.revenue, 'currency')}</p>
+                    <p className="text-xs text-slate-500">Revenue</p>
+                  </div>
+                </div>
+                <div className="mt-2 grid gap-1.5 text-sm text-slate-700">
+                  {scenario.drivers.map((driver) => (
+                    <p key={driver}>{driver}</p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="channels" className="border-slate-200 border-b-0">
+          <AccordionTrigger className="min-h-11 items-center py-3 text-base font-semibold text-slate-950 hover:no-underline [&>svg]:text-slate-500">
+            <span className="flex items-center gap-2">
+              <PieChart className="h-4 w-4 shrink-0 text-slate-600" aria-hidden />
+              Channel mix
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="pb-4">
+            {forecast.channelBreakdown.length === 0 ? (
+              <p className="text-sm leading-6 text-slate-600">Add moves to generate a channel forecast.</p>
+            ) : (
+              <div className="space-y-3">
+                {forecast.channelBreakdown.map((channel) => (
+                  <div key={channel.channel} className="rounded-md border border-slate-200 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold uppercase text-slate-800">{channel.channel}</p>
+                      <p className="text-sm font-semibold text-slate-950">${Math.round(channel.contribution).toLocaleString()}</p>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Projected ROI {channel.roi.toFixed(0)}% · adstock ${Math.round(channel.adstock).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Panel>
+  );
+}
+
+function Panel({ children, className, id }: { children: React.ReactNode; className?: string; id?: string }) {
+  return (
+    <section id={id} className={cn('rounded-lg border border-slate-200 bg-white p-5 shadow-sm', className)}>
       {children}
     </section>
   );
@@ -807,15 +634,6 @@ function MetricTile({ metric }: { metric: ReturnType<typeof buildSimulationForec
       <p className={cn('mt-1 text-sm font-medium', isPositive ? 'text-emerald-700' : 'text-red-700')}>
         {isPositive ? '+' : ''}{formatForecastValue(metric.delta, metric.format)}
       </p>
-    </div>
-  );
-}
-
-function PlanSignal({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'neutral' | 'warning' }) {
-  return (
-    <div className="flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-      <span className="text-sm text-slate-600">{label}</span>
-      <span className={cn('text-sm font-semibold', tone === 'warning' ? 'text-amber-700' : 'text-slate-950')}>{value}</span>
     </div>
   );
 }
@@ -870,27 +688,6 @@ function BudgetFact({ label, value, isWarning = false }: { label: string; value:
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <p className={cn('mt-1 font-semibold', isWarning ? 'text-red-700' : 'text-slate-950')}>{value}</p>
     </div>
-  );
-}
-
-function MobileActionButton({
-  label,
-  meta,
-  onClick,
-}: {
-  label: string;
-  meta: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-[22px] border border-slate-200 bg-white px-3 py-3 text-left shadow-sm"
-    >
-      <p className="text-xs font-semibold text-slate-950">{label}</p>
-      <p className="mt-1 text-[11px] leading-5 text-slate-500">{meta}</p>
-    </button>
   );
 }
 
