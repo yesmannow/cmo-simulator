@@ -15,6 +15,8 @@ export type SaveSimulationSnapshotResult = {
   ok: boolean;
   status: number;
   retriable: boolean;
+  /** False when no browser Supabase session was found — caller skipped POST. Distinct from HTTP success. */
+  persisted: boolean;
 };
 
 async function postSaveOnce(body: string, signal?: AbortSignal): Promise<Response> {
@@ -28,6 +30,9 @@ async function postSaveOnce(body: string, signal?: AbortSignal): Promise<Respons
 
 /**
  * Persists the current simulation to the server with bounded retries and UI sync events.
+ *
+ * When `getSimAuthSession()` returns null, returns `{ ok: true, persisted: false }` (HTTP not attempted).
+ * Call sites that require a real save must check `persisted` or gate with their own session guard.
  */
 export async function saveSimulationSnapshot(
   context: SimulationContext,
@@ -38,7 +43,7 @@ export async function saveSimulationSnapshot(
   const session = await getSimAuthSession();
   if (!session) {
     dispatchSaveSync({ state: "idle", at: new Date().toISOString() });
-    return { ok: true, status: 204, retriable: false };
+    return { ok: true, status: 204, retriable: false, persisted: false };
   }
 
   const payload = toPersistedRunPayload(
@@ -53,7 +58,7 @@ export async function saveSimulationSnapshot(
     const msg = "You appear offline. Reconnect, then use Retry save in the header.";
     dispatchSaveSync({ state: "offline", message: msg, at: new Date().toISOString() });
     logger.warn("saveSimulationSnapshot skipped: offline");
-    return { ok: false, status: 0, retriable: true };
+    return { ok: false, status: 0, retriable: true, persisted: false };
   }
 
   dispatchSaveSync({ state: "saving", at: new Date().toISOString() });
@@ -64,7 +69,7 @@ export async function saveSimulationSnapshot(
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     if (options?.signal?.aborted) {
       dispatchSaveSync({ state: "idle", at: new Date().toISOString() });
-      return { ok: false, status: 499, retriable: false };
+      return { ok: false, status: 499, retriable: false, persisted: false };
     }
 
     try {
@@ -73,7 +78,7 @@ export async function saveSimulationSnapshot(
 
       if (response.ok) {
         dispatchSaveSync({ state: "saved", at: new Date().toISOString() });
-        return { ok: true, status: response.status, retriable: false };
+        return { ok: true, status: response.status, retriable: false, persisted: true };
       }
 
       const retriable = response.status >= 500 || response.status === 429;
@@ -95,7 +100,7 @@ export async function saveSimulationSnapshot(
           message: clientMsg,
           at: new Date().toISOString(),
         });
-        return { ok: false, status: response.status, retriable };
+        return { ok: false, status: response.status, retriable, persisted: false };
       }
 
       const delay = BASE_DELAY_MS * 2 ** (attempt - 1);
@@ -103,7 +108,7 @@ export async function saveSimulationSnapshot(
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
         dispatchSaveSync({ state: "idle", at: new Date().toISOString() });
-        return { ok: false, status: 499, retriable: false };
+        return { ok: false, status: 499, retriable: false, persisted: false };
       }
       lastStatus = 0;
       lastRetriable = true;
@@ -114,7 +119,7 @@ export async function saveSimulationSnapshot(
           message: "Network error while saving. Check your connection and retry.",
           at: new Date().toISOString(),
         });
-        return { ok: false, status: 0, retriable: true };
+        return { ok: false, status: 0, retriable: true, persisted: false };
       }
       await sleep(BASE_DELAY_MS * 2 ** (attempt - 1));
     }
@@ -125,5 +130,5 @@ export async function saveSimulationSnapshot(
     message: "Could not save after several tries.",
     at: new Date().toISOString(),
   });
-  return { ok: false, status: lastStatus, retriable: lastRetriable };
+  return { ok: false, status: lastStatus, retriable: lastRetriable, persisted: false };
 }

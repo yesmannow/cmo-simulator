@@ -1,3 +1,4 @@
+/** Maps XState `state.value` strings to App Router paths — phases owned by `simulationMachine` in `simMachine.ts`. */
 export type SimulationPhase =
   | "idle"
   | "strategySession"

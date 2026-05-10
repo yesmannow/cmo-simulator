@@ -1,4 +1,5 @@
 import type { SimulationContext } from "@/lib/simMachine";
+import type { SimulationTeachingGrade } from "@/lib/simulationContracts";
 
 export interface TeachingReport {
   outcome: string;
@@ -8,6 +9,7 @@ export interface TeachingReport {
   growthLeaderTakeaway: string;
 }
 
+/** Numeric score used for persistence, PDF, and intelligence breakdowns — not the same formula as `finalResults.score`. */
 export function calculateOverallScore(context: SimulationContext): number {
   const quarters = [context.quarters.Q1, context.quarters.Q2, context.quarters.Q3, context.quarters.Q4];
   const totalRevenue = quarters.reduce((sum, quarter) => sum + (quarter.results.revenue || 0), 0);
@@ -16,7 +18,7 @@ export function calculateOverallScore(context: SimulationContext): number {
   return Math.round((totalRevenue / 2000000) * 50 + finalMarketShare * 2);
 }
 
-export function calculateGrade(score: number): "A+" | "A" | "B" | "C" | "D" | "F" {
+export function calculateGrade(score: number): SimulationTeachingGrade {
   if (score >= 95) return "A+";
   if (score >= 85) return "A";
   if (score >= 75) return "B";

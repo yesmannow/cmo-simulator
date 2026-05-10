@@ -24,6 +24,13 @@ import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
 import { buildSimulationDebriefReport } from '@/lib/simulationReport';
 import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
+/**
+ * Debrief route sits behind `src/app/sim/layout.tsx`, which already requires a Supabase user (`getUser` on the server).
+ *
+ * `authSession` here is the browser client's `getSession()` snapshot — it can be briefly empty during hydration even though the layout gate passed.
+ * Dismiss panel copy refers to skipping **explicit unlock/sign-up UX**, not being anonymous on `/sim`.
+ * Authoritative save identity still flows through `getSimAuthSession()` inside `saveSimulationSnapshot` and matches POST `/api/simulations/save` checks.
+ */
 export default function DebriefPage() {
   const router = useRouter();
   const { context, completeDebrief, restartSimulation } = useSimulation();
@@ -124,8 +131,12 @@ export default function DebriefPage() {
     try {
       const result = await saveSimulationSnapshot(context, 'debrief', 'completed');
 
-      if (!result.ok) {
-        setStatusMessage('Could not save this run. Check the save status in the header and try Retry.');
+      if (!result.ok || !result.persisted) {
+        setStatusMessage(
+          !result.persisted
+            ? 'Session not ready to save yet — refresh or retry save from the header.'
+            : 'Could not save this run. Check the save status in the header and try Retry.',
+        );
         return;
       }
 

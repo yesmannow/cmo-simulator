@@ -73,10 +73,12 @@ export async function POST(request: NextRequest) {
 
     const payloadEmailNorm = payload.userEmail.trim().toLowerCase();
     const sessionEmailNorm = (user.email ?? "").trim().toLowerCase();
+    // Mirror client body fields with cookie session so a tampered JSON body cannot save under another user.
     if (payload.userId !== user.id || payloadEmailNorm !== sessionEmailNorm) {
       return NextResponse.json({ error: "Payload identity mismatch." }, { status: 403, headers });
     }
 
+    // Uses teaching/persistence scoring (`simulationInsights`), same as `toPersistedRunPayload`.
     const scoreBreakdowns = buildSimulationScoreBreakdowns(payload.context);
     const breakdownRows = scoreBreakdowns.map((breakdown) => ({
       breakdown_id: crypto.randomUUID(),

@@ -1,4 +1,5 @@
 import type { SimulationContext, Tactic } from '@/lib/simMachine';
+import type { SimulationKpiSnapshot, SimulationTeachingGrade } from '@/lib/simulationContracts';
 import { buildTeachingReport, calculateGrade, calculateOverallScore, type TeachingReport } from '@/lib/simulationInsights';
 
 export interface SimulationReportUser {
@@ -25,14 +26,8 @@ export interface SimulationDebriefReport {
   generatedAt: string;
   user?: SimulationReportUser;
   score: number;
-  grade: ReturnType<typeof calculateGrade>;
-  finalKpis: {
-    revenue: number;
-    profit: number;
-    marketShare: number;
-    customerSatisfaction: number;
-    brandAwareness: number;
-  };
+  grade: SimulationTeachingGrade;
+  finalKpis: SimulationKpiSnapshot;
   summary: TeachingReport;
   quarterRows: SimulationReportQuarterRow[];
   topDecisions: SimulationReportDecision[];

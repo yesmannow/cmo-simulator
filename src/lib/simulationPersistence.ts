@@ -1,4 +1,5 @@
 import type { SimulationContext } from "@/lib/simMachine";
+import type { SimulationTeachingGrade } from "@/lib/simulationContracts";
 import { buildTeachingReport, calculateGrade, calculateOverallScore } from "@/lib/simulationInsights";
 
 export interface PersistedRunPayload {
@@ -11,7 +12,7 @@ export interface PersistedRunPayload {
   currentPhase: string;
   status: "in_progress" | "completed";
   overallScore: number;
-  grade: "A+" | "A" | "B" | "C" | "D" | "F";
+  grade: SimulationTeachingGrade;
   debrief: ReturnType<typeof buildTeachingReport>;
   context: SimulationContext;
   savedAtIso: string;

@@ -5,6 +5,7 @@ import { SimulationProvider } from '@/components/simulation/SimulationProvider';
 import { CrmShell } from '@/components/simulation/CrmShell';
 import { createClient } from '@/lib/supabase/server';
 
+/** `/sim/*` server gate for signed-in users. Runtime ownership map: docs/SIMULATION_RUNTIME_AUTHORITY.md */
 export default async function SimulationLayout({
   children,
 }: {

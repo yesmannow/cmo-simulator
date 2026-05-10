@@ -22,7 +22,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const [hydrationError, setHydrationError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load state from local storage on mount
+    // Hydrates XState context before routing; separate from Supabase run persistence (`saveSimulationSnapshot`).
     const saved = localStorage.getItem('cmo-sim-state-v2');
     if (saved) {
       try {

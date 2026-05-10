@@ -6,6 +6,10 @@ import { SimulationState, Channel, PlayerInput, MarketConditions } from '../type
 import type { TimeHorizon, MarketLandscape, Industry } from '@/types';
 import { mergeSimulationContext } from "@/lib/simulationHydration";
 import { buildQuarterMarketConditions } from "@/lib/marketConditions";
+import type {
+  SimulationKpiSnapshot,
+  SimulationMachineGrade,
+} from "@/lib/simulationContracts";
 
 // Types for simulation context and events
 export interface SimulationContext {
@@ -40,14 +44,8 @@ export interface SimulationContext {
   totalBudget: number;
   remainingBudget: number;
 
-  // KPIs tracking
-  kpis: {
-    revenue: number;
-    profit: number;
-    marketShare: number;
-    customerSatisfaction: number;
-    brandAwareness: number;
-  };
+  // KPIs tracking (cumulative revenue/profit; other fields mirror latest quarter — see processQuarterAdvance)
+  kpis: SimulationKpiSnapshot;
 
   // Wildcard events
   wildcards: WildcardEvent[];
@@ -76,13 +74,7 @@ export interface QuarterData {
   wildcardEvents: WildcardEvent[];
   talentHired?: TalentCandidate[];
   bigBetMade?: BigBetOption;
-  results: {
-    revenue: number;
-    profit: number;
-    marketShare: number;
-    customerSatisfaction: number;
-    brandAwareness: number;
-  };
+  results: SimulationKpiSnapshot;
 }
 
 export interface Tactic {
@@ -156,19 +148,13 @@ export interface WildcardChoice {
 }
 
 export interface SimulationResults {
-  finalKPIs: {
-    revenue: number;
-    profit: number;
-    marketShare: number;
-    customerSatisfaction: number;
-    brandAwareness: number;
-  };
+  finalKPIs: SimulationKpiSnapshot;
   quarterlyBreakdown: Record<string, QuarterData>;
   strategicDecisions: unknown[];
   wildcardEvents: WildcardEvent[];
   recommendations: string[];
   score: number;
-  grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  grade: SimulationMachineGrade;
 }
 
 export type HydrationPatch =
@@ -846,9 +832,8 @@ export const simulationMachine = createMachine({
           target: 'completed',
         },
         SAVE_SIMULATION: {
-          actions: () => {
-            // No-op: Persistent storage removed
-          },
+          // Persistence lives outside XState: quarter routes / debrief call `saveSimulationSnapshot` → POST `/api/simulations/save`.
+          actions: () => {},
         },
       },
     },
@@ -1008,8 +993,7 @@ function calculateFinalResults(context: SimulationContext): SimulationResults {
     (context.kpis.brandAwareness) * 0.25 // Brand awareness weight: 25%
   );
 
-  // Determine grade
-  let grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  let grade: SimulationMachineGrade;
   if (score >= 90) grade = 'A';
   else if (score >= 80) grade = 'B';
   else if (score >= 70) grade = 'C';

@@ -1,292 +1,168 @@
 # CMO Simulator
 
-An advanced, educational marketing strategy game built with Next.js 15. The **CMO Simulator** is a powerful, interactive Chief Marketing Officer simulation tool designed to teach advanced marketing strategy, complex systems thinking, and resource allocation. Assume the role of a CMO, navigating a 12-month campaign with realistic challenges, strategic decisions, and complex market dynamics where you're accountable to the CEO, CFO, and your team.
+Educational marketing strategy simulation built with **Next.js 15** (App Router) and **TypeScript**. You run a four-quarter year as CMO: allocate budget to tactics, react to wildcard events, optionally place a strategic bet in Q3, and review outcomes against revenue, profit, market share, satisfaction, and brand awareness.
 
-## 🌟 Comprehensive Overview
+## Overview
 
-The CMO Simulator acts as a digital twin "sandbox" where players deploy marketing budgets across various channels, balancing growth, profitability, and team morale. It integrates realistic marketing math (diminishing returns, compounding effects, tactic synergy, and adstock/marketing carryover effects) into a gamified educational experience. Players must navigate market shifts, manage internal crises via an adaptive crisis engine, and optimize their strategy tech tree to build a resilient and highly effective marketing engine.
+The app combines a **game layer** (XState state machine, budgets, scenarios) with a **marketing-mix style engine**: channel spend maps into **adstock** (carryover), **Hill saturation** (diminishing returns), **synergy** across active channels, then a simple traffic → leads → conversions funnel that drives **incremental revenue**. Quarter results merge engine output with tactic expectations and wildcard impacts.
 
-## 🎮 What Makes This Special
+For a **fine-grained formula and variable reference** (maintained alongside the code), see **[docs/SIMULATION_ENGINE_REFERENCE.md](./docs/SIMULATION_ENGINE_REFERENCE.md)**.
 
-The CMO Simulator is not just another portfolio project—it's a comprehensive learning platform that demonstrates:
+## What’s in the product
 
-- **Complex Systems Thinking**: Realistic marketing math with compounding effects, diminishing returns, and hidden metrics
-- **Educational Design**: Learn by doing through consequences, not lectures
-- **Full-Stack Mastery**: Next.js 15, Supabase, TypeScript, advanced state management
-- **Game Design**: Engaging mechanics that make learning marketing strategy fun
-- **Strategic Depth**: Multiple paths to success, no single "correct" strategy
+- **Scenarios & setup** (`/sim/setup`): Turnaround, Hyper-Growth SaaS, and Challenger presets with budgets and starting KPIs; company identity, landscape, and strategy inputs.
+- **Quarter play** (`/sim/q1` … `q4`): Add/remove tactics, triggers wildcards, complete quarters to advance the machine.
+- **Forecast** (quarter UI): Projects outcomes using the same `processQuarterAdvance` path as live play, with downside/base/upside scenario adjustments.
+- **Executive / board messaging**: Contextual pressure copy from KPIs and quarter (`ExecutivePressure`); engine also tracks **stress meters** and flow state on `engineState` for pipeline/analytics views.
+- **Wildcards & morale**: Events with choices; impacts can affect KPIs plus **morale** and **brandEquity** on context.
+- **Big bets (Q3)**: Randomized success/failure from risk-weighted probability (`talentMarket.ts`).
+- **Debrief & PDF**: End-of-run summary; downloadable PDF via **@react-pdf/renderer** (`/sim/debrief`).
+- **Persistence**: Authenticated users can save/load runs through Supabase (`cmo_simulation_runs` and related RPC/migrations).
+- **Themes**: Brand/theme selection via user profile (`user_profiles`).
 
-## 🛠️ Simulation Features & Tools
+Some narrative in **[docs/design/SIMULATION_DESIGN_SPEC.md](./docs/design/SIMULATION_DESIGN_SPEC.md)** describes stretch goals (e.g. full crisis engine, tech tree, synthetic personas). Treat that doc as **design intent**; behavior is defined by the implementation and **SIMULATION_ENGINE_REFERENCE.md**.
 
-### 📈 Advanced Scoring & Simulation Engine
-- **Hidden Metrics**: Brand Equity and Team Morale affect all outcomes.
-- **Compounding Growth & Adstock**: SEO investments grow exponentially, while marketing carryover (Adstock) ensures past campaigns continue affecting the present.
-- **Tactic Synergy**: Deploying complementary tactics (e.g., Performance marketing immediately following Brand Awareness flights) reveals powerful synergy multipliers.
-- **Diminishing Returns**: Paid ads saturate with increased spend.
-- **Share of Voice Model**: Market share is dynamically calculated based on competitive spending.
-- **Multiple Success Paths**: Win through growth, efficiency, or brand building.
+## Tech stack
 
-### 🤖 "Board of Directors" AI & Constraints
-The game enforces strategic balance through three pressure meters:
-- **CEO (Growth Focus)**: Demands increasing market share and bolder category creation.
-- **CFO (Profit Focus)**: Demands high MROI, low CAC, and tight financial margins.
-- **CMO / Team (Sanity Focus)**: Demands stable workloads and skill alignment to prevent burnout.
-*Dropping any meter to zero triggers a "Board Meeting" defense event.*
+| Area | Choice |
+|------|--------|
+| Framework | Next.js **15.5** (App Router) |
+| UI | React **19**, Tailwind **4**, shadcn/Radix primitives |
+| Simulation | **XState** (`simMachine.ts`), **Zustand** (demo store / engine playground) |
+| Engine | `src/engine/` — adstock, Hill transform, synergy (`synergy`, `saturation`, `adstock`) |
+| Auth & DB | **Supabase** (Auth, Postgres, RLS) |
+| Charts | Recharts |
+| PDF | @react-pdf/renderer |
+| Deploy | Vercel-friendly; optional **Cloudflare** via OpenNext (`build:cloudflare`) |
 
-### 🔮 Interactive Holographic Tooltips
-- Discover deeper marketing insights and contextual information through beautifully animated, glassmorphism-styled global tooltips attached to tactical nodes and key metrics across the War Room and KPI dashboard.
+## Getting started
 
-### ⚡ The Crisis Engine (Adaptive Difficulty)
-The simulator detects if your strategy is becoming too comfortable and unleashes randomized constraints:
-- **Supply Chain Shocks**: Inventory drops, forcing a pivot in messaging.
-- **Customer data incident**: Sensitive data exposure drives scrutiny; trust drops until comms, legal, and security responses align.
-- **Competitor Price Wars**: Triggers a new Nash Equilibrium where total market value shrinks.
-- **Dynamic Wildcard Events**: Context-aware events based on your industry, market landscape, and performance (e.g. key resignations, website outages, press features).
+### Prerequisites
 
-### 🧬 Strategy Tech Tree (MarTech Stack)
-- Upgrade infrastructure (e.g., AI Personalization) via capital investments that yield permanent conversion multipliers, teaching the trade-off between operating expenses and capital investments.
-- **Hiring vs. Outsourcing**: Balance fixed vs. variable costs by bringing talent in-house versus hiring agencies.
+- **Node.js 20+** recommended (works with modern Next.js 15 toolchains)
+- **npm**
+- A **Supabase** project if you use auth and saved runs
 
-### 🧪 Digital Twin "Sandbox" & A/B Testing
-- **Synthetic Personas**: Dry-run limited budgets and view localized CTR reactions before blindly spending millions (teaching Agile Marketing).
-- **A/B Test Mini-Game**: Choose between ad variations, learn why one performs better, and see the real impact on campaign metrics (±25% CPA, ±35% conversions). Industry-specific tests included.
-
-### 🏢 Phase 0: Strategic Foundation
-- **Company Naming**: Personalize your venture
-- **Time Horizon Selection**: 1-year sprint, 3-year growth, or 5-year long game
-- **Industry Choice**: Healthcare, Legal Services, or E-commerce
-- **Market Landscape**: Choose your battlefield (Disruptor, Crowded Field, or Open Frontier)
-- **Budget Allocation**: Strategic distribution across Brand Awareness, Lead Generation, and Conversion Optimization
-
-### 📊 Tactical Data & Visualizations
-- **Sonar Radar (Perceptual Mapping)**: Displays your brand's position relative to the customer's "Ideal Point".
-- **Risk Indicator Slider**: Adjust brand aggression vs. margin stability, which feeds directly into the Stochastic probability engine.
-- **Campaign Debrief**: Post-simulation analysis with deep insights, decision timelines, and educational feedback. Includes downloadable PDF reports.
-- **Leaderboards**: Global rankings by Strategy Score with percentile rankings and industry benchmarks.
-
-### 🎨 Theme System ✅
-- 5 beautiful brand themes (Aurora Tech, Heritage Serif, Clinic Clean, Forest Nature, Sunset Warm)
-- CSS custom properties for dynamic theming
-- Theme persistence to user profiles
-
-## Setup Instructions
-
-### 1. Environment Variables
-
-Create a `.env.local` file in the root directory:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-### 2. Supabase Database Setup
-
-1. Create a new Supabase project
-2. Run the SQL commands from `supabase-schema-enhanced.sql` in your Supabase SQL editor
-3. This will create:
-   - `profiles` table for user theme preferences
-   - `simulations_enhanced` table with all Phase 0 variables
-   - `quarterly_results` for performance tracking
-   - `decision_points` for Campaign Debrief
-   - `wildcard_events`, `tactics_used`, `talent_hires`, `big_bets`, `ab_test_results`
-   - Row Level Security policies
-   - Views for leaderboard and analytics
-   - Functions for percentile calculation
-
-### 3. Install Dependencies
+### 1. Install
 
 ```bash
 npm install
 ```
 
-### 4. Run Development Server
+### 2. Environment variables
+
+Create `.env.local` in the repo root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+### 3. Database
+
+Apply SQL in **`supabase/migrations/`** in order on your Supabase project (SQL Editor or CLI). This repo uses **`cmo_simulation_runs`**, save RPCs, and optional intelligence tables—see the migration filenames starting with dates.
+
+**Legacy / optional:** Root-level **`supabase-schema-enhanced.sql`** and **`setup-database.md`** describe an older expanded schema (profiles, leaderboard views, etc.). The live app’s profile API expects **`user_profiles`**; align your database with the migrations and APIs you actually use.
+
+Verify saved-run plumbing when wired:
+
+```bash
+npm run verify:db
+```
+
+### 4. Development server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3002](http://localhost:3002) to see the application.
+Opens **http://localhost:3002** (see `package.json` scripts).
 
-## Project Structure
+### Useful scripts
 
-```
-src/
-├── app/
-│   ├── dashboard/          # Protected dashboard page
-│   ├── login/             # Authentication login page
-│   ├── signup/            # User registration page
-│   ├── globals.css        # Global styles with theme variables
-│   └── page.tsx           # Landing page
-├── components/
-│   ├── ui/                # shadcn/ui components
-│   ├── BrandPicker.tsx    # Theme selection component
-│   └── LogoutButton.tsx   # Authentication logout
-├── lib/
-│   └── supabase/          # Supabase client configurations
-│       ├── client.ts      # Browser client
-│       ├── server.ts      # Server client
-│       └── middleware.ts  # Auth middleware
-└── middleware.ts          # Next.js middleware for route protection
-```
+| Script | Purpose |
+|--------|---------|
+| `npm run dev` | Dev server with Turbopack on port 3002 |
+| `npm run build` | Production build |
+| `npm run start` | Start production server on 3002 |
+| `npm run lint` | ESLint |
+| `npm run test` | Jest |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run build:cloudflare` | OpenNext build + Cloudflare output fix |
+| `npm run verify:db` | Check simulation DB helpers |
 
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 15 with App Router & Turbopack
-- **Language**: TypeScript with full type safety
-- **Authentication**: Supabase Auth with SSR sessions
-- **Database**: Supabase PostgreSQL with Row Level Security
-- **Styling**: Tailwind CSS 4 with CSS custom properties
-- **UI Components**: shadcn/ui (Radix UI primitives)
-- **Animation**: Framer Motion for smooth transitions
-- **State Management**: XState for simulation state machine
-- **Charts**: Recharts for data visualization
-- **Icons**: Lucide React
-- **Forms**: React Hook Form with Zod validation
-
-## 📁 Project Structure
+## Project structure
 
 ```
 src/
 ├── app/
+│   ├── page.tsx                 # Root entry
+│   ├── landing/                 # Marketing landing
+│   ├── auth/                    # sign-in (includes signup mode), callback, update-password
 │   ├── sim/
-│   │   ├── setup/              # Phase 0: Company setup
-│   │   ├── strategy/           # Strategy session
-│   │   ├── q1/ q2/ q3/ q4/    # Quarterly gameplay
-│   │   ├── debrief/[id]/      # Campaign analysis
-│   │   └── page.tsx           # Simulation hub
-│   ├── dashboard/             # User dashboard
-│   ├── leaderboard/           # Global rankings
-│   └── api/                   # API routes
+│   │   ├── setup/               # Scenario & company setup
+│   │   ├── strategy/            # Strategy session
+│   │   ├── q1/ … q4/            # Quarterly operating UI
+│   │   ├── debrief/             # Results & PDF
+│   │   ├── analytics/ pipeline/ campaigns/ credits/ simulations/
+│   │   └── layout.tsx           # Sim shell
+│   ├── api/
+│   │   ├── simulations/         # Save, load, list runs
+│   │   ├── profile/             # user_profiles
+│   │   ├── auth/
+│   │   └── ...
+│   └── engine-demo/             # Direct engine / store playground
 ├── components/
-│   ├── ui/                    # shadcn/ui components
-│   ├── ABTestMiniGame.tsx     # A/B test component
-│   ├── BrandPicker.tsx        # Theme selector
-│   └── ...
+│   ├── simulation/              # Quarter UI, debrief PDF, modals, KPI surfaces
+│   └── ui/                      # Shared primitives
+├── engine/                      # Adstock, saturation, synergy, tick
 ├── lib/
-│   ├── scoringEngine.ts       # Complex scoring math
-│   ├── advancedWildcards.ts   # Dynamic events
-│   ├── simMachine.ts          # XState state machine
-│   ├── tactics.ts             # Marketing tactics library
-│   ├── talentMarket.ts        # Hiring system
-│   ├── database/              # Supabase utilities
-│   └── supabase/              # Auth & client setup
-└── types/                     # TypeScript definitions
+│   ├── simMachine.ts            # XState machine & processQuarterAdvance
+│   ├── marketConditions.ts      # Quarter market inputs
+│   ├── simulationForecast.ts    # Forecast & scenarios
+│   ├── simulationPersistence.ts # Save payload shapes
+│   ├── enhancedWildcards.ts     # Wildcard content
+│   ├── talentMarket.ts        # Big bets & talent
+│   ├── store.ts                 # Zustand demo store
+│   └── supabase/                # Clients & middleware helpers
+├── middleware.ts                # Next middleware (e.g. Supabase session refresh)
+└── types/                       # Shared TS types
 ```
 
-## 🎓 Educational Philosophy
+## Documentation
 
-The CMO Simulator teaches marketing strategy through:
+| Doc | Purpose |
+|-----|---------|
+| [docs/SIMULATION_ENGINE_REFERENCE.md](./docs/SIMULATION_ENGINE_REFERENCE.md) | Formulas, variables, and code paths for the simulation |
+| [docs/SIMULATION_FLOW_AND_PEDAGOGY.md](./docs/SIMULATION_FLOW_AND_PEDAGOGY.md) | User journey by stage, actions/options per route, debrief outputs, teaching intent |
+| [QUICKSTART.md](./QUICKSTART.md) | Step-by-step local setup (verify paths against this README) |
+| [setup-database.md](./setup-database.md) | Legacy enhanced schema notes |
+| [docs/design/SIMULATION_DESIGN_SPEC.md](./docs/design/SIMULATION_DESIGN_SPEC.md) | Product/design vision |
 
-1. **Experiential Learning**: Learn by doing, see immediate consequences
-2. **Strategic Trade-offs**: Every decision has pros and cons
-3. **Multiple Paths**: No single "correct" strategy - win through growth, efficiency, or brand building
-4. **Contextual Education**: Insights appear when relevant, not as lectures
-5. **Progressive Complexity**: Start simple (Q1), build to advanced strategy (Q4)
+## Deployment
 
-### Key Marketing Concepts Taught
+### Vercel
 
-- **Share of Voice**: How spending relative to competitors determines market share
-- **Compounding Growth**: Why SEO/content investments grow exponentially
-- **Diminishing Returns**: How paid ads become less efficient at scale
-- **Brand Equity**: The long-term value of brand building
-- **Creative Testing**: Why some ads outperform others
-- **Strategic Response**: How to handle competitive threats and opportunities
-- **Resource Allocation**: Balancing short-term gains vs. long-term value
+1. Connect the Git repo and set **environment variables** (`NEXT_PUBLIC_SUPABASE_*`).
+2. Build command: `npm run build` (default).
 
-## 📚 Documentation
+### Cloudflare Pages (OpenNext)
 
-- **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)**: Comprehensive technical guide
-- **[supabase-schema-enhanced.sql](./supabase-schema-enhanced.sql)**: Complete database schema
-- **README.md** (this file): Quick start and overview
+Use **`npm run build:cloudflare`** (see `package.json`) and the OpenNext + **`nodejs_compat`** compatibility flag workflow described for Cloudflare; output is under **`.open-next`**.
 
-## 🚀 Deployment
+Community reference: [OpenNext Cloudflare](https://opennext.js.org/cloudflare/get-started).
 
-### Vercel (Recommended)
+## Roadmap (ideas)
 
-1. Push to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. Deploy
+- Align **QUICKSTART.md** and **setup-database.md** fully with migrations-first DB setup
+- Tutorial/onboarding pass tied to first `/sim/setup` visit
+- Deeper use of engine **`competitorSpend`** in the tick (today mainly forecast/context)
+- Achievements, sharing, and exports as needed for your GTM
 
-### Environment Variables for Production
+## Contributing
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_production_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_production_anon_key
-```
+Issues and PRs are welcome. Keep simulation math changes documented in **SIMULATION_ENGINE_REFERENCE.md**.
 
-### Cloudflare Pages Deployment
+## License
 
-This project is configured for deployment to Cloudflare Pages using the **OpenNext adapter** (`@opennextjs/cloudflare`), NOT the default `@cloudflare/next-on-pages` package.
-
-> ⚠️ **Important:** Do NOT use the default "Next.js" framework preset settings in Cloudflare Pages. The default preset uses `@cloudflare/next-on-pages` with a different build output directory. This project requires the OpenNext adapter settings below.
-
-**Cloudflare Pages Dashboard Build Configuration:**
-
-| Setting | Value |
-|---------|-------|
-| **Framework preset** | `None` |
-| **Build command** | `npx opennextjs-cloudflare build` |
-| **Build output directory** | `.open-next` |
-| **Root directory** | `/` (leave default) |
-
-**Compatibility Flags (Required):**
-- Navigate to: Settings → Functions → Compatibility flags
-- Add `nodejs_compat` for **both** Production and Preview environments
-
-**Steps:**
-1. Connect your GitHub repository to Cloudflare Pages
-2. **Framework preset**: Select "None"
-3. **Build command**: Set to `npx opennextjs-cloudflare build`
-4. **Build output directory**: Set to `.open-next`
-5. Add your environment variables:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-6. In Settings → Functions → Compatibility flags, add `nodejs_compat` for both production and preview
-7. (Optional) Enable build comments in Settings → Builds & deployments to get build status and preview links on pull requests
-8. Deploy!
-
-For more information, see the [OpenNext Cloudflare documentation](https://opennext.js.org/cloudflare/get-started).
-
-## 🎯 Roadmap
-
-### Current Phase: Core Simulation ✅
-- [x] Phase 0 setup with company naming
-- [x] Advanced scoring engine
-- [x] A/B test mini-game
-- [x] Dynamic wildcard events
-- [x] Campaign debrief
-- [x] Leaderboard system
-
-### Next Phase: Enhanced Features
-- [ ] PDF report generation (Puppeteer)
-- [ ] Email automation (n8n.io or Zapier)
-- [ ] Social sharing with Open Graph images
-- [ ] Achievement system integration
-- [ ] Tutorial/onboarding flow
-- [ ] Mobile optimization
-
-### Future Phases
-- [ ] Multiplayer mode (compete in real-time)
-- [ ] Custom industries
-- [ ] AI-powered competitors
-- [ ] Advanced analytics dashboard
-- [ ] Certification program
-- [ ] API for data export
-
-## 🤝 Contributing
-
-This is a portfolio project, but suggestions and feedback are welcome! Open an issue or reach out.
-
-## 📄 License
-
-MIT License - feel free to use this as inspiration for your own projects.
-
-## 🙏 Acknowledgments
-
-Built with modern web technologies and inspired by the need for practical marketing education through gamification.
-
----
-
-**Built by [Your Name]** | [Portfolio](your-portfolio-url) | [LinkedIn](your-linkedin) | [Twitter](your-twitter)
+MIT
