@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Briefcase, Users } from 'lucide-react';
 import { useSimulation } from '@/hooks/useSimulation';
-import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { getTacticsForQuarter } from '@/lib/tactics';
 import type { Tactic } from '@/lib/simMachine';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
@@ -115,7 +115,7 @@ export default function Q2Page() {
         quarter="Q2"
         title="Scale what is working without losing control"
         subtitle="Use second-quarter budget to increase reach, handle market pressure, and avoid overcommitting the team."
-        availableTactics={SAMPLE_TACTICS.slice(4, 10)}
+        availableTactics={getTacticsForQuarter('Q2')}
         selectedTactics={selectedTactics}
         onAddTactic={handleAddTactic}
         onRemoveTactic={handleRemoveTactic}

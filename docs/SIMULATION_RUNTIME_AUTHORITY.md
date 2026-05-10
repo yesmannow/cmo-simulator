@@ -10,6 +10,10 @@ This note maps **where truth lives** for the playable simulation. Product copy a
 | Routing from machine phase → URL | `src/lib/simulationRouting.ts` (`resolveSimulationPath`) |
 | Adstock, saturation, synergy, tick math | `src/engine/` (see `docs/SIMULATION_ENGINE_REFERENCE.md`) |
 | Quarter market inputs | `src/lib/marketConditions.ts` |
+| Playable scenarios (IDs, KPIs, mandates) | `src/lib/config/simulationScenarios.ts` (`SIMULATION_SCENARIOS`) |
+| Tactic & wildcard catalog + quarter tactic rosters | `src/lib/config/tacticCatalog.ts` (via `src/lib/tactics.ts` helpers) |
+| Strategy-session presets (channels, audiences, positioning) | `src/lib/config/strategySessionOptions.ts` |
+| Profile difficulty preference ↔ engine difficulty bridge | `src/lib/config/simulationDifficultyModes.ts` |
 
 ## Client shell
 

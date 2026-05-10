@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSimulation } from '@/hooks/useSimulation';
-import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { getTacticsForQuarter } from '@/lib/tactics';
 import type { Tactic } from '@/lib/simMachine';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { QuarterOperatingConsole } from '@/components/simulation/QuarterOperatingConsole';
@@ -39,7 +39,7 @@ export default function Q1Page() {
         quarter="Q1"
         title="Set the first-quarter growth foundation"
         subtitle="Choose a focused mix that can create early signal while preserving enough budget for learning and course correction."
-        availableTactics={SAMPLE_TACTICS.slice(0, 6)}
+        availableTactics={getTacticsForQuarter('Q1')}
         selectedTactics={selectedTactics}
         onAddTactic={handleAddTactic}
         onRemoveTactic={handleRemoveTactic}

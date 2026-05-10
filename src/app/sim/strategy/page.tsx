@@ -9,16 +9,16 @@ import type { LucideIcon } from 'lucide-react';
 import {
   ArrowRight,
   DollarSign,
-  Globe,
-  Handshake,
   Megaphone,
-  Newspaper,
-  Presentation,
   Target,
-  Tv,
   Users,
 } from 'lucide-react';
 
+import {
+  STRATEGY_AUDIENCE_PRESETS,
+  STRATEGY_CHANNEL_OPTIONS,
+  STRATEGY_POSITIONING_PRESETS,
+} from '@/lib/config/strategySessionOptions';
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -38,33 +38,6 @@ type StrategyFormData = {
   customPositioning: string;
 };
 
-const CHANNEL_OPTIONS = [
-  { id: 'digital', name: 'Digital Marketing', icon: Globe, description: 'Paid digital, web acquisition, and measurable demand capture.' },
-  { id: 'social', name: 'Social Media', icon: Megaphone, description: 'Organic and paid social momentum, community, and visibility.' },
-  { id: 'traditional', name: 'Traditional Media', icon: Tv, description: 'Broadcast and broad-reach brand investment.' },
-  { id: 'content', name: 'Content Marketing', icon: Newspaper, description: 'Thought leadership, education, and long-tail audience capture.' },
-  { id: 'events', name: 'Events & Experiences', icon: Presentation, description: 'Field marketing, launches, activations, and in-person demand.' },
-  { id: 'partnerships', name: 'Partnerships', icon: Handshake, description: 'Distribution leverage, channel relationships, and co-marketing.' },
-];
-
-const AUDIENCE_OPTIONS = [
-  'Young Professionals (25-35)',
-  'Families with Children',
-  'Tech-Savvy Millennials',
-  'Budget-Conscious Consumers',
-  'Premium/Luxury Seekers',
-  'Small Business Owners',
-];
-
-const POSITIONING_OPTIONS = [
-  'Premium Quality Leader',
-  'Best Value for Money',
-  'Innovation & Technology',
-  'Sustainability & Ethics',
-  'Customer Service Excellence',
-  'Convenience & Speed',
-];
-
 export default function StrategySessionPage() {
   const router = useRouter();
   const { context, setStrategy, completeStrategySession, startSimulation } = useSimulation();
@@ -81,7 +54,7 @@ export default function StrategySessionPage() {
   const [mobileStep, setMobileStep] = useState<1 | 2 | 3>(1);
   const [channelDetailsId, setChannelDetailsId] = useState<string | null>(null);
 
-  const selectedChannel = channelDetailsId ? CHANNEL_OPTIONS.find((c) => c.id === channelDetailsId) ?? null : null;
+  const selectedChannel = channelDetailsId ? STRATEGY_CHANNEL_OPTIONS.find((c) => c.id === channelDetailsId) ?? null : null;
 
   const handleChannelToggle = (channelId: string) => {
     const nextChannels = formData.primaryChannels.includes(channelId)
@@ -268,7 +241,7 @@ export default function StrategySessionPage() {
               </div>
 
               <div className="grid gap-3">
-                {AUDIENCE_OPTIONS.map((audience) => (
+                {STRATEGY_AUDIENCE_PRESETS.map((audience) => (
                   <Button
                     key={audience}
                     variant="outline"
@@ -335,7 +308,7 @@ export default function StrategySessionPage() {
               </div>
 
               <div className="grid gap-3">
-                {POSITIONING_OPTIONS.map((positioning) => (
+                {STRATEGY_POSITIONING_PRESETS.map((positioning) => (
                   <Button
                     key={positioning}
                     variant="outline"
@@ -403,7 +376,7 @@ export default function StrategySessionPage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {CHANNEL_OPTIONS.map((channel) => {
+              {STRATEGY_CHANNEL_OPTIONS.map((channel) => {
                 const selected = formData.primaryChannels.includes(channel.id);
                 return (
                   <div
@@ -459,7 +432,7 @@ export default function StrategySessionPage() {
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-4">Tactical Matrix Channels</p>
                 <div className="flex flex-wrap gap-3">
                   {formData.primaryChannels.map((channelId: string) => {
-                    const channel = CHANNEL_OPTIONS.find(c => c.id === channelId);
+                    const channel = STRATEGY_CHANNEL_OPTIONS.find(c => c.id === channelId);
                     return (
                       <Badge key={channelId} variant="secondary" className="bg-white text-slate-700 border-slate-200 px-3 py-1 text-sm font-semibold">
                         {channel?.name}

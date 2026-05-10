@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle } from 'lucide-react';
 import { useSimulation } from '@/hooks/useSimulation';
-import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { getTacticsForQuarter } from '@/lib/tactics';
 import type { Tactic } from '@/lib/simMachine';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
@@ -76,7 +76,7 @@ export default function Q4Page() {
         quarter="Q4"
         title="Make the final quarter count"
         subtitle="Prioritize the moves that strengthen the annual result, explain the tradeoff, and produce a useful final debrief."
-        availableTactics={SAMPLE_TACTICS.slice(12, 18)}
+        availableTactics={getTacticsForQuarter('Q4')}
         selectedTactics={selectedTactics}
         onAddTactic={handleAddTactic}
         onRemoveTactic={handleRemoveTactic}

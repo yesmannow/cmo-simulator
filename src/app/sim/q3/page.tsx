@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Target } from 'lucide-react';
 import { useSimulation } from '@/hooks/useSimulation';
-import { SAMPLE_TACTICS } from '@/lib/tactics';
+import { getTacticsForQuarter } from '@/lib/tactics';
 import type { Tactic } from '@/lib/simMachine';
 import { calculateEnhancedWildcardImpact, type EnhancedWildcardEvent } from '@/lib/enhancedWildcards';
 import { getEnhancedWildcardForQuarter } from '@/lib/wildcardHelpers';
@@ -97,7 +97,7 @@ export default function Q3Page() {
         quarter="Q3"
         title="Rebalance the mix before the final push"
         subtitle="Use the third quarter to double down, correct saturation, or make a bigger strategic bet before the year closes."
-        availableTactics={SAMPLE_TACTICS.slice(8, 14)}
+        availableTactics={getTacticsForQuarter('Q3')}
         selectedTactics={selectedTactics}
         onAddTactic={handleAddTactic}
         onRemoveTactic={handleRemoveTactic}

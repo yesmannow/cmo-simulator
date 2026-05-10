@@ -42,7 +42,10 @@ import {
   type UserProfileFormState,
 } from '@/lib/userProfile';
 import { cn } from '@/lib/utils';
-import { CompanyProfile, Industry, MarketLandscape, TimeHorizon } from '@/types';
+import {
+  SIMULATION_SCENARIOS,
+  type SimulationScenarioIconKey,
+} from '@/lib/config/simulationScenarios';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
@@ -57,6 +60,12 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react';
+
+const SCENARIO_CARD_ICONS: Record<SimulationScenarioIconKey, LucideIcon> = {
+  target: Target,
+  rocket: Rocket,
+  zap: Zap,
+};
 
 interface SetupData {
   scenarioId: string | null;
@@ -233,72 +242,6 @@ function mapProfileFromApi(profile: Record<string, unknown> | null | undefined):
   };
 }
 
-const SCENARIOS = [
-  {
-    id: 'turnaround',
-    name: 'The Turnaround',
-    description: 'A legacy brand steadily losing market share. Your job is to stop the bleeding and revitalize the brand before cash runs out.',
-    icon: Target,
-    color: 'text-amber-300 bg-amber-500/10 border-amber-400/20',
-    timeHorizon: '1-year' as TimeHorizon,
-    industry: 'ecommerce' as Industry,
-    companyProfile: 'enterprise' as CompanyProfile,
-    marketLandscape: 'disruptor' as MarketLandscape,
-    difficulty: 'Hard',
-    budget: 1500000,
-    startingKPIs: {
-      revenue: 5000000,
-      profit: 0,
-      marketShare: 15,
-      brandAwareness: 60,
-      customerSatisfaction: 35,
-    },
-    executiveMandate: 'Immediate stabilization and return to profitability.',
-  },
-  {
-    id: 'hyper-growth',
-    name: 'Hyper-Growth SaaS',
-    description: 'A heavily funded Series B startup. The board demands aggressive acquisition at all costs to hit unicorn valuation.',
-    icon: Rocket,
-    color: 'text-violet-300 bg-violet-500/10 border-violet-400/20',
-    timeHorizon: '3-year' as TimeHorizon,
-    industry: 'saas' as Industry,
-    companyProfile: 'startup' as CompanyProfile,
-    marketLandscape: 'crowded' as MarketLandscape,
-    difficulty: 'Very Hard',
-    budget: 3500000,
-    startingKPIs: {
-      revenue: 1200000,
-      profit: 0,
-      marketShare: 2,
-      brandAwareness: 10,
-      customerSatisfaction: 85,
-    },
-    executiveMandate: 'Triple-digit YoY growth. Unit economics secondary.',
-  },
-  {
-    id: 'challenger',
-    name: 'The Challenger Brand',
-    description: 'A lean startup trying to disrupt a massive incumbent. You must be resourceful, loud, and strategic to survive.',
-    icon: Zap,
-    color: 'text-emerald-300 bg-emerald-500/10 border-emerald-400/20',
-    timeHorizon: '5-year' as TimeHorizon,
-    industry: 'fintech' as Industry,
-    companyProfile: 'startup' as CompanyProfile,
-    marketLandscape: 'disruptor' as MarketLandscape,
-    difficulty: 'Medium',
-    budget: 500000,
-    startingKPIs: {
-      revenue: 250000,
-      profit: 0,
-      marketShare: 1,
-      brandAwareness: 5,
-      customerSatisfaction: 90,
-    },
-    executiveMandate: 'Build an obsessed cult-following over 5 years.',
-  },
-];
-
 function formatBudget(value: number) {
   return `$${(value / 1_000_000).toFixed(1)}M`;
 }
@@ -339,8 +282,8 @@ export default function SetupPage() {
     data.budgetAllocation.brandAwareness +
     data.budgetAllocation.leadGeneration +
     data.budgetAllocation.conversionOptimization;
-  const selectedScenario = SCENARIOS.find((scenario) => scenario.id === data.scenarioId);
-  const SelectedScenarioIcon = selectedScenario?.icon;
+  const selectedScenario = SIMULATION_SCENARIOS.find((scenario) => scenario.id === data.scenarioId);
+  const SelectedScenarioIcon = selectedScenario ? SCENARIO_CARD_ICONS[selectedScenario.iconKey] : undefined;
   const stepMeta = STEP_META[step - 1];
 
   useEffect(() => {
@@ -445,7 +388,7 @@ export default function SetupPage() {
 
   const saveAndContinue = async () => {
     try {
-      const scenario = SCENARIOS.find((entry) => entry.id === data.scenarioId);
+      const scenario = SIMULATION_SCENARIOS.find((entry) => entry.id === data.scenarioId);
       if (!scenario) throw new Error('Scenario missing');
       const runId = crypto.randomUUID();
       const startedAt = new Date().toISOString();
@@ -526,7 +469,8 @@ export default function SetupPage() {
 
   const launchGuidedDemo = () => {
     const runId = crypto.randomUUID();
-    const demoScenario = SCENARIOS.find((scenario) => scenario.id === 'challenger') || SCENARIOS[0];
+    const demoScenario =
+      SIMULATION_SCENARIOS.find((scenario) => scenario.id === 'challenger') || SIMULATION_SCENARIOS[0];
     const guidedDemoState: Partial<SimulationContext> = {
       simulationId: runId,
       startedAt: new Date(),
@@ -824,8 +768,8 @@ export default function SetupPage() {
                   </div>
                   {showAdvancedScenario && (
                     <div className="mt-5 grid gap-5 lg:grid-cols-3">
-                    {SCENARIOS.map((scenario) => {
-                      const Icon = scenario.icon;
+                    {SIMULATION_SCENARIOS.map((scenario) => {
+                      const Icon = SCENARIO_CARD_ICONS[scenario.iconKey];
                       const isSelected = data.scenarioId === scenario.id;
 
                       return (

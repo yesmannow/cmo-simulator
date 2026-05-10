@@ -1,3 +1,4 @@
+import { isSimulationScenarioId } from "@/lib/config/simulationScenarios";
 import type { Industry, MarketLandscape } from "@/types";
 import type { Channel, MarketConditions } from "@/types/engine";
 
@@ -44,9 +45,9 @@ function scaleCompetitorSpend(
 }
 
 function getScenarioMarketTuning(scenarioId: string | undefined): ScenarioMarketTuning | null {
-  if (!scenarioId) return null;
+  if (!isSimulationScenarioId(scenarioId)) return null;
 
-  // Keep this keyed to the IDs in `src/app/sim/setup/page.tsx`.
+  // Keep this keyed to `SIMULATION_SCENARIOS` in `src/lib/config/simulationScenarios.ts`.
   if (scenarioId === "turnaround") {
     return {
       baselineEconomicIndex: 0.95,

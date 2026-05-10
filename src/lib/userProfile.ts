@@ -1,3 +1,8 @@
+import {
+  PROFILE_DIFFICULTY_OPTIONS,
+  type SimulationProfileDifficulty,
+} from "@/lib/config/simulationDifficultyModes";
+
 export const PROFILE_ROLE_OPTIONS = [
   { value: "cmo", label: "CMO" },
   { value: "founder", label: "Founder" },
@@ -21,16 +26,13 @@ export const SIMULATION_GOAL_OPTIONS = [
   { value: "efficiency", label: "Efficiency" },
 ] as const;
 
-export const DIFFICULTY_OPTIONS = [
-  { value: "easy", label: "Easy" },
-  { value: "medium", label: "Medium" },
-  { value: "hard", label: "Hard" },
-] as const;
+/** @deprecated Use {@link PROFILE_DIFFICULTY_OPTIONS} from `@/lib/config/simulationDifficultyModes`. */
+export const DIFFICULTY_OPTIONS = PROFILE_DIFFICULTY_OPTIONS;
 
 export type ProfileRole = (typeof PROFILE_ROLE_OPTIONS)[number]["value"];
 export type MarketingMaturity = (typeof MARKETING_MATURITY_OPTIONS)[number]["value"];
 export type SimulationGoal = (typeof SIMULATION_GOAL_OPTIONS)[number]["value"];
-export type PreferredDifficulty = (typeof DIFFICULTY_OPTIONS)[number]["value"];
+export type PreferredDifficulty = SimulationProfileDifficulty;
 
 export interface UserProfileFormState {
   fullName: string;
