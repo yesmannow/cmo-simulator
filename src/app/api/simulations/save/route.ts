@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { PersistedRunPayload } from "@/lib/simulationPersistence";
+import type { SimulationTeachingGrade } from "@/lib/simulationContracts";
 import { buildSimulationScoreBreakdowns } from "@/lib/simulationIntelligence";
+import { buildTeachingReport, calculateGrade, calculateOverallScore } from "@/lib/simulationInsights";
 import { logger } from "@/lib/logger";
 import { getOrCreateRequestId, withRequestIdHeaders } from "@/lib/apiRequestId";
 
@@ -21,7 +23,14 @@ function validatePayload(payload: unknown): payload is PersistedRunPayload {
   return true;
 }
 
-function toRpcRunRow(payload: PersistedRunPayload) {
+function toRpcRunRow(
+  payload: PersistedRunPayload,
+  finalized: {
+    overallScore: number;
+    grade: SimulationTeachingGrade;
+    debrief: ReturnType<typeof buildTeachingReport>;
+  },
+) {
   return {
     run_id: payload.runId,
     user_id: payload.userId,
@@ -31,9 +40,9 @@ function toRpcRunRow(payload: PersistedRunPayload) {
     company_name: payload.companyName,
     current_phase: payload.currentPhase,
     status: payload.status,
-    overall_score: payload.overallScore ?? null,
-    grade: payload.grade ?? null,
-    debrief: payload.debrief,
+    overall_score: finalized.overallScore,
+    grade: finalized.grade,
+    debrief: finalized.debrief,
     context: payload.context,
     saved_at: payload.savedAtIso,
   };
@@ -78,7 +87,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payload identity mismatch." }, { status: 403, headers });
     }
 
-    // Uses teaching/persistence scoring (`simulationInsights`), same as `toPersistedRunPayload`.
+    // Authoritative teaching score + debrief from context (same formulas as client `toPersistedRunPayload`).
+    // Client-sent overallScore/grade/debrief are ignored for persistence so tampered JSON cannot skew stored runs.
+    const finalizedOverallScore = calculateOverallScore(payload.context);
+    const finalizedGrade = calculateGrade(finalizedOverallScore);
+    const finalizedDebrief = buildTeachingReport(payload.context);
+
     const scoreBreakdowns = buildSimulationScoreBreakdowns(payload.context);
     const breakdownRows = scoreBreakdowns.map((breakdown) => ({
       breakdown_id: crypto.randomUUID(),
@@ -92,7 +106,11 @@ export async function POST(request: NextRequest) {
       metadata: breakdown.metadata,
     }));
 
-    const pRun = toRpcRunRow(payload);
+    const pRun = toRpcRunRow(payload, {
+      overallScore: finalizedOverallScore,
+      grade: finalizedGrade,
+      debrief: finalizedDebrief,
+    });
 
     const { data: rpcResult, error: rpcError } = await supabase.rpc("save_simulation_run_atomic", {
       p_run: pRun,

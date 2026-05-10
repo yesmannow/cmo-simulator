@@ -103,7 +103,7 @@ Verification snippets (optional): [`supabase/verification/`](../supabase/verific
 - **Security:** `SECURITY INVOKER` — runs as the **authenticated user**; RLS applies to `INSERT`/`UPDATE`/`DELETE`/`SELECT` inside the function.
 - **Behavior (summary):**
   1. Requires `auth.uid()` non-null and equal to `p_run->>'user_id'`.
-  2. **Upserts** one row into `cmo_simulation_runs` keyed by `run_id` (`ON CONFLICT (run_id) DO UPDATE`).
+  2. **Upserts** one row into `cmo_simulation_runs` keyed by `run_id` (`ON CONFLICT (run_id) DO UPDATE`). The Next.js save route supplies `overall_score`, `grade`, and `debrief` in `p_run` **after** recomputing them server-side from `context` (RPC itself still persists whatever keys are present in `p_run`).
   3. **Deletes** all `simulation_score_breakdowns` rows for that `run_id`.
   4. **Inserts** breakdown rows from `p_breakdowns` (JSON array of objects).
 - **Grants:** `REVOKE ALL … FROM PUBLIC`; `GRANT EXECUTE … TO authenticated`.
@@ -130,9 +130,9 @@ Primary persistence for a simulation **run**: identity, status, JSON blobs for m
 | `company_name` | `text` | NO | `'Untitled Company'` | From strategy setup. |
 | `current_phase` | `text` | NO | `'setup'` | App-driven phase label (e.g. quarter / setup). |
 | `status` | `text` | NO | — | **`CHECK`** in `('in_progress', 'completed')`. |
-| `overall_score` | `numeric` | YES | — | Derived score when saved. |
-| `grade` | `text` | YES | — | Letter grade string from app. |
-| `debrief` | `jsonb` | NO | `'{}'` | Shape from `buildTeachingReport(context)` (see [`simulationInsights`](../src/lib/simulationInsights.ts)). |
+| `overall_score` | `numeric` | YES | — | **Server-finalized** on save: `calculateOverallScore(context)` in [`POST /api/simulations/save`](../src/app/api/simulations/save/route.ts) (same deterministic formula as the client preview). |
+| `grade` | `text` | YES | — | **Server-finalized** on save: `calculateGrade(overall_score)` (not taken from client JSON for persistence). |
+| `debrief` | `jsonb` | NO | `'{}'` | **Server-finalized** on save: `buildTeachingReport(context)` output (client body mirrors are ignored for DB writes). |
 | `context` | `jsonb` | NO | `'{}'` | Full **`SimulationContext`** from [`simMachine`](../src/lib/simMachine.ts)—quarters, tactics, strategy, budgets, results, etc. |
 | `saved_at` | `timestamptz` | NO | `now()` | Last successful save timestamp from client/API. |
 | `created_at` | `timestamptz` | NO | `now()` | Row creation. |
@@ -232,7 +232,7 @@ Denormalized rows derived from `context` at save time for querying/reporting (on
 
 | Route | Method | Tables / RPC |
 |-------|--------|----------------|
-| `/api/simulations/save` | POST | RPC `save_simulation_run_atomic`; then `SELECT * FROM cmo_simulation_runs` for response. |
+| `/api/simulations/save` | POST | Recomputes `overall_score`, `grade`, `debrief` from `context`; RPC `save_simulation_run_atomic`; then `SELECT * FROM cmo_simulation_runs` for response. |
 | `/api/simulations` | GET | `cmo_simulation_runs` — list recent columns for dashboard. |
 | `/api/simulations/latest` | GET | `cmo_simulation_runs` — latest row for resume. |
 | `/api/simulations/[runId]` | DELETE | `cmo_simulation_runs` — cascade removes events/breakdowns. |
@@ -249,8 +249,8 @@ Denormalized rows derived from `context` at save time for querying/reporting (on
 
 The API converts the HTTP body to snake_case keys matching Postgres column names ([`toRpcRunRow`](../src/app/api/simulations/save/route.ts)). Logical TypeScript shape: [`PersistedRunPayload`](../src/lib/simulationPersistence.ts).
 
-- **`context`:** Full **`SimulationContext`** — quarters (`Q1`–`Q4` with tactics, results, budgets), `strategy`, `simulationId`, `scenarioId`, wildcards, etc. This is the **large** JSON document.
-- **`debrief`:** Output of **`buildTeachingReport(context)`** — structured teaching strings (outcome, why, tradeoff, next move, growth leader takeaway).
+- **`context`:** Full **`SimulationContext`** — quarters (`Q1`–`Q4` with tactics, results, budgets), `strategy`, `simulationId`, `scenarioId`, wildcards, etc. This is the **large** JSON document and the **source of truth** for persisted scoring on the server.
+- **`overall_score` / `grade` / `debrief` (in `p_run`):** The save route **recomputes** these from `context` using [`simulationInsights`](../src/lib/simulationInsights.ts) (`calculateOverallScore`, `calculateGrade`, `buildTeachingReport`) before calling the RPC. The client still sends `overallScore`, `grade`, and `debrief` on the wire for payload shape parity and local UX; those fields are **not** trusted for database persistence.
 
 ### 9.2 `p_breakdowns`
 
