@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
+import { getOrCreateRequestId, withRequestIdHeaders } from "@/lib/apiRequestId";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -9,12 +11,14 @@ function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const requestId = getOrCreateRequestId(request);
+  const headers = withRequestIdHeaders(requestId);
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401, headers });
     }
 
     const { data, error } = await supabase
@@ -24,27 +28,33 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
-      return NextResponse.json({ error: "Failed to load profile.", details: error.message }, { status: 500 });
+      logger.error("GET /api/profile failed", error, { requestId });
+      return NextResponse.json({ error: "Failed to load profile." }, { status: 500, headers });
     }
 
-    return NextResponse.json({ ok: true, profile: data ?? null });
+    return NextResponse.json({ ok: true, profile: data ?? null }, { headers });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("GET /api/profile unexpected error", error, { requestId });
+    return NextResponse.json(
+      { error: "Something went wrong. Try again." },
+      { status: 500, headers },
+    );
   }
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = getOrCreateRequestId(request);
+  const headers = withRequestIdHeaders(requestId);
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id || !user.email) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401, headers });
     }
 
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     if (!body || !isRecord(body)) {
-      return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid JSON body." }, { status: 400, headers });
     }
 
     const profileRow = {
@@ -66,13 +76,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: "Failed to save profile.", details: error.message }, { status: 500 });
+      logger.error("POST /api/profile failed", error, { requestId });
+      return NextResponse.json({ error: "Failed to save profile." }, { status: 500, headers });
     }
 
-    return NextResponse.json({ ok: true, profile: data });
+    return NextResponse.json({ ok: true, profile: data }, { headers });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("POST /api/profile unexpected error", error, { requestId });
+    return NextResponse.json(
+      { error: "Something went wrong. Try again." },
+      { status: 500, headers },
+    );
   }
 }
 

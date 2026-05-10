@@ -20,7 +20,7 @@ type PersistedRun = {
   saved_at: string;
 };
 
-/** Map PostgREST / Supabase errors to a short UI message when the table or schema is wrong. */
+/** Map PostgREST / Supabase errors to a user-safe message (no internal paths or SQL filenames). */
 function loadSimulationsUserMessage(apiError: string | undefined, details: unknown): string {
   const d = typeof details === "string" ? details : "";
   const combined = `${apiError ?? ""} ${d}`.toLowerCase();
@@ -28,9 +28,9 @@ function loadSimulationsUserMessage(apiError: string | undefined, details: unkno
     combined.includes("pgrst205")
     || combined.includes("schema cache")
     || combined.includes("could not find the table")
-    || combined.includes("relation \"public.cmo_simulation_runs\" does not exist")
+    || combined.includes('relation "public.cmo_simulation_runs" does not exist')
   ) {
-    return "Saved runs are unavailable: the database table is missing or not migrated. Ask an admin to apply supabase/migrations/20260502_create_cmo_simulation_runs.sql (see supabase/verification/cmo_simulation_runs.sql for checks).";
+    return "Saved runs are temporarily unavailable. If this persists, contact support—your administrator may need to finish database setup.";
   }
   return apiError ?? "Unable to load simulations.";
 }

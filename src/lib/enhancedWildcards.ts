@@ -39,8 +39,9 @@ export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
   {
     id: 'wildcard-enhanced-1',
     type: 'crisis',
-    title: 'Data Privacy Scandal',
-    description: 'A major data breach has exposed customer information. The media is demanding answers and customers are losing trust.',
+    title: 'Customer data incident',
+    description:
+      'Sensitive customer data appears to have been exposed. Regulators and press are asking for a clear account of what happened, what is contained, and how customers are protected.',
     rarity: 'uncommon',
     moraleImpact: {
       base: -20,
@@ -58,12 +59,14 @@ export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
         'crisis-data-comprehensive': +5,
       }
     },
-    teamMoraleDescription: 'Team is stressed about reputation damage and customer trust.',
+    teamMoraleDescription:
+      'Legal, security, and comms are stretched thin; people want a single narrative before speculation fills the gap.',
     choices: [
       {
         id: 'crisis-data-ignore',
-        title: 'Minimal Response',
-        description: 'Issue a brief statement and hope it blows over quickly.',
+        title: 'Hold the line',
+        description:
+          'Publish a short holding statement, limit interviews, and route inquiries through legal while you assess scope.',
         cost: 25000,
         timeRequired: 10,
         impact: {
@@ -76,8 +79,9 @@ export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
       },
       {
         id: 'crisis-data-minimal',
-        title: 'Standard Crisis Management',
-        description: 'Hire a PR firm and implement basic security improvements.',
+        title: 'Managed response',
+        description:
+          'Retain external comms counsel, stand up a status page with regular updates, and fund baseline security and identity hardening.',
         cost: 150000,
         timeRequired: 40,
         impact: {
@@ -90,8 +94,9 @@ export const ENHANCED_WILDCARDS: EnhancedWildcardEvent[] = [
       },
       {
         id: 'crisis-data-comprehensive',
-        title: 'Transparency & Innovation',
-        description: 'Full transparency, customer compensation, and industry-leading security overhaul.',
+        title: 'Full transparency program',
+        description:
+          'Disclose scope and root cause, offer concrete customer remedies, and fund a multi-quarter security and data-protection program with third-party attestation.',
         cost: 500000,
         timeRequired: 80,
         impact: {

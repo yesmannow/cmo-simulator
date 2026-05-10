@@ -38,5 +38,5 @@ Hiring an in-house team increases fixed costs (moving the Break-Even Point) but 
 ## 4. The Crisis Engine (Adaptive Difficulty)
 The simulator detects if the player's "Competency Score" is too steady, unleashing randomized constraints such as:
 - **Supply Chain Shock**: Inventory drops to 0 for a quarter, forcing the CMO to pivot messaging to wait-lists.
-- **Data Privacy Hack**: Trust Score plummets by 40%, slashing Targeting Efficiency and forcing aggressive PR remediation.
+- **Customer data incident**: Trust score and targeting efficiency fall sharply until the CMO funds a credible response (comms, customer remedies, and security hardening).
 - **Price War**: Aggressive competitors slash prices. Players matching the price cut trigger a new Nash Equilibrium where total market value shrinks.

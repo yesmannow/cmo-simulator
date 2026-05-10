@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Area,
   AreaChart,
@@ -86,10 +87,37 @@ export function EnhancedDebrief({
   const finalMarketShare = context.quarters.Q4.results.marketShare;
   
   const getGrade = (score: number) => {
-    if (score >= 90) return { grade: "L", label: "LEGENDARY", color: "text-blue-400", border: "border-blue-500/50", glow: "shadow-blue-500/20" };
-    if (score >= 80) return { grade: "A", label: "EXECUTIVE", color: "text-emerald-400", border: "border-emerald-500/50", glow: "shadow-emerald-500/20" };
-    if (score >= 70) return { grade: "B", label: "STRATEGIST", color: "text-indigo-400", border: "border-indigo-500/50", glow: "shadow-indigo-500/20" };
-    return { grade: "C", label: "MANAGER", color: "text-amber-400", border: "border-amber-500/50", glow: "shadow-amber-500/20" };
+    if (score >= 90)
+      return {
+        grade: "L",
+        label: "LEGENDARY",
+        color: "text-blue-600",
+        border: "border-blue-300",
+        glow: "shadow-blue-200/80",
+      };
+    if (score >= 80)
+      return {
+        grade: "A",
+        label: "EXECUTIVE",
+        color: "text-emerald-600",
+        border: "border-emerald-300",
+        glow: "shadow-emerald-200/80",
+      };
+    if (score >= 70)
+      return {
+        grade: "B",
+        label: "STRATEGIST",
+        color: "text-indigo-600",
+        border: "border-indigo-300",
+        glow: "shadow-indigo-200/80",
+      };
+    return {
+      grade: "C",
+      label: "MANAGER",
+      color: "text-amber-600",
+      border: "border-amber-300",
+      glow: "shadow-amber-200/80",
+    };
   };
 
   const overallScore = Math.round((totalRevenue / 2000000) * 50 + finalMarketShare * 2);
@@ -187,26 +215,26 @@ export function EnhancedDebrief({
       title: "Teaching + Proof Report",
       subtitle: "Structured debrief for growth leaders",
       content: (
-        <div className="grid md:grid-cols-2 gap-6 py-4">
-          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
-            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Outcome</p>
-            <p className="text-slate-100">{report.outcome}</p>
+        <div className="grid gap-6 py-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Outcome</p>
+            <p className="text-slate-800">{report.outcome}</p>
           </div>
-          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
-            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Why</p>
-            <p className="text-slate-100">{report.why}</p>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Why</p>
+            <p className="text-slate-800">{report.why}</p>
           </div>
-          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
-            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Tradeoff</p>
-            <p className="text-slate-100">{report.tradeoff}</p>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Tradeoff</p>
+            <p className="text-slate-800">{report.tradeoff}</p>
           </div>
-          <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
-            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Recommended Next Move</p>
-            <p className="text-slate-100">{report.nextMove}</p>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Recommended Next Move</p>
+            <p className="text-slate-800">{report.nextMove}</p>
           </div>
-          <div className="md:col-span-2 p-6 bg-blue-500/10 rounded-2xl border border-blue-400/20">
-            <p className="text-xs uppercase tracking-widest text-blue-300/70 mb-2">Growth Leader Takeaway</p>
-            <p className="text-blue-100">{report.growthLeaderTakeaway}</p>
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 md:col-span-2">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-blue-700">Growth Leader Takeaway</p>
+            <p className="text-blue-900">{report.growthLeaderTakeaway}</p>
           </div>
         </div>
       ),
@@ -221,21 +249,26 @@ export function EnhancedDebrief({
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", damping: 12 }}
-            className={`w-48 h-48 rounded-full border-8 ${gradeInfo.border} flex flex-col items-center justify-center bg-slate-900/80 shadow-[0_0_50px_rgba(0,0,0,0.5)] ${gradeInfo.glow} relative`}
+            className={`relative flex h-48 w-48 flex-col items-center justify-center rounded-full border-8 bg-slate-50 shadow-lg ${gradeInfo.border} ${gradeInfo.glow}`}
           >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent opacity-20" />
-            <span className={`text-8xl font-black ${gradeInfo.color} tracking-tighter`}>{gradeInfo.grade}</span>
-            <span className="text-[10px] font-black text-slate-500 tracking-[0.3em] mt-[-10px] uppercase">{gradeInfo.label}</span>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white to-slate-100/80 opacity-90" />
+            <span className={`relative text-8xl font-black tracking-tighter ${gradeInfo.color}`}>{gradeInfo.grade}</span>
+            <span className="relative mt-[-10px] text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">
+              {gradeInfo.label}
+            </span>
           </motion.div>
-          
-          <div className="grid grid-cols-2 gap-10 w-full max-w-2xl px-10">
-            <div className="text-center space-y-1">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Global Rank</p>
-              <p className="text-3xl font-bold text-white uppercase">TOP 12%</p>
+
+          <div className="grid w-full max-w-2xl grid-cols-2 gap-10 px-10">
+            <div className="space-y-1 text-center">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Global Rank</p>
+              <p className="text-3xl font-bold uppercase text-slate-900">TOP 12%</p>
             </div>
-            <div className="text-center space-y-1">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Strategic Score</p>
-              <p className="text-3xl font-bold text-white"><CountUp end={overallScore} duration={2} />pts</p>
+            <div className="space-y-1 text-center">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Strategic Score</p>
+              <p className="text-3xl font-bold text-slate-900">
+                <CountUp end={overallScore} duration={2} />
+                pts
+              </p>
             </div>
           </div>
         </div>
@@ -249,14 +282,19 @@ export function EnhancedDebrief({
         <div className="grid gap-6 py-4 lg:grid-cols-2">
           <div className="space-y-3">
             {scoreBreakdowns.map((breakdown) => (
-              <div key={`${breakdown.phase}-${breakdown.category}`} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div
+                key={`${breakdown.phase}-${breakdown.category}`}
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              >
                 <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest text-blue-300/70">{breakdown.phase} · {breakdown.category}</p>
-                    <p className="mt-1 text-sm text-slate-100">{breakdown.insight}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-widest text-blue-700">
+                      {breakdown.phase} · {breakdown.category}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-800">{breakdown.insight}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-black text-white">{breakdown.score}</div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-2xl font-black text-slate-900">{breakdown.score}</div>
                     <div className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">/ {breakdown.maxScore}</div>
                   </div>
                 </div>
@@ -264,16 +302,21 @@ export function EnhancedDebrief({
             ))}
           </div>
           <div className="space-y-3">
-            {recommendations.length > 0 ? recommendations.map((recommendation) => (
-              <div key={`${recommendation.phase}-${recommendation.category}-${recommendation.priority}`} className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
-                <p className="text-xs font-black uppercase tracking-widest text-blue-300/80">
-                  {recommendation.phase} · priority {recommendation.priority}
-                </p>
-                <h3 className="mt-1 text-lg font-semibold text-white">{recommendation.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-blue-100/80">{recommendation.body}</p>
-              </div>
-            )) : (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+            {recommendations.length > 0 ? (
+              recommendations.map((recommendation) => (
+                <div
+                  key={`${recommendation.phase}-${recommendation.category}-${recommendation.priority}`}
+                  className="rounded-2xl border border-blue-200 bg-blue-50 p-4"
+                >
+                  <p className="text-xs font-black uppercase tracking-widest text-blue-800">
+                    {recommendation.phase} · priority {recommendation.priority}
+                  </p>
+                  <h3 className="mt-1 text-lg font-semibold text-slate-900">{recommendation.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-blue-950/80">{recommendation.body}</p>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                 No recommendations generated.
               </div>
             )}
@@ -286,30 +329,36 @@ export function EnhancedDebrief({
       title: "Revenue Trajectory",
       subtitle: "Compounded growth rates across FY cycles",
       content: (
-        <div className="w-full h-[400px] mt-8 bg-white/5 rounded-3xl p-6 border border-white/5 shadow-inner">
+        <div className="mt-8 h-[400px] w-full rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-inner">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={quarterlyData}>
               <defs>
                 <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
               <XAxis dataKey="quarter" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis 
-                stroke="#64748b" 
-                fontSize={12} 
-                tickLine={false} 
-                axisLine={false} 
-                tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`}
+              <YAxis
+                stroke="#64748b"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                 domain={[0, (dataMax: number) => Math.max(dataMax, 500000)]}
               />
-              <Tooltip 
-                contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #ffffff10", borderRadius: "12px", color: "white" }}
-                itemStyle={{ color: "#3b82f6" }}
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  color: "#0f172a",
+                }}
+                itemStyle={{ color: "#2563eb" }}
+                labelStyle={{ color: "#475569" }}
               />
-              <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
+              <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -320,31 +369,43 @@ export function EnhancedDebrief({
       title: "Market Dominance",
       subtitle: "Competitive landscape penetration",
       content: (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-10">
-          <div className="space-y-6 flex flex-col justify-center">
-            <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-2">
-              <div className="flex items-center gap-2 text-blue-400">
-                <Target className="w-4 h-4" />
+        <div className="grid grid-cols-1 gap-8 py-10 md:grid-cols-2">
+          <div className="flex flex-col justify-center space-y-6">
+            <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <div className="flex items-center gap-2 text-blue-600">
+                <Target className="h-4 w-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Final Market Share</span>
               </div>
-              <p className="text-5xl font-black text-white">{finalMarketShare.toFixed(1)}%</p>
-              <p className="text-xs text-slate-500">Relative to industry benchmarks (2026 Avg: 18.4%)</p>
+              <p className="text-5xl font-black text-slate-900">{finalMarketShare.toFixed(1)}%</p>
+              <p className="text-xs text-slate-600">Relative to industry benchmarks (2026 Avg: 18.4%)</p>
             </div>
-            
-            <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-2">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <Users className="w-4 h-4" />
+
+            <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <Users className="h-4 w-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Customer Trust Index</span>
               </div>
-              <p className="text-5xl font-black text-white">{context.quarters.Q4.results.customerSatisfaction.toFixed(1)}%</p>
-              <p className="text-xs text-slate-500">Premium brand perception achieved</p>
+              <p className="text-5xl font-black text-slate-900">{context.quarters.Q4.results.customerSatisfaction.toFixed(1)}%</p>
+              <p className="text-xs text-slate-600">Premium brand perception achieved</p>
             </div>
           </div>
-          <div className="h-[300px] md:h-full bg-slate-900/40 rounded-3xl border border-white/5 overflow-hidden flex items-center justify-center p-6">
+          <div className="flex h-[300px] items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6 md:h-full">
             <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={quarterlyData}>
-                  <Bar dataKey="share" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                </BarChart>
+              <BarChart data={quarterlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="quarter" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}%`} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    color: "#0f172a",
+                  }}
+                  itemStyle={{ color: "#2563eb" }}
+                />
+                <Bar dataKey="share" fill="#2563eb" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -356,27 +417,29 @@ export function EnhancedDebrief({
       subtitle: "What your decisions say about your leadership style",
       content: (
         <div className="flex flex-col items-center justify-center space-y-8 py-4">
-          <div className="p-8 bg-slate-900/50 rounded-[30px] border border-blue-500/30 flex flex-col items-center w-full shadow-[0_0_50px_rgba(59,130,246,0.1)]">
-            <archetype.icon className="w-20 h-20 text-blue-400 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-            <h3 className="text-4xl font-black text-white uppercase tracking-widest text-center">{archetype.name}</h3>
-            <p className="text-blue-200/60 mt-4 text-center max-w-lg text-lg italic leading-relaxed">
-              {archetype.desc}
-            </p>
+          <div className="flex w-full flex-col items-center rounded-[30px] border border-blue-200 bg-blue-50/80 p-8 shadow-md">
+            <archetype.icon className="mb-6 h-20 w-20 text-blue-600" />
+            <h3 className="text-center text-4xl font-black uppercase tracking-widest text-slate-900">{archetype.name}</h3>
+            <p className="mt-4 max-w-lg text-center text-lg italic leading-relaxed text-blue-900/80">{archetype.desc}</p>
           </div>
-          
-          <div className="grid grid-cols-2 gap-6 w-full mt-4">
-            <div className="p-6 bg-white/5 border border-white/5 rounded-2xl flex items-start gap-4">
-              <Crosshair className="w-8 h-8 text-emerald-400 shrink-0" />
+
+          <div className="mt-4 grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <Crosshair className="h-8 w-8 shrink-0 text-emerald-600" />
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Strengths</p>
-                <p className="text-sm text-slate-300">Aligned heavily with your primary budget allocations. Created strong narrative consistency in your chosen channels.</p>
+                <p className="mb-1 text-xs font-black uppercase tracking-widest text-slate-500">Strengths</p>
+                <p className="text-sm text-slate-700">
+                  Aligned heavily with your primary budget allocations. Created strong narrative consistency in your chosen channels.
+                </p>
               </div>
             </div>
-            <div className="p-6 bg-white/5 border border-white/5 rounded-2xl flex items-start gap-4">
-              <AlertTriangle className="w-8 h-8 text-amber-400 shrink-0" />
+            <div className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <AlertTriangle className="h-8 w-8 shrink-0 text-amber-600" />
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500 mb-1">Blindspots</p>
-                <p className="text-sm text-slate-300">Lack of diversification may expose the brand to channel saturation or competitor flanking.</p>
+                <p className="mb-1 text-xs font-black uppercase tracking-widest text-slate-500">Blindspots</p>
+                <p className="text-sm text-slate-700">
+                  Lack of diversification may expose the brand to channel saturation or competitor flanking.
+                </p>
               </div>
             </div>
           </div>
@@ -388,33 +451,46 @@ export function EnhancedDebrief({
       title: "Campaign Turning Point",
       subtitle: "The moment momentum shifted",
       content: (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-10 h-full">
-          <div className="h-full bg-slate-900/40 rounded-3xl border border-white/5 overflow-hidden flex items-center justify-center p-6 relative">
-             {/* Simple timeline visualization */}
-             <div className="absolute inset-y-10 left-12 w-1 bg-white/10 rounded-full" />
-             <div className="flex flex-col justify-between w-full h-full pl-8">
-               {['Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-                 <div key={q} className="relative flex items-center gap-6">
-                   <div className={`w-8 h-8 rounded-full border-4 ${q === turningPoint.quarter ? 'bg-emerald-500 border-emerald-900 shadow-[0_0_20px_rgba(16,185,129,0.5)]' : 'bg-slate-800 border-slate-900'} z-10 -ml-[19px] shrink-0`} />
-                   <div>
-                     <p className={`font-black uppercase tracking-widest ${q === turningPoint.quarter ? 'text-emerald-400 text-xl' : 'text-slate-500'}`}>{q}</p>
-                     {q === turningPoint.quarter && (
-                       <p className="text-xs text-emerald-500/60 font-bold uppercase tracking-widest mt-1">Maximum Inflection</p>
-                     )}
-                   </div>
-                 </div>
-               ))}
-             </div>
+        <div className="grid h-full grid-cols-1 gap-8 py-10 md:grid-cols-2">
+          <div className="relative flex h-full items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6">
+            <div className="absolute inset-y-10 left-12 w-1 rounded-full bg-slate-200" />
+            <div className="flex h-full w-full flex-col justify-between pl-8">
+              {["Q1", "Q2", "Q3", "Q4"].map((q) => (
+                <div key={q} className="relative flex items-center gap-6">
+                  <div
+                    className={cn(
+                      "z-10 -ml-[19px] h-8 w-8 shrink-0 rounded-full border-4",
+                      q === turningPoint.quarter
+                        ? "border-emerald-700 bg-emerald-500 shadow-md shadow-emerald-200"
+                        : "border-slate-300 bg-white",
+                    )}
+                  />
+                  <div>
+                    <p
+                      className={cn(
+                        "font-black uppercase tracking-widest",
+                        q === turningPoint.quarter ? "text-xl text-emerald-700" : "text-slate-500",
+                      )}
+                    >
+                      {q}
+                    </p>
+                    {q === turningPoint.quarter && (
+                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-emerald-600">Maximum Inflection</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="space-y-6 flex flex-col justify-center">
-             <div className="p-8 bg-emerald-500/10 rounded-[30px] border border-emerald-500/20">
-               <TrendingUp className="w-10 h-10 text-emerald-400 mb-6" />
-               <h3 className="text-2xl font-bold text-white mb-2">Momentum Spike in {turningPoint.quarter}</h3>
-               <p className="text-emerald-100/70 leading-relaxed mb-6">{turningPoint.insight}</p>
-               <div className="p-4 bg-slate-900/50 rounded-xl border border-white/5 border-l-emerald-500 border-l-4">
-                 <p className="text-sm text-slate-300 italic">{turningPoint.lesson}</p>
-               </div>
-             </div>
+          <div className="flex flex-col justify-center space-y-6">
+            <div className="rounded-[30px] border border-emerald-200 bg-emerald-50 p-8">
+              <TrendingUp className="mb-6 h-10 w-10 text-emerald-600" />
+              <h3 className="mb-2 text-2xl font-bold text-slate-900">Momentum Spike in {turningPoint.quarter}</h3>
+              <p className="mb-6 leading-relaxed text-emerald-900/80">{turningPoint.insight}</p>
+              <div className="rounded-xl border border-slate-200 border-l-4 border-l-emerald-500 bg-white p-4">
+                <p className="text-sm italic text-slate-700">{turningPoint.lesson}</p>
+              </div>
+            </div>
           </div>
         </div>
       )
@@ -424,22 +500,22 @@ export function EnhancedDebrief({
       title: "Alternative Path Coaching",
       subtitle: "If you rerun this scenario, try this",
       content: (
-        <div className="flex flex-col items-center justify-center space-y-8 py-10 h-full">
-           <div className="p-10 w-full max-w-2xl bg-gradient-to-br from-indigo-500/10 to-transparent rounded-[30px] border border-indigo-500/30 text-center relative overflow-hidden">
-             <Compass className="w-16 h-16 text-indigo-400 mx-auto mb-6 opacity-80" />
-             <h3 className="text-2xl font-black text-white uppercase tracking-widest mb-4">Strategic Recommendation</h3>
-             
-             <p className="text-lg text-indigo-100/80 leading-relaxed max-w-xl mx-auto">
-               {archetype.advice}
-             </p>
-             
-             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full pointer-events-none" />
-           </div>
-           
-           <div className="flex gap-4 items-center">
-             <Lightbulb className="w-5 h-5 text-amber-400" />
-             <p className="text-sm font-black uppercase text-amber-400 tracking-widest">Replay the simulator to test a different archetype.</p>
-           </div>
+        <div className="flex h-full flex-col items-center justify-center space-y-8 py-10">
+          <div className="relative w-full max-w-2xl overflow-hidden rounded-[30px] border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-10 text-center">
+            <Compass className="mx-auto mb-6 h-16 w-16 text-indigo-600 opacity-90" />
+            <h3 className="mb-4 text-2xl font-black uppercase tracking-widest text-slate-900">Strategic Recommendation</h3>
+
+            <p className="mx-auto max-w-xl text-lg leading-relaxed text-indigo-950/85">{archetype.advice}</p>
+
+            <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-indigo-200/40 blur-[80px]" />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Lightbulb className="h-5 w-5 shrink-0 text-amber-600" />
+            <p className="text-sm font-black uppercase tracking-widest text-amber-800">
+              Replay the simulator to test a different archetype.
+            </p>
+          </div>
         </div>
       )
     }
@@ -447,38 +523,48 @@ export function EnhancedDebrief({
 
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  const prevIndex = (currentSlide - 1 + slides.length) % slides.length;
+  const nextIndex = (currentSlide + 1) % slides.length;
+  const prevSectionTitle = slides[prevIndex].title;
+  const nextSectionTitle = slides[nextIndex].title;
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center py-10 px-4 mt-[-40px]">
-      <motion.div 
+    <div className="mt-[-40px] flex min-h-screen flex-col items-center bg-transparent px-4 py-10 text-slate-950">
+      <motion.div
         layout
-        className="w-full max-w-5xl bg-slate-900/60 border border-white/10 backdrop-blur-2xl rounded-[40px] shadow-2xl relative overflow-hidden"
+        className="relative w-full max-w-5xl overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-xl"
       >
-        {/* Progress header */}
         <div className="flex gap-1 p-6">
           {slides.map((_, i) => (
-            <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= currentSlide ? "bg-blue-500" : "bg-white/10"}`} />
+            <div
+              key={i}
+              className={cn(
+                "h-1 flex-1 rounded-full transition-all duration-300",
+                i <= currentSlide ? "bg-blue-600" : "bg-slate-200",
+              )}
+            />
           ))}
         </div>
 
-        <div className="px-12 pb-12">
-          {/* Slide Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="space-y-1">
-              <motion.h1 
+        <div className="px-6 pb-10 sm:px-10 lg:px-12">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1">
+              <motion.h1
                 key={`title-${currentSlide}`}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-4xl font-black text-white uppercase tracking-tight"
+                className="text-3xl font-black uppercase tracking-tight text-slate-900 sm:text-4xl"
               >
                 {slides[currentSlide].title}
               </motion.h1>
-              <p className="text-slate-500 font-medium text-sm">{slides[currentSlide].subtitle}</p>
+              <p className="text-sm font-medium text-slate-600">
+                Section {currentSlide + 1} of {slides.length} — {slides[currentSlide].title}
+              </p>
+              <p className="text-xs text-slate-500">{slides[currentSlide].subtitle}</p>
             </div>
-            <Building2 className="w-8 h-8 text-white/10" />
+            <Building2 className="hidden h-8 w-8 shrink-0 text-slate-300 sm:block" aria-hidden />
           </div>
 
-          {/* Slide Content */}
           <div className="relative min-h-[450px]">
             <AnimatePresence mode="wait">
               <motion.div
@@ -493,73 +579,109 @@ export function EnhancedDebrief({
             </AnimatePresence>
           </div>
 
-          {/* Controls */}
-          <div className="flex flex-col gap-5 mt-12 pt-8 border-t border-white/5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex gap-3">
-              <Button 
-                variant="ghost" 
-                onClick={prevSlide}
-                className="rounded-full w-12 h-12 p-0 bg-white/5 hover:bg-white/10 text-white"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={nextSlide}
-                className="rounded-full w-12 h-12 p-0 bg-white/5 hover:bg-white/10 text-white"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </Button>
+          <div className="mt-10 flex flex-col gap-6 border-t border-slate-200 pt-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevSlide}
+                  aria-label={`Go to previous section: ${prevSectionTitle}`}
+                  className="h-12 w-12 shrink-0 rounded-full border-slate-200 p-0 text-slate-900 hover:bg-slate-50"
+                >
+                  <ChevronLeft className="h-6 w-6" aria-hidden />
+                </Button>
+                <div className="min-w-0 flex-1 text-center sm:text-left">
+                  <nav className="w-full overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Debrief sections">
+                    <div className="flex snap-x snap-mandatory gap-2">
+                      {slides.map((slide, i) => (
+                        <button
+                          key={slide.id}
+                          type="button"
+                          onClick={() => setCurrentSlide(i)}
+                          className={cn(
+                            "max-w-[200px] snap-start truncate rounded-lg border px-3 py-2 text-left text-xs font-semibold transition-colors",
+                            i === currentSlide
+                              ? "border-slate-900 bg-slate-900 text-white"
+                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                          )}
+                          aria-current={i === currentSlide ? true : undefined}
+                        >
+                          {slide.title}
+                        </button>
+                      ))}
+                    </div>
+                  </nav>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={nextSlide}
+                  aria-label={`Go to next section: ${nextSectionTitle}`}
+                  className="h-12 w-12 shrink-0 rounded-full border-slate-200 p-0 text-slate-900 hover:bg-slate-50 sm:order-last"
+                >
+                  <ChevronRight className="h-6 w-6" aria-hidden />
+                </Button>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3">
-               <Button
+              <Button
                 onClick={onSaveRun}
                 disabled={saveDisabled}
                 variant="outline"
-                className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2 disabled:opacity-40"
-               >
-                <Save className="w-4 h-4" /> Save Run
-               </Button>
-               <Button onClick={onExportPDF} variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2">
-                <Download className="w-4 h-4" /> Export Briefing
-               </Button>
-               <Button onClick={handleCopyBriefing} variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl px-6 h-12 font-bold flex items-center gap-2">
-                <Clipboard className="w-4 h-4" /> Copy Summary
-               </Button>
-               {currentSlide === slides.length - 1 && (
-                 <Button onClick={onRestart} className="bg-white text-slate-950 hover:bg-slate-200 rounded-xl px-8 h-12 font-black transition-transform active:scale-95 shadow-xl shadow-white/10">
-                   RESTART CAMPAIGN
-                 </Button>
-               )}
+                className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50 disabled:opacity-40"
+              >
+                <Save className="h-4 w-4" /> Save Run
+              </Button>
+              <Button
+                onClick={onExportPDF}
+                variant="outline"
+                className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50"
+              >
+                <Download className="h-4 w-4" /> Export Briefing
+              </Button>
+              <Button
+                onClick={handleCopyBriefing}
+                variant="outline"
+                className="flex h-12 items-center gap-2 rounded-xl border-slate-200 bg-white px-6 font-bold text-slate-900 hover:bg-slate-50"
+              >
+                <Clipboard className="h-4 w-4" /> Copy Summary
+              </Button>
+              {currentSlide === slides.length - 1 && (
+                <Button
+                  onClick={onRestart}
+                  className="h-12 rounded-xl bg-slate-900 px-8 font-black text-white shadow-md transition-transform hover:bg-slate-800 active:scale-95"
+                >
+                  RESTART CAMPAIGN
+                </Button>
+              )}
             </div>
           </div>
-          {copyStatus && (
-            <p className="mt-4 text-sm font-medium text-blue-200">{copyStatus}</p>
-          )}
+          {copyStatus && <p className="mt-4 text-sm font-medium text-blue-800">{copyStatus}</p>}
         </div>
       </motion.div>
 
-      <section className="mt-6 w-full max-w-5xl rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-white">
+      <section className="mt-6 w-full max-w-5xl rounded-2xl border border-slate-200 bg-slate-50 p-6 text-slate-900">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <p className="text-xs font-black uppercase tracking-widest text-emerald-300">Turn the run into a real growth conversation</p>
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-700">Turn the run into a real growth conversation</p>
             <h2 className="mt-2 text-2xl font-black tracking-tight">Use this debrief as the starting point for a strategy review.</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
+            <p className="mt-2 text-sm leading-6 text-slate-600">
               Bring the briefing into a real conversation about budget allocation, positioning, channel risk, and the next 90 days of execution.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <a
               href={contactUrl}
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-5 text-sm font-black text-slate-950 hover:bg-slate-200"
+              className="inline-flex h-12 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-black text-white hover:bg-slate-800"
             >
               <CalendarCheck className="mr-2 h-4 w-4" />
               Request Review
             </a>
             <a
               href={`mailto:?subject=${encodeURIComponent("CMO Simulator Growth Briefing")}&body=${encodeURIComponent(report.growthLeaderTakeaway)}`}
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 text-sm font-bold text-white hover:bg-white/10"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-900 hover:bg-slate-50"
             >
               <Mail className="mr-2 h-4 w-4" />
               Email Takeaway
@@ -568,10 +690,9 @@ export function EnhancedDebrief({
         </div>
       </section>
 
-      {/* Footer Branding */}
-      <div className="mt-8 flex items-center gap-3 opacity-20 hover:opacity-100 transition-opacity">
-        <ShieldCheck className="w-5 h-5 text-white" />
-        <span className="text-xs font-black text-white uppercase tracking-[0.5em]">CMO SIMULATOR | BOARDROOM EDITION 2026</span>
+      <div className="mt-8 flex items-center gap-3 opacity-40 transition-opacity hover:opacity-100">
+        <ShieldCheck className="h-5 w-5 text-slate-600" />
+        <span className="text-xs font-black uppercase tracking-[0.5em] text-slate-600">CMO SIMULATOR | BOARDROOM EDITION 2026</span>
       </div>
     </div>
   );

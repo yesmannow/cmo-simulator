@@ -72,6 +72,33 @@ export async function signInSimAuth(email: string, password: string): Promise<Si
   return session;
 }
 
+/** Absolute URL for OAuth / email link return (must match Supabase / GoTrue redirect allow list). */
+export function getOAuthCallbackUrl(nextPath: string): string {
+  const next = nextPath.startsWith("/") ? nextPath : `/${nextPath}`;
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3002").replace(/\/$/, "");
+  return `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+}
+
+/** Browser-only: redirects to Google consent screen. Enable Google in Supabase Auth providers first. */
+export async function signInWithGoogleOAuth(nextPath: string): Promise<void> {
+  const supabase = createClient();
+  const redirectTo = getOAuthCallbackUrl(nextPath);
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo,
+      queryParams: { prompt: "select_account" },
+    },
+  });
+  if (error) throw error;
+  if (data?.url) {
+    window.location.assign(data.url);
+  }
+}
+
 async function signUpViaServerOrSupabase(
   email: string,
   password: string,

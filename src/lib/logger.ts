@@ -34,7 +34,13 @@ class Logger {
       ? { message: error.message, stack: error.stack, name: error.name }
       : error;
 
-    console.error(`[ERROR] ${message}`, errorDetails, context || '');
+    const requestId =
+      typeof context?.requestId === "string" && context.requestId.length > 0
+        ? context.requestId
+        : undefined;
+    const prefix = requestId ? `[ERROR][req:${requestId}] ` : "[ERROR] ";
+
+    console.error(`${prefix}${message}`, errorDetails, context || '');
 
     // In production, send to error tracking service (Sentry, etc.)
     if (this.isProduction && typeof window !== 'undefined') {

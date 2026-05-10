@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import type React from 'react';
 import { AlertTriangle, ArrowRight, BarChart3, Check, Circle, DollarSign, LineChart, Minus, PieChart, Plus, Target, TrendingUp, WalletCards } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -57,9 +57,17 @@ export function QuarterOperatingConsole({
   );
   const [activeSheet, setActiveSheet] = useState<null | 'forecast' | 'logic' | 'channels'>(null);
   const [briefTactic, setBriefTactic] = useState<EnrichedTactic | null>(null);
+  const finalizeHintMobileId = useId();
+  const finalizeHintDesktopId = useId();
   const selectedIds = useMemo(() => new Set(selectedTactics.map((tactic) => tactic.id)), [selectedTactics]);
   const { budgetSummary } = forecast;
   const budgetIsOver = budgetSummary.remainingBudget < 0;
+  const finalizeHintText =
+    selectedTactics.length === 0
+      ? 'Add at least one move to finalize this quarter.'
+      : budgetIsOver
+        ? 'Selected spend exceeds this quarter’s budget—remove or swap moves to finalize.'
+        : '';
   const planReadiness = selectedTactics.length === 0
     ? 'No moves selected'
     : budgetIsOver
@@ -210,32 +218,35 @@ export function QuarterOperatingConsole({
       </section>
 
       <section className="hidden gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
-        <Panel>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
+        <Panel className="@container min-w-0">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 max-w-prose">
               <h2 className="text-lg font-semibold text-slate-950">Baseline vs selected plan</h2>
               <p className="text-sm leading-5 text-slate-600">Baseline now vs projected quarter-end after selected moves.</p>
             </div>
-            <Badge variant="outline" className="w-fit border-slate-300 bg-slate-50 text-slate-700">
+            <Badge variant="outline" className="w-fit shrink-0 border-slate-300 bg-slate-50 text-slate-700">
               {forecast.topRisk}
             </Badge>
           </div>
           {selectedTactics.length === 0 && (
-            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-900">
+            <div className="mt-4 min-w-0 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-5 text-amber-900">
               No moves selected. Add one move to see a true plan projection.
             </div>
           )}
-          <div className="mt-4 divide-y divide-slate-200">
+          <div className="mt-4 min-w-0 divide-y divide-slate-200 overflow-x-auto">
             {forecast.comparisonRows.map((row) => (
-              <div key={row.label} className="grid grid-cols-[108px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 py-3 text-sm">
-                <span className="font-semibold text-slate-950">{row.label}</span>
-                <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+              <div
+                key={row.label}
+                className="grid grid-cols-1 items-start gap-3 py-3 text-sm @[28rem]:grid-cols-[minmax(0,6.5rem)_minmax(0,1fr)_minmax(0,1fr)] @[28rem]:items-center"
+              >
+                <span className="min-w-0 break-words font-semibold leading-snug text-slate-950">{row.label}</span>
+                <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Current baseline</p>
-                  <p className="mt-1 font-semibold text-slate-700">{row.currentValue}</p>
+                  <p className="mt-1 break-words font-semibold leading-snug text-slate-700">{row.currentValue}</p>
                 </div>
-                <div className="rounded-md border border-slate-950 bg-slate-950 px-3 py-2 text-white">
+                <div className="min-w-0 rounded-md border border-slate-950 bg-slate-950 px-3 py-2 text-white">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Selected plan</p>
-                  <p className="mt-1 font-semibold">{row.plannedValue}</p>
+                  <p className="mt-1 break-words font-semibold leading-snug">{row.plannedValue}</p>
                 </div>
               </div>
             ))}
@@ -470,6 +481,7 @@ export function QuarterOperatingConsole({
               type="button"
               onClick={onCompleteQuarter}
               disabled={!canComplete}
+              aria-describedby={!canComplete && finalizeHintText ? finalizeHintMobileId : undefined}
               className={cn(
                 'w-full rounded-[22px] py-6 text-base font-semibold',
                 canComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-200 text-slate-400',
@@ -478,6 +490,11 @@ export function QuarterOperatingConsole({
               {completeLabel}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
+            {!canComplete && finalizeHintText ? (
+              <p id={finalizeHintMobileId} className="mt-2 text-center text-xs leading-5 text-amber-900">
+                {finalizeHintText}
+              </p>
+            ) : null}
           </div>
         </main>
 
@@ -520,7 +537,10 @@ export function QuarterOperatingConsole({
             </div>
             <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-700">
               {forecast.riskWarnings.map((warning) => (
-                <li key={warning} className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950">
+                <li
+                  key={warning}
+                  className="min-w-0 break-words rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-950"
+                >
                   {warning}
                 </li>
               ))}
@@ -557,6 +577,7 @@ export function QuarterOperatingConsole({
             type="button"
             onClick={onCompleteQuarter}
             disabled={!canComplete}
+            aria-describedby={!canComplete && finalizeHintText ? finalizeHintDesktopId : undefined}
             className={cn(
               'w-full rounded-md py-6 text-base font-semibold',
               canComplete ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-slate-200 text-slate-400',
@@ -565,6 +586,11 @@ export function QuarterOperatingConsole({
             {completeLabel}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
+          {!canComplete && finalizeHintText ? (
+            <p id={finalizeHintDesktopId} className="text-center text-xs leading-5 text-amber-900">
+              {finalizeHintText}
+            </p>
+          ) : null}
         </aside>
       </section>
 

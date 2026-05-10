@@ -24,7 +24,7 @@ export type NavItem = {
 };
 
 export const CORE_NAV_ITEMS: NavItem[] = [
-  { label: 'Overview', href: '/sim', icon: LayoutDashboard },
+  { label: 'Continue', href: '/sim', icon: LayoutDashboard },
   { label: 'My Simulations', href: '/sim/simulations', icon: FolderOpenDot },
   { label: 'Strategy', href: '/sim/strategy', icon: Flag },
   { label: 'Debrief', href: '/sim/debrief', icon: BarChart3 },
@@ -44,7 +44,7 @@ export const CRM_NAV_ITEMS: NavItem[] = [
 ];
 
 export const ALL_NAV_ITEMS: NavItem[] = [
-  { label: 'Home', href: '/sim', icon: Home },
+  { label: 'Continue', href: '/sim', icon: Home },
   { label: 'Setup', href: '/sim/setup', icon: Wrench },
   ...CORE_NAV_ITEMS.filter((item) => item.href !== '/sim'),
   ...QUARTER_NAV_ITEMS,
@@ -69,7 +69,7 @@ export function titleForPath(pathname: string) {
   if (pathname.startsWith('/sim/q3')) return 'Q3 Operating Plan';
   if (pathname.startsWith('/sim/q4')) return 'Q4 Operating Plan';
   if (pathname.startsWith('/sim/debrief')) return 'Debrief';
-  return 'Overview';
+  return 'Continue';
 }
 
 export function activeHref(pathname: string, href: string) {
@@ -88,7 +88,7 @@ export function primaryNavItemForPath(pathname: string): NavItem {
   if (pathname.startsWith('/sim/pipeline')) return { label: 'Pipeline', href: '/sim/pipeline', icon: GitBranch };
   if (pathname.startsWith('/sim/analytics')) return { label: 'Analytics', href: '/sim/analytics', icon: LineChart };
   if (pathname.startsWith('/sim/debrief')) return { label: 'Debrief', href: '/sim/debrief', icon: BarChart3 };
-  return { label: 'Overview', href: '/sim', icon: LayoutDashboard };
+  return { label: 'Continue', href: '/sim', icon: LayoutDashboard };
 }
 
 export function mobileModeItemForPath(pathname: string): NavItem {

@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getOrCreateRequestId, withRequestIdHeaders } from "@/lib/apiRequestId";
+import { logger } from "@/lib/logger";
+
+const MAX_SIGNUP_BODY_BYTES = 32 * 1024;
+const MAX_EMAIL_LEN = 254;
 
 function publicSiteUrl(request: NextRequest): string {
   const fromEnv = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
@@ -32,6 +37,13 @@ function confirmationEmailHtml(confirmUrl: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = getOrCreateRequestId(request);
+  const headers = withRequestIdHeaders(requestId);
+  const len = Number(request.headers.get("content-length") ?? "0");
+  if (len > MAX_SIGNUP_BODY_BYTES) {
+    return NextResponse.json({ message: "Request body too large." }, { status: 413, headers });
+  }
+
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = resendFromAddress();
   const admin = createAdminClient();
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
   if (!apiKey || !from || !admin) {
     return NextResponse.json(
       { code: "email_not_configured", message: "Resend + Supabase service role are not configured on the server." },
-      { status: 503 },
+      { status: 503, headers },
     );
   }
 
@@ -47,17 +59,17 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ message: "Invalid JSON body." }, { status: 400 });
+    return NextResponse.json({ message: "Invalid JSON body." }, { status: 400, headers });
   }
 
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
 
-  if (!email.includes("@")) {
-    return NextResponse.json({ message: "Enter a valid email address." }, { status: 400 });
+  if (!email.includes("@") || email.length > MAX_EMAIL_LEN) {
+    return NextResponse.json({ message: "Enter a valid email address." }, { status: 400, headers });
   }
-  if (password.length < 8) {
-    return NextResponse.json({ message: "Password must be at least 8 characters." }, { status: 400 });
+  if (password.length < 8 || password.length > 256) {
+    return NextResponse.json({ message: "Password must be at least 8 characters." }, { status: 400, headers });
   }
 
   const site = publicSiteUrl(request);
@@ -80,16 +92,23 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { message: "An account with this email already exists. Sign in instead." },
-        { status: 409 },
+        { status: 409, headers },
       );
     }
-    return NextResponse.json({ message: error.message || "Sign up failed." }, { status: 400 });
+    logger.error("sign-up generateLink failed", error, { requestId });
+    return NextResponse.json({ message: "Sign up failed. Check your details and try again." }, { status: 400, headers });
   }
 
   const actionLink = data.properties?.action_link;
   const userId = data.user?.id;
   if (!actionLink || !userId) {
-    return NextResponse.json({ message: "Could not create a confirmation link." }, { status: 500 });
+    logger.error("sign-up missing action_link or user id", new Error("invalid generateLink payload"), {
+      requestId,
+    });
+    return NextResponse.json(
+      { message: "Could not create a confirmation link." },
+      { status: 500, headers },
+    );
   }
 
   const resend = new Resend(apiKey);
@@ -108,11 +127,12 @@ export async function POST(request: NextRequest) {
 
   if (sendError) {
     await admin.auth.admin.deleteUser(userId);
+    logger.error("sign-up Resend send failed", sendError, { requestId });
     return NextResponse.json(
-      { message: sendError.message || "Failed to send confirmation email." },
-      { status: 502 },
+      { message: "Failed to send confirmation email." },
+      { status: 502, headers },
     );
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true }, { headers });
 }

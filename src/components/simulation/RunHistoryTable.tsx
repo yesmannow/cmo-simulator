@@ -303,7 +303,7 @@ export function RunHistoryTable({
         }}
       >
         <DialogContent
-          className="fixed right-0 top-0 z-50 h-[100vh] w-full max-w-[720px] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-l border-slate-200 bg-white p-0 shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-right-1/2 data-[state=closed]:slide-out-to-right-1/2 sm:rounded-none"
+          className="fixed right-0 top-0 z-50 h-[100vh] w-full max-w-[720px] translate-x-0 translate-y-0 gap-0 overflow-hidden rounded-none border-l border-slate-200 bg-white p-0 text-slate-950 shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-right-1/2 data-[state=closed]:slide-out-to-right-1/2 sm:rounded-none"
         >
           {selectedRun ? (
             <RunDetailsDrawer

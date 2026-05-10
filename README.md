@@ -39,7 +39,7 @@ The game enforces strategic balance through three pressure meters:
 ### ⚡ The Crisis Engine (Adaptive Difficulty)
 The simulator detects if your strategy is becoming too comfortable and unleashes randomized constraints:
 - **Supply Chain Shocks**: Inventory drops, forcing a pivot in messaging.
-- **Data Privacy Hacks**: Trust Score plummets, requiring PR remediation.
+- **Customer data incident**: Sensitive data exposure drives scrutiny; trust drops until comms, legal, and security responses align.
 - **Competitor Price Wars**: Triggers a new Nash Equilibrium where total market value shrinks.
 - **Dynamic Wildcard Events**: Context-aware events based on your industry, market landscape, and performance (e.g. key resignations, website outages, press features).
 

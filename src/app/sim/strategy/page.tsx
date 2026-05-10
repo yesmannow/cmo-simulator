@@ -21,7 +21,7 @@ import {
 
 import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -403,42 +403,51 @@ export default function StrategySessionPage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {CHANNEL_OPTIONS.map((channel) => (
-                <Button
-                  key={channel.id}
-                  variant="outline"
-                  className={cn(
-                    "h-auto whitespace-normal p-4 flex flex-col items-start gap-3 text-left transition-all duration-300",
-                    formData.primaryChannels.includes(channel.id)
-                      ? "border-slate-900 bg-slate-900 text-white shadow-sm scale-[1.02]"
-                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                  )}
-                  onClick={() => handleChannelToggle(channel.id)}
-                >
-                  <ChannelIcon icon={channel.icon} selected={formData.primaryChannels.includes(channel.id)} />
-                  <div className="min-w-0 w-full">
-                    <div className="break-words text-[12px] font-black uppercase tracking-[0.12em] leading-4">
-                      {channel.name}
-                    </div>
+              {CHANNEL_OPTIONS.map((channel) => {
+                const selected = formData.primaryChannels.includes(channel.id);
+                return (
+                  <div
+                    key={channel.id}
+                    className={cn(
+                      buttonVariants({ variant: 'outline', size: 'default' }),
+                      'flex h-auto flex-col items-stretch gap-3 whitespace-normal p-4 text-left transition-all duration-300',
+                      selected
+                        ? 'scale-[1.02] border-slate-900 bg-slate-900 text-white shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                    )}
+                  >
                     <button
                       type="button"
                       className={cn(
-                        "mt-3 inline-flex w-fit items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
-                        formData.primaryChannels.includes(channel.id)
-                          ? "border-white/15 bg-white/10 text-white hover:bg-white/15"
-                          : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100",
+                        'flex flex-col items-start gap-3 rounded-md border-0 bg-transparent p-0 text-left outline-none ring-offset-background',
+                        'transition-colors hover:bg-transparent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        selected ? 'text-white' : 'text-slate-700',
                       )}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        setChannelDetailsId(channel.id);
-                      }}
+                      onClick={() => handleChannelToggle(channel.id)}
+                      aria-pressed={selected}
+                    >
+                      <ChannelIcon icon={channel.icon} selected={selected} />
+                      <div className="min-w-0 w-full">
+                        <div className="break-words text-[12px] font-black uppercase tracking-[0.12em] leading-4">
+                          {channel.name}
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(
+                        'inline-flex w-fit items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold',
+                        selected
+                          ? 'border-white/15 bg-white/10 text-white hover:bg-white/15'
+                          : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
+                      )}
+                      onClick={() => setChannelDetailsId(channel.id)}
                     >
                       Learn more
                     </button>
                   </div>
-                </Button>
-              ))}
+                );
+              })}
             </div>
 
             {formData.primaryChannels.length > 0 && (

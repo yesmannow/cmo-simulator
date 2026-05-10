@@ -300,12 +300,14 @@ const COMPETITIVE_EVENTS: WildcardEvent[] = [
  */
 const MARKET_SHIFT_EVENTS: WildcardEvent[] = [
   {
-    id: 'market-privacy-law',
+    id: 'market-consumer-data-rules',
     type: 'market-shift',
     severity: 'major',
-    title: '⚖️ New Privacy Regulations',
-    description: 'New data privacy legislation just passed, making all ad targeting 20% less effective. Third-party cookies are being phased out faster than expected.',
-    context: 'Privacy regulations are reshaping digital marketing. First-party data and contextual targeting are the future.',
+    title: 'Customer data & targeting rules tighten',
+    description:
+      'New statutes and platform policies limit behavioral signals; aggregate ad targeting is roughly 20% less effective until you adapt consent, measurement, and channel mix.',
+    context:
+      'First-party relationships and contextual placements replace shrinking third-party reach; planning assumptions for paid media need a reset.',
     triggeredInQuarter: 'Q2',
     choices: [
       {
@@ -340,7 +342,7 @@ const MARKET_SHIFT_EVENTS: WildcardEvent[] = [
         },
         riskLevel: 'medium',
         longTermEffect: 'Less efficient but compliant with regulations',
-        reasoning: 'Contextual targeting is less precise but privacy-compliant'
+        reasoning: 'Contextual targeting is less precise but aligns with tightening customer-data rules'
       },
       {
         id: 'content-seo',
@@ -357,7 +359,7 @@ const MARKET_SHIFT_EVENTS: WildcardEvent[] = [
         },
         riskLevel: 'low',
         longTermEffect: 'Builds sustainable organic traffic independent of ad platforms',
-        reasoning: 'Organic channels unaffected by privacy changes, compounds over time'
+        reasoning: 'Organic channels are less exposed to signal loss from customer-data rule changes, compounds over time'
       }
     ]
   },

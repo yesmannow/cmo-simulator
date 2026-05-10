@@ -3,12 +3,14 @@ import { SimulationState } from '../types/engine';
 
 export const BLACK_SWAN_EVENTS = [
   {
-    id: 'black-swan-privacy-hack',
+    id: 'black-swan-customer-data',
     type: 'internal-crisis' as const,
     severity: 'critical' as const,
-    title: '🚨 CRITICAL: Massive Data Privacy Breach',
-    description: 'A third-party vendor was hacked. 40% of your customer database was exposed, triggering major PR damage and regulatory scrutiny.',
-    context: 'Data privacy is systemic risk. The Trust Multiplier drops significantly.',
+    title: 'Critical: Customer data incident',
+    description:
+      'A third-party vendor compromise exposed a large share of customer records. Press and regulators are asking for scope, timelines, and concrete remediation.',
+    context:
+      'Customer data incidents compress trust. The trust multiplier stays depressed until the response looks coordinated and funded.',
     triggeredInQuarter: 'Q2' as const,
     choices: [
       {

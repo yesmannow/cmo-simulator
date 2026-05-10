@@ -1,21 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
+import { getOrCreateRequestId, withRequestIdHeaders } from "@/lib/apiRequestId";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ runId: string }> },
 ) {
+  const requestId = getOrCreateRequestId(request);
+  const headers = withRequestIdHeaders(requestId);
   try {
     const { runId } = await context.params;
 
     if (!runId) {
-      return NextResponse.json({ error: "Missing run ID." }, { status: 400 });
+      return NextResponse.json({ error: "Missing run ID." }, { status: 400, headers });
     }
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401, headers });
     }
 
     const { error } = await supabase
@@ -25,15 +29,16 @@ export async function DELETE(
       .eq("user_id", user.id);
 
     if (error) {
-      return NextResponse.json(
-        { error: "Failed to delete run.", details: error.message },
-        { status: 500 },
-      );
+      logger.error("DELETE /api/simulations/[runId] failed", error, { requestId, runId });
+      return NextResponse.json({ error: "Failed to delete run." }, { status: 500, headers });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true }, { headers });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("DELETE /api/simulations/[runId] unexpected error", error, { requestId });
+    return NextResponse.json(
+      { error: "Something went wrong. Try again." },
+      { status: 500, headers },
+    );
   }
 }

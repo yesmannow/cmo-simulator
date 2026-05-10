@@ -10,6 +10,7 @@ import { ImmersiveLayout } from '@/components/simulation/ImmersiveLayout';
 import { SimulationDebriefPdf } from '@/components/simulation/SimulationDebriefPdf';
 import { useSimulation } from '@/hooks/useSimulation';
 import { deriveSimulationRecommendations, buildSimulationScoreBreakdowns } from '@/lib/simulationIntelligence';
+import { calculateGrade, calculateOverallScore } from '@/lib/simulationInsights';
 import {
   formatAuthErrorMessage,
   getSimAuthSession,
@@ -17,7 +18,8 @@ import {
   signUpSimAuth,
   type SimAuthSession,
 } from '@/lib/simAuth';
-import { toPersistedRunPayload } from '@/lib/simulationPersistence';
+import { buildDebriefProfileHint } from '@/lib/debriefPersonalization';
+import { saveSimulationSnapshot } from '@/lib/saveSimulationSnapshot';
 import { buildSimulationDebriefReport } from '@/lib/simulationReport';
 import { recordSimulationEvent } from '@/lib/simulationTelemetry';
 
@@ -32,6 +34,7 @@ export default function DebriefPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authPromptDismissed, setAuthPromptDismissed] = useState(false);
+  const [profileRow, setProfileRow] = useState<Record<string, unknown> | null>(null);
   const scoreBreakdowns = buildSimulationScoreBreakdowns(context);
   const recommendations = deriveSimulationRecommendations(context, scoreBreakdowns);
 
@@ -43,6 +46,27 @@ export default function DebriefPage() {
       setAuthSession(session);
     })();
   }, [completeDebrief]);
+
+  useEffect(() => {
+    if (!authSession) {
+      setProfileRow(null);
+      return;
+    }
+    const ac = new AbortController();
+    void (async () => {
+      try {
+        const response = await fetch('/api/profile', { signal: ac.signal });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!ac.signal.aborted) {
+          setProfileRow(data?.profile && typeof data.profile === 'object' ? data.profile : null);
+        }
+      } catch {
+        if (!ac.signal.aborted) setProfileRow(null);
+      }
+    })();
+    return () => ac.abort();
+  }, [authSession]);
 
   const requireAuth = async (): Promise<SimAuthSession | null> => {
     const session = await getSimAuthSession();
@@ -89,35 +113,26 @@ export default function DebriefPage() {
     setIsSaving(true);
     setStatusMessage(null);
     try {
-      const payload = toPersistedRunPayload(context, {
-        userId: session.userId,
-        email: session.email,
-      });
+      const result = await saveSimulationSnapshot(context, 'debrief', 'completed');
 
-      const response = await fetch('/api/simulations/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        throw new Error(errorBody?.error || 'Failed to save simulation run.');
+      if (!result.ok) {
+        setStatusMessage('Could not save this run. Check the save status in the header and try Retry.');
+        return;
       }
 
-      setStatusMessage('Run saved to Supabase successfully.');
+      setStatusMessage('Run saved successfully.');
       void recordSimulationEvent({
         runId: context.simulationId ?? '',
         eventType: 'debrief_saved',
         phase: 'debrief',
         payload: {
-          overallScore: payload.overallScore,
-          grade: payload.grade,
+          overallScore: calculateOverallScore(context),
+          grade: calculateGrade(calculateOverallScore(context)),
         },
       });
     } catch (error) {
       logger.error('Error saving simulation run', error);
-      setStatusMessage(error instanceof Error ? error.message : 'Unknown save error.');
+      setStatusMessage('Could not save this run. Try again in a moment.');
     } finally {
       setIsSaving(false);
     }
@@ -164,11 +179,19 @@ export default function DebriefPage() {
     }
   };
 
+  const profileHint = buildDebriefProfileHint(profileRow);
+  const debriefSubtitle = [
+    'Executive review: what worked, what didn’t, and what to adjust in the next run. Save/export is optional.',
+    profileHint,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <ImmersiveLayout
       title="Debrief"
       quarter="CRM View"
-      subtitle="Executive review: what worked, what didn’t, and what to adjust in the next run. Save/export is optional."
+      subtitle={debriefSubtitle}
     >
       <div className="mx-auto max-w-7xl space-y-6">
         <ConfettiEffect trigger={showConfetti} />
@@ -180,13 +203,20 @@ export default function DebriefPage() {
             </p>
             <div className="mt-4 grid gap-3 md:grid-cols-2">
               <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                spellCheck={false}
                 className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
                 placeholder="Work email"
                 value={emailInput}
                 onChange={(event) => setEmailInput(event.target.value)}
               />
               <input
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 className="rounded-md border border-slate-200 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400"
                 placeholder="Password (min 8 chars)"
                 value={passwordInput}

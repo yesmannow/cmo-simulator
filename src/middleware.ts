@@ -1,8 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
+function attachRequestId(request: NextRequest, response: NextResponse) {
+  const existing = request.headers.get("x-request-id")?.trim();
+  const id =
+    existing && existing.length > 0 && existing.length < 200
+      ? existing
+      : crypto.randomUUID();
+  response.headers.set("x-request-id", id);
+}
+
 export async function middleware(request: NextRequest) {
   const { user, response } = await updateSession(request);
+  attachRequestId(request, response);
   const { pathname } = request.nextUrl;
   const requiresAuth =
     pathname.startsWith("/sim") || pathname.startsWith("/api/simulations");

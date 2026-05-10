@@ -78,6 +78,29 @@ export function validateEnv() {
   }
 }
 
+/**
+ * Stricter checks for production Node runtime (after build). Call from instrumentation
+ * or once at server startup so misconfigured deploys fail loudly.
+ */
+export function assertProductionRuntimeEnv(): void {
+  if (process.env.NODE_ENV !== "production") return;
+  if (isBuildTime()) return;
+
+  const missing: string[] = [];
+  for (const name of requiredEnvVars) {
+    if (!process.env[name]) missing.push(name);
+  }
+  if (!process.env.NEXT_PUBLIC_SITE_URL?.trim()) {
+    missing.push("NEXT_PUBLIC_SITE_URL");
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `[CMO Simulator] Production runtime misconfiguration: missing ${missing.join(", ")}. See .env.example.`,
+    );
+  }
+}
+
 // Validate on module load (only in Node.js environment, not in browser)
 // Skip during build time for Cloudflare Pages compatibility
 if (typeof window === 'undefined') {

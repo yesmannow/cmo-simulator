@@ -1,5 +1,14 @@
 // Talent Market System for Q2 Hiring
 
+/** Drives Lucide avatar in Talent UI (replaces legacy emoji). */
+export type TalentAvatarKind =
+  | 'leadership'
+  | 'creative'
+  | 'research'
+  | 'growth'
+  | 'partnerships'
+  | 'operations';
+
 export interface TalentCandidate {
   id: string;
   name: string;
@@ -10,7 +19,8 @@ export interface TalentCandidate {
   hiringCost: number; // One-time hiring cost
   specialties: string[];
   personality: string;
-  avatar: string;
+  /** When missing (legacy saved runs), UI defaults to `leadership`. */
+  avatarKind?: TalentAvatarKind;
   impact: {
     revenue: number;
     efficiency: number; // Reduces time requirements
@@ -51,7 +61,7 @@ export const TALENT_POOL: TalentCandidate[] = [
     hiringCost: 15000,
     specialties: ['Performance Marketing', 'Data-Driven Growth'],
     personality: 'Analytical and results-driven',
-    avatar: '👩‍💼',
+    avatarKind: 'leadership',
     impact: {
       revenue: 150000,
       efficiency: 20, // 20% time reduction on digital tactics
@@ -73,7 +83,7 @@ export const TALENT_POOL: TalentCandidate[] = [
     hiringCost: 12000,
     specialties: ['Brand Storytelling', 'Visual Identity'],
     personality: 'Creative visionary with strategic thinking',
-    avatar: '🎨',
+    avatarKind: 'creative',
     impact: {
       revenue: 100000,
       efficiency: 15,
@@ -95,7 +105,7 @@ export const TALENT_POOL: TalentCandidate[] = [
     hiringCost: 20000,
     specialties: ['Customer Journey Mapping', 'Retention Strategy'],
     personality: 'Empathetic researcher with business acumen',
-    avatar: '🔬',
+    avatarKind: 'research',
     impact: {
       revenue: 120000,
       efficiency: 10,
@@ -117,7 +127,7 @@ export const TALENT_POOL: TalentCandidate[] = [
     hiringCost: 8000,
     specialties: ['Viral Growth', 'Community Engagement'],
     personality: 'Scrappy innovator with unconventional thinking',
-    avatar: '🚀',
+    avatarKind: 'growth',
     impact: {
       revenue: 80000,
       efficiency: 25,
@@ -139,7 +149,7 @@ export const TALENT_POOL: TalentCandidate[] = [
     hiringCost: 18000,
     specialties: ['Strategic Alliances', 'Channel Partnerships'],
     personality: 'Relationship builder with strategic vision',
-    avatar: '🤝',
+    avatarKind: 'partnerships',
     impact: {
       revenue: 200000,
       efficiency: 5,
@@ -161,7 +171,7 @@ export const TALENT_POOL: TalentCandidate[] = [
     hiringCost: 7000,
     specialties: ['Marketing Technology', 'Process Efficiency'],
     personality: 'Detail-oriented optimizer with technical expertise',
-    avatar: '⚙️',
+    avatarKind: 'operations',
     impact: {
       revenue: 60000,
       efficiency: 30,

@@ -7,9 +7,8 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: process.env.SKIP_ESLINT === "true",
   },
   typescript: {
-    // Allow build to proceed with TypeScript errors for now
-    // TODO: Fix type errors incrementally
-    ignoreBuildErrors: true,
+    // `npm run typecheck` must pass; CI/build will fail on TS errors when this is false.
+    ignoreBuildErrors: false,
   },
   // Note: OpenNext Cloudflare handles output configuration
   // Do not set output: "standalone" as it conflicts with OpenNext

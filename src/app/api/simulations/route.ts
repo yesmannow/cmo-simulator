@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
+import { getOrCreateRequestId, withRequestIdHeaders } from "@/lib/apiRequestId";
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
+  const requestId = getOrCreateRequestId(request);
+  const headers = withRequestIdHeaders(requestId);
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401, headers });
     }
 
     const { data, error } = await supabase
@@ -17,13 +21,20 @@ export async function GET(_request: NextRequest) {
       .limit(25);
 
     if (error) {
-      return NextResponse.json({ error: "Failed to load simulations.", details: error.message }, { status: 500 });
+      logger.error("GET /api/simulations failed", error, { requestId });
+      return NextResponse.json(
+        { error: "Failed to load simulations." },
+        { status: 500, headers },
+      );
     }
 
-    return NextResponse.json({ ok: true, runs: data ?? [] });
+    return NextResponse.json({ ok: true, runs: data ?? [] }, { headers });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    logger.error("GET /api/simulations unexpected error", error, { requestId });
+    return NextResponse.json(
+      { error: "Something went wrong. Try again." },
+      { status: 500, headers },
+    );
   }
 }
 
