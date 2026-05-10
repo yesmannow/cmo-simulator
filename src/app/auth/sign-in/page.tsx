@@ -60,13 +60,17 @@ function SignInForm() {
     }
 
     setIsLoading(true);
+    let startedNavigation = false;
     try {
       await signInSimAuth(email.trim().toLowerCase(), password);
       router.replace(nextPath);
+      startedNavigation = true;
     } catch (error) {
       setMessage(formatAuthErrorMessage(error), 'error');
     } finally {
-      setIsLoading(false);
+      // Keep the loading state active until we actually leave the page.
+      // `router.replace()` does not provide an awaitable completion signal.
+      if (!startedNavigation) setIsLoading(false);
     }
   };
 
@@ -92,6 +96,7 @@ function SignInForm() {
     }
 
     setIsLoading(true);
+    let startedNavigation = false;
     try {
       const outcome = await signUpSimAuthWithOutcome(
         email.trim().toLowerCase(),
@@ -101,6 +106,7 @@ function SignInForm() {
       );
       if (outcome.kind === 'signed_in') {
         router.replace(nextPath);
+        startedNavigation = true;
         return;
       }
       if (outcome.kind === 'confirm_email') {
@@ -116,7 +122,7 @@ function SignInForm() {
       }
       setMessage(outcome.message, 'error');
     } finally {
-      setIsLoading(false);
+      if (!startedNavigation) setIsLoading(false);
     }
   };
 

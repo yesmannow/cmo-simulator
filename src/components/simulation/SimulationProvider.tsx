@@ -17,8 +17,9 @@ interface SimulationContextValue {
 const SimulationReactContext = createContext<SimulationContextValue | null>(null);
 
 export function SimulationProvider({ children }: { children: React.ReactNode }) {
-  // Use a state to hold the hydrated context
-  const [hydratedContext, setHydratedContext] = useState<HydrationPatch | null>(null);
+  // Default to an empty patch so we never block first paint.
+  // We then *optionally* apply a saved patch after mount.
+  const [hydratedContext, setHydratedContext] = useState<HydrationPatch>({});
   const [hydrationError, setHydrationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,8 +41,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         setHydratedContext({});
       }
     } else {
-       // If no saved state, use an empty object so the machine uses its defaults
-       setHydratedContext({});
+      // If no saved state, keep an empty patch so the machine uses its defaults.
+      setHydratedContext({});
     }
   }, []);
 
@@ -62,14 +63,6 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
             Reset Local Session
           </button>
         </div>
-      </div>
-    );
-  }
-
-  if (!hydratedContext) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950 text-white">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     );
   }

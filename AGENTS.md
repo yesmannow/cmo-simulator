@@ -1,16 +1,18 @@
 <claude-mem-context>
 # Memory Context
 
-# claude-mem status
+# [cmo-simulator] recent context, 2026-05-10 2:51pm EDT
 
-This project has no memory yet. The current session will seed it; subsequent sessions will receive auto-injected context for relevant past work.
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
+Format: ID TIME TYPE TITLE
+Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Memory injection starts on your second session in a project.
+Stats: 3 obs (1,074t read) | 46,905t work | 98% savings
 
-`/learn-codebase` is available if the user wants to front-load the entire repo into memory in a single pass (~5 minutes on a typical repo, optional). Otherwise memory builds passively as work happens.
+### May 10, 2026
+236 2:51p 🔴 Eliminated Forced Full-Screen Spinner in SimulationProvider
+237 " 🔄 Replaced getUser() with getSession() in Middleware and Sim Layout
+238 " 🔴 Fixed Premature Loading State Reset After Sign-In Navigation
 
-Live activity: http://localhost:37777
-How it works: `/how-it-works`
-
-This message disappears once the first observation lands.
+Access 47k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

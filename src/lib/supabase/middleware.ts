@@ -27,9 +27,12 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
+  // Use session-based user for middleware gating to avoid an extra network
+  // round-trip on every `/sim/*` navigation (layout performs an authoritative
+  // `getUser()` check once).
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  return { user, response: supabaseResponse };
+  return { user: session?.user ?? null, response: supabaseResponse };
 }
