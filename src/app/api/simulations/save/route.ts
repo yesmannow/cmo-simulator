@@ -9,6 +9,7 @@ import { getOrCreateRequestId, withRequestIdHeaders } from "@/lib/apiRequestId";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 6 * 1024 * 1024;
+const MAX_SAVED_RUNS_PER_USER = 5;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -87,6 +88,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payload identity mismatch." }, { status: 403, headers });
     }
 
+    // Enforce max saved runs (creation only). Updates to an existing run_id are allowed.
+    // We also enforce this in the RPC for race-safety, but this gives a clearer client error code/message.
+    try {
+      const { data: existingRow, error: existingError } = await supabase
+        .from("cmo_simulation_runs")
+        .select("run_id")
+        .eq("user_id", user.id)
+        .eq("run_id", payload.runId)
+        .maybeSingle();
+
+      if (existingError) {
+        logger.warn("Run existence check failed; deferring to RPC enforcement", {
+          requestId,
+          errorMessage: existingError.message,
+        });
+      } else if (!existingRow) {
+        const { count, error: countError } = await supabase
+          .from("cmo_simulation_runs")
+          .select("run_id", { count: "exact", head: true })
+          .eq("user_id", user.id);
+
+        if (countError) {
+          logger.warn("Run count check failed; deferring to RPC enforcement", {
+            requestId,
+            errorMessage: countError.message,
+          });
+        } else if ((count ?? 0) >= MAX_SAVED_RUNS_PER_USER) {
+          return NextResponse.json(
+            {
+              error:
+                "Run limit reached (5 saved simulations). Delete one from My simulations before starting a new run.",
+            },
+            { status: 409, headers },
+          );
+        }
+      }
+    } catch (limitError) {
+      logger.warn("Run limit precheck failed; deferring to RPC enforcement", {
+        requestId,
+        error: limitError,
+      });
+    }
+
     // Authoritative teaching score + debrief from context (same formulas as client `toPersistedRunPayload`).
     // Client-sent overallScore/grade/debrief are ignored for persistence so tampered JSON cannot skew stored runs.
     const finalizedOverallScore = calculateOverallScore(payload.context);
@@ -141,6 +185,15 @@ export async function POST(request: NextRequest) {
       }
       if (result?.error === "invalid_input") {
         return NextResponse.json({ error: "Missing or invalid payload fields." }, { status: 400, headers });
+      }
+      if (result?.error === "run_limit_reached") {
+        return NextResponse.json(
+          {
+            error:
+              "Run limit reached (5 saved simulations). Delete one from My simulations before starting a new run.",
+          },
+          { status: 409, headers },
+        );
       }
       return NextResponse.json({ error: "Failed to persist simulation run." }, { status: 500, headers });
     }

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, type ChangeEvent } from 'react';

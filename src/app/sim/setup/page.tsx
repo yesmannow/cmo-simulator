@@ -423,6 +423,30 @@ export default function SetupPage() {
     try {
       const scenario = SIMULATION_SCENARIOS.find((entry) => entry.id === data.scenarioId);
       if (!scenario) throw new Error('Scenario missing');
+
+      // Guardrail: limit users to five saved runs at a time.
+      // Server-side enforcement also exists, but this gives a clear UX before the user invests time.
+      if (user) {
+        try {
+          const runsResponse = await fetch('/api/simulations');
+          if (runsResponse.ok) {
+            const runsJson = await runsResponse.json().catch(() => null);
+            const existingRuns = Array.isArray(runsJson?.runs) ? (runsJson.runs as unknown[]) : [];
+            if (existingRuns.length >= 5) {
+              alert(
+                "You already have 5 saved simulations. Delete one from 'My simulations' before starting a new run.",
+              );
+              router.push('/sim/simulations');
+              return;
+            }
+          }
+        } catch (limitError) {
+          logger.warn('Saved run count check failed; continuing without local guardrail', {
+            error: limitError,
+          });
+        }
+      }
+
       const runId = crypto.randomUUID();
       const startedAt = new Date().toISOString();
 
